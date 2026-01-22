@@ -1,0 +1,88 @@
+# GitHub Actions workflow for building and testing fcontext
+# Copyright Kyle Hayes (2026)
+# Distributed under the Boost Software License, Version 1.0
+# (See accompanying file LICENSE or copy at
+#  http://www.boost.org/LICENSE_1_0.txt)
+
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} - ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu AMD64
+          - runner: ubuntu-latest
+            os: Ubuntu
+            arch: AMD64
+            cmake-generator: Unix Makefiles
+
+          # Ubuntu ARM64
+          - runner: ubuntu-24.04-arm64
+            os: Ubuntu
+            arch: ARM64
+            cmake-generator: Unix Makefiles
+
+          # macOS AMD64 (Intel)
+          - runner: macos-13
+            os: macOS
+            arch: AMD64
+            cmake-generator: Unix Makefiles
+
+          # macOS ARM64 (Apple Silicon)
+          - runner: macos-14
+            os: macOS
+            arch: ARM64
+            cmake-generator: Unix Makefiles
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Configure CMake
+        working-directory: build
+        run: cmake -G "${{ matrix.cmake-generator }}" ..
+
+      - name: Build
+        working-directory: build
+        run: make -j$(nproc || sysctl -n hw.ncpu)
+
+      - name: Run tests
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: Display test results
+        if: always()
+        working-directory: build
+        run: |
+          echo "=== Build Summary ==="
+          echo "OS: ${{ matrix.os }} ${{ matrix.arch }}"
+          echo "CMake Generator: ${{ matrix.cmake-generator }}"
+          if [ -f Testing/Temporary/LastTest.log ]; then
+            echo "=== Test Log ==="
+            cat Testing/Temporary/LastTest.log
+          fi
