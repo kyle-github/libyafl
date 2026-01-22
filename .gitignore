@@ -1,0 +1,44 @@
+# .gitignore for fcontext project
+# Derived from Boost.Context - https://github.com/boostorg/context
+# Copyright Oliver Kowalke (original), Kyle GV (2026, .gitignore addition)
+# Distributed under the Boost Software License 1.0
+# See LICENSE file for details
+
+# Build directories and artifacts
+/build/
+/cmake-build-*/
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Debug symbols
+*.dSYM/
+*.pdb
+
+# Test executables
+/test_fcontext_basic
+/test_fcontext_simple
+/test_fcontext_transfer
+
+# IDE and editor files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+*~
+*.orig
+
+# CMake cache (only in main build directory)
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/Makefile
+
+# Python bytecode (if any)
+__pycache__/
+*.pyc
