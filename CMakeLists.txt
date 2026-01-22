@@ -1,6 +1,6 @@
 # CMake build configuration for fcontext
 # Derived from Boost.Context - https://github.com/boostorg/context
-# Copyright Oliver Kowalke (original), Kyle GV (2026, CMake changes)
+# Copyright Oliver Kowalke (original), Kyle Hayes (2026, CMake changes)
 # Distributed under the Boost Software License 1.0
 # See LICENSE file for details
 
