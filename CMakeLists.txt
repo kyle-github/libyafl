@@ -5,17 +5,16 @@
 # See LICENSE file for details
 
 cmake_minimum_required(VERSION 3.10)
+project(fcontext_tests C ASM)
 
 # ============================================================================
 # Enforce Out-of-Source Builds
 # ============================================================================
 
-# Prevent building in the source directory
+# Enforce out-of-source builds to keep source tree clean
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-    message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory and run CMake from there, e.g.: mkdir build-<generator> && cd build-<generator> && cmake -G \"<generator>\" ..")
+    message(FATAL_ERROR "In-source builds are not allowed. Please remove CMakeCache.txt and CMakeFiles/ from the source directory, then create a separate build directory: mkdir build && cd build && cmake ..")
 endif()
-
-project(fcontext_tests C ASM)
 
 # ============================================================================
 # Output Directory Configuration
@@ -164,8 +163,13 @@ endforeach()
 # ============================================================================
 
 enable_testing()
+
+# Ensure all test-related output goes to the build directory only
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED TRUE)
+
 foreach(test ${TESTS})
-    add_test(NAME ${test} COMMAND ${test})
+    # Use absolute path to binary so tests run from build directory
+    add_test(NAME ${test} COMMAND ${CMAKE_BINARY_DIR}/bin/${test})
 endforeach()
 
 # ============================================================================

@@ -33,11 +33,16 @@
 *~
 *.orig
 
-# CMake cache (only in main build directory)
-/CMakeCache.txt
-/CMakeFiles/
-/cmake_install.cmake
+# CMake generated files (not to be checked in)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
 /Makefile
+a.out
+
+# CTest and test runtime artifacts
+Testing/
 
 # Python bytecode (if any)
 __pycache__/
