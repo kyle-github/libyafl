@@ -13,6 +13,8 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include <errno.h>
 #include "fcontext.h"
 
@@ -115,13 +117,9 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
     }
 #endif
 
-    /* Create metadata structure at the beginning of the stack */
-    fcontext_stack_t *state = (fcontext_stack_t *)stack_addr;
-
-    /* Initialize context at top of stack (stacks grow downward) */
-    void *stack_top = (char *)stack_addr + stack_size;
-    fcontext_t ctx = make_fcontext(stack_top, stack_size, entry_fn);
-    if (ctx == NULL) {
+    /* Allocate metadata structure SEPARATELY from stack to prevent corruption on overflow */
+    fcontext_stack_t *state = (fcontext_stack_t *)malloc(sizeof(fcontext_stack_t));
+    if (state == NULL) {
 #ifdef _WIN32
         VirtualFree(region, 0, MEM_RELEASE);
 #else
@@ -130,9 +128,32 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
         return NULL;
     }
 
+#if FCONTEXT_ENABLE_STACK_WATERMARK
+    /* Fill the ENTIRE stack with watermark pattern for high water mark detection */
+    /* No metadata stored on stack, so we can fill it all */
+    memset(stack_addr, FCONTEXT_STACK_WATERMARK, stack_size);
+#endif
+
+    /* Initialize context at top of stack (stacks grow downward) */
+    /* Note: Stack pointer is automatically aligned to 16 bytes by make_fcontext assembly */
+    void *stack_top = (char *)stack_addr + stack_size;
+    /* Ensure 16-byte alignment for ABI compliance */
+    stack_top = fcontext_align_stack_pointer(stack_top);
+    fcontext_t ctx = make_fcontext(stack_top, stack_size, entry_fn);
+    if (ctx == NULL) {
+#ifdef _WIN32
+        VirtualFree(region, 0, MEM_RELEASE);
+#else
+        munmap(region, total_size);
+#endif
+        free(state);
+        return NULL;
+    }
+
     /* Store allocation info for cleanup */
     state->context = ctx;
     state->mmap_base = region;
+    state->stack_base = stack_addr;
     state->mmap_size = total_size;
     state->stack_size = stack_size;
 
@@ -140,14 +161,64 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
 }
 
 /**
+ * Get the stack usage (high water mark) for a context.
+ *
+ * Scans the stack from bottom to top looking for the watermark pattern.
+ * Returns the maximum stack depth used.
+ */
+size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx) {
+    if (ctx == NULL || ctx->stack_size == 0 || ctx->stack_base == NULL) {
+        return 0;
+    }
+
+#if FCONTEXT_ENABLE_STACK_WATERMARK
+    /* Stack base pointer points to the actual stack (after bottom guard page) */
+    const uint8_t *stack_bottom = (const uint8_t *)ctx->stack_base;
+
+    /* Scan from bottom to top to find where watermark pattern ends */
+    /* No metadata on stack, so we scan the entire stack region */
+    size_t unused_bytes = 0;
+    for (size_t i = 0; i < ctx->stack_size; i++) {
+        if (stack_bottom[i] != FCONTEXT_STACK_WATERMARK) {
+            /* Found modified stack memory - this is where stack usage started */
+            break;
+        }
+        unused_bytes++;
+    }
+
+    /* Return bytes used (total - unused) */
+    size_t used_bytes = ctx->stack_size - unused_bytes;
+    return used_bytes;
+#else
+    return 0;  /* Watermark checking disabled */
+#endif
+}
+
+/**
  * Destroy a context created with fcontext_create().
- * Frees the guarded stack region (platform-agnostic).
+ * Frees the guarded stack region and metadata (platform-agnostic).
  */
 void fcontext_destroy(fcontext_stack_t *ctx) {
     if (ctx == NULL) {
         return;
     }
 
+#if FCONTEXT_ENABLE_STACK_WATERMARK
+    /* Check and report stack usage before destroying */
+    size_t used = fcontext_get_stack_usage(ctx);
+    if (used > 0) {
+        size_t percent = (used * 100) / ctx->stack_size;
+        fprintf(stderr, "fcontext: stack usage: %zu / %zu bytes (%zu%%)\n",
+                used, ctx->stack_size, percent);
+
+        /* Warn if stack usage is high */
+        if (percent > 90) {
+            fprintf(stderr, "fcontext: WARNING: stack usage exceeded 90%% - consider increasing stack size\n");
+        }
+    }
+#endif
+
+    /* Free the stack region */
     if (ctx->mmap_base != NULL && ctx->mmap_size > 0) {
 #ifdef _WIN32
         VirtualFree(ctx->mmap_base, 0, MEM_RELEASE);
@@ -155,4 +226,7 @@ void fcontext_destroy(fcontext_stack_t *ctx) {
         munmap(ctx->mmap_base, ctx->mmap_size);
 #endif
     }
+
+    /* Free the metadata structure (allocated separately with malloc) */
+    free(ctx);
 }

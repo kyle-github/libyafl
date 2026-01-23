@@ -49,6 +49,17 @@ extern "C" {
 #define FCONTEXT_DEFAULT_STACK_SIZE (24 * 1024)
 #endif
 
+/* Enable stack watermark checking for high water mark detection */
+#ifndef FCONTEXT_ENABLE_STACK_WATERMARK
+#define FCONTEXT_ENABLE_STACK_WATERMARK 1
+#endif
+
+/* Stack watermark fill pattern (0xA5 = 10100101) */
+#define FCONTEXT_STACK_WATERMARK 0xA5
+
+/* Required stack alignment (16 bytes for x86_64/ARM64 ABI compliance) */
+#define FCONTEXT_STACK_ALIGNMENT 16
+
 /* ========================================================================
  * Types
  * ======================================================================== */
@@ -172,6 +183,23 @@ static inline size_t fcontext_align_to_page(size_t size) {
     return ((size + page_size - 1) / page_size) * page_size;
 }
 
+/**
+ * Align a pointer to the required stack alignment boundary (16 bytes).
+ *
+ * Stack pointers must be 16-byte aligned on x86_64 and ARM64 for ABI compliance.
+ * Use this when allocating stacks manually with malloc().
+ *
+ * Parameters:
+ *   ptr - Pointer to align (typically malloc result + size)
+ *
+ * Returns:
+ *   Aligned pointer (rounded down to 16-byte boundary)
+ */
+static inline void* fcontext_align_stack_pointer(void* ptr) {
+    uintptr_t addr = (uintptr_t)ptr;
+    return (void*)(addr & ~(FCONTEXT_STACK_ALIGNMENT - 1));
+}
+
 /* ========================================================================
  * High-Level Convenience API - Memory Management with Guard Pages
  * ======================================================================== */
@@ -179,9 +207,10 @@ static inline size_t fcontext_align_to_page(size_t size) {
 /**
  * Context with allocated stack and guard pages.
  *
- * Uses mmap to allocate address space for 3 pages:
+ * Metadata structure is allocated separately from the stack to prevent
+ * corruption on stack overflow. The stack region contains only:
  * - Guard page at bottom (unmapped)
- * - Actual stack in middle (mapped, readable/writable)
+ * - Actual stack in middle (mapped, readable/writable, filled with watermark)
  * - Guard page at top (unmapped)
  *
  * This catches stack overflow/underflow while using minimal memory.
@@ -189,9 +218,9 @@ static inline size_t fcontext_align_to_page(size_t size) {
 typedef struct {
     fcontext_t context;
     void *mmap_base;        /* Base of mmap'd region (for cleanup) */
+    void *stack_base;       /* Base of actual stack (after bottom guard page) */
     size_t mmap_size;       /* Total size of mmap'd region */
-    size_t stack_size;      /* Size of actual stack (one page) */
-    uint8_t stack[];
+    size_t stack_size;      /* Size of actual stack (excludes guard pages) */
 } fcontext_stack_t;
 
 /**
@@ -230,6 +259,25 @@ extern fcontext_stack_t *fcontext_create(size_t stack_size,
  *   - Safe to call on NULL
  */
 extern void fcontext_destroy(fcontext_stack_t *ctx);
+
+/**
+ * Get the stack usage (high water mark) for a context.
+ *
+ * Scans the stack from bottom to top looking for the watermark pattern (0xA5).
+ * Returns the maximum stack depth used by the coroutine.
+ *
+ * Parameters:
+ *   ctx - Context to check
+ *
+ * Returns:
+ *   Number of bytes used from the stack (0 if watermark checking is disabled)
+ *
+ * Notes:
+ *   - Only works if FCONTEXT_ENABLE_STACK_WATERMARK is enabled
+ *   - Stack must have been filled with watermark pattern at creation
+ *   - Returns 0 if ctx is NULL or watermark checking is disabled
+ */
+extern size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx);
 
 /**
  * Switch to a context created with fcontext_create().

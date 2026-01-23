@@ -166,6 +166,7 @@ set(TESTS
     test_fcontext_basic
     test_fcontext_simple
     test_fcontext_transfer
+    test_fcontext_watermark
 )
 
 foreach(test ${TESTS})

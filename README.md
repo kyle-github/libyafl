@@ -5,8 +5,10 @@ A portable, low-level C11 fiber/coroutine context switching library derived from
 ## Features
 
 - **Pure C11 implementation** - No C++ dependencies, no platform-specific quirks
-- ** Symmetric coroutines** - Stackful green threads/coroutines that yield control to each other.
+- **Symmetric coroutines** - Stackful green threads/coroutines that yield control to each other
 - **Guard pages** - Memory-efficient mmap-based stack with automatic bounds detection
+- **Stack watermark checking** - Detects high water mark (maximum stack usage) with 0xA5 pattern
+- **16-byte stack alignment** - Automatic ABI-compliant alignment for x86_64 and ARM64
 - **Page-aware allocation** - Automatically handles varying page sizes (4KB Linux, 16KB macOS ARM, etc.)
 - **Portable across platforms** - x86_64 and ARM64 on Linux, macOS, and Windows
 - **Portable across architectures** - x86_64, ARM64, x86, ARM support
@@ -190,6 +192,36 @@ Benefits:
 - **Automatic overflow detection** - Stack overflow causes segmentation fault (all platforms)
 - **Memory efficient** - Guard pages use address space, not physical memory
 - **Page-aware** - Works correctly with 4KB (Linux/Windows) and 16KB (macOS ARM) pages
+
+### Stack Watermark Checking
+
+When enabled (default), the entire stack is filled with pattern `0xA5` at creation. When the context is destroyed, the library scans from the bottom upward to detect the high water mark:
+
+```c
+/* Create context with watermark checking */
+fcontext_stack_t *ctx = fcontext_create(16 * 1024, my_fiber);
+
+/* Run the fiber */
+jump_fcontext(ctx->context, NULL);
+
+/* Check stack usage */
+size_t used = fcontext_get_stack_usage(ctx);
+printf("Stack used: %zu bytes\n", used);
+
+/* Destroy - automatically reports usage */
+fcontext_destroy(ctx);
+// Output: fcontext: stack usage: 2048 / 16384 bytes (12%)
+```
+
+**Features:**
+- Detects maximum stack depth used during fiber lifetime
+- Warns if usage exceeds 90%
+- Zero runtime overhead (only at creation/destruction)
+- Can be disabled with `#define FCONTEXT_ENABLE_STACK_WATERMARK 0`
+
+**Design:** Metadata is allocated separately with `malloc()`, not on the stack. This prevents metadata corruption on stack overflow before the guard page is hit.
+
+For details, see [docs/WATERMARK.md](docs/WATERMARK.md).
 
 ### High-Level Example
 
