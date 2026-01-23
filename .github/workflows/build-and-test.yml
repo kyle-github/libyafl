@@ -273,3 +273,64 @@ jobs:
       - name: Run tests
         working-directory: build
         run: ctest --output-on-failure
+
+  # Cross-compilation for riscv64 (64-bit RISC-V)
+  cross-compile-riscv64:
+    name: Ubuntu - riscv64 (cross-compiled)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cross-compilation toolchain
+        run: |
+          sudo apt-get update
+
+          # Add riscv64 architecture
+          sudo dpkg --add-architecture riscv64
+
+          # Update package lists
+          sudo apt-get update
+
+          # Install cross-compiler, QEMU, and runtime libraries
+          sudo apt-get install -y \
+            cmake \
+            build-essential \
+            gcc-riscv64-linux-gnu \
+            qemu-user-binfmt \
+            libc6-dev:riscv64 \
+            libgcc-s1:riscv64
+
+      - name: Create clean build directory
+        run: |
+          rm -rf build
+          mkdir -p build
+
+      - name: Configure CMake for riscv64
+        working-directory: build
+        run: |
+          cmake -G "Unix Makefiles" \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=riscv64 \
+            -DCMAKE_C_COMPILER=riscv64-linux-gnu-gcc \
+            -DCMAKE_ASM_COMPILER=riscv64-linux-gnu-gcc \
+            ..
+
+      - name: Build
+        working-directory: build
+        run: make -j$(nproc)
+
+      - name: Verify binary architecture
+        working-directory: build
+        run: |
+          echo "=== Binary verification ==="
+          ls -lh bin/test_fcontext_basic
+          file bin/test_fcontext_basic
+          readelf -h bin/test_fcontext_basic | grep "Class.*ELF64" || { echo "ERROR: Not 64-bit binary"; exit 1; }
+          readelf -h bin/test_fcontext_basic | grep "Machine.*RISC-V" || { echo "ERROR: Not RISC-V binary"; exit 1; }
+          echo "✓ Binary architecture verified"
+
+      - name: Run tests
+        working-directory: build
+        run: ctest --output-on-failure

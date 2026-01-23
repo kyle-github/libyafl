@@ -163,6 +163,74 @@ elseif(OS_TYPE STREQUAL "linux")
             src/asm/arm/jump_arm_aapcs_elf_gas.S
             src/asm/arm/ontop_arm_aapcs_elf_gas.S
         )
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+        message(STATUS "Detected Linux on riscv64 architecture")
+        set(ARCH_TYPE "riscv64")
+        set(ASM_FILES
+            src/asm/riscv64/make_riscv64_sysv_elf_gas.S
+            src/asm/riscv64/jump_riscv64_sysv_elf_gas.S
+            src/asm/riscv64/ontop_riscv64_sysv_elf_gas.S
+        )
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "loongarch64|loongarch|LOONGARCH64")
+        message(STATUS "Detected Linux on loongarch64 architecture")
+        set(ARCH_TYPE "loongarch64")
+        set(ASM_FILES
+            src/asm/loongarch64/make_loongarch64_sysv_elf_gas.S
+            src/asm/loongarch64/jump_loongarch64_sysv_elf_gas.S
+            src/asm/loongarch64/ontop_loongarch64_sysv_elf_gas.S
+        )
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "mips|MIPS")
+        # MIPS can be 32-bit or 64-bit; default to 32-bit (O32 ABI)
+        message(STATUS "Detected Linux on mips architecture (32-bit)")
+        set(ARCH_TYPE "mips")
+        set(ASM_FILES
+            src/asm/mips/make_mips32_o32_elf_gas.S
+            src/asm/mips/jump_mips32_o32_elf_gas.S
+            src/asm/mips/ontop_mips32_o32_elf_gas.S
+        )
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "mips64|MIPS64")
+        message(STATUS "Detected Linux on mips64 architecture (64-bit)")
+        set(ARCH_TYPE "mips64")
+        set(ASM_FILES
+            src/asm/mips64/make_mips64_n64_elf_gas.S
+            src/asm/mips64/jump_mips64_n64_elf_gas.S
+            src/asm/mips64/ontop_mips64_n64_elf_gas.S
+        )
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc|powerpc|PowerPC")
+        # PowerPC can be 32-bit or 64-bit; determine from CMAKE_SYSTEM_PROCESSOR
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "64|ppc64|powerpc64")
+            message(STATUS "Detected Linux on ppc64 architecture (64-bit)")
+            set(ARCH_TYPE "ppc64")
+            set(ASM_FILES
+                src/asm/ppc64/make_ppc64_sysv_elf_gas.S
+                src/asm/ppc64/jump_ppc64_sysv_elf_gas.S
+                src/asm/ppc64/ontop_ppc64_sysv_elf_gas.S
+            )
+        else()
+            message(STATUS "Detected Linux on ppc32 architecture (32-bit)")
+            set(ARCH_TYPE "ppc32")
+            set(ASM_FILES
+                src/asm/ppc32/make_ppc32_sysv_elf_gas.S
+                src/asm/ppc32/jump_ppc32_sysv_elf_gas.S
+                src/asm/ppc32/ontop_ppc32_sysv_elf_gas.S
+            )
+        endif()
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "s390x|S390X")
+        message(STATUS "Detected Linux on s390x architecture")
+        set(ARCH_TYPE "s390x")
+        set(ASM_FILES
+            src/asm/s390x/make_s390x_sysv_elf_gas.S
+            src/asm/s390x/jump_s390x_sysv_elf_gas.S
+            src/asm/s390x/ontop_s390x_sysv_elf_gas.S
+        )
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "sparc64|SPARC64|sparcv9")
+        message(STATUS "Detected Linux on sparc64 architecture")
+        set(ARCH_TYPE "sparc64")
+        set(ASM_FILES
+            src/asm/sparc64/make_sparc64_sysv_elf_gas.S
+            src/asm/sparc64/jump_sparc64_sysv_elf_gas.S
+            src/asm/sparc64/ontop_sparc64_sysv_elf_gas.S
+        )
     else()
         message(FATAL_ERROR "Unsupported architecture on Linux: ${CMAKE_SYSTEM_PROCESSOR}")
     endif()
