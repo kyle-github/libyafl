@@ -28,7 +28,7 @@ jobs:
             cmake-generator: Unix Makefiles
 
           # Ubuntu ARM64
-          - runner: ubuntu-24.04-arm64
+          - runner: ubuntu-24.04-arm
             os: Ubuntu
             arch: ARM64
             cmake-generator: Unix Makefiles
