@@ -75,7 +75,7 @@ jobs:
             cmake-generator: Ninja
 
           # Windows ARM64
-          - runner: windows-arm64
+          - runner: windows-11-arm
             os: Windows
             arch: ARM64
             cmake-generator: Ninja

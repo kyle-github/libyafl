@@ -46,13 +46,13 @@ All combinations below are automatically tested on each push via GitHub Actions:
 | Runner | OS | Architecture | Build Type |
 |--------|-------|--------------|------------|
 | ubuntu-latest | Ubuntu | AMD64 | Native |
-| ubuntu-24.04-arm64 | Ubuntu | ARM64 | Native |
+| ubuntu-24.04-arm | Ubuntu | ARM64 | Native |
 | macos-15-intel | macOS | AMD64 | Native |
 | macos-15 | macOS | ARM64 | Native |
 | ubuntu-24.04 | Ubuntu | i386 | Cross-compile + QEMU |
 | ubuntu-24.04 | Ubuntu | armhf | Cross-compile + QEMU |
 | windows-latest | Windows | AMD64 | Native |
-| windows-arm64 | Windows | ARM64 | Native |
+| windows-11-arm | Windows | ARM64 | Native |
 
 **Note:** Cross-compiled 32-bit architectures (i386, armhf) use ubuntu-24.04 with custom Ubuntu ports repository configuration. Main repos are restricted to amd64/i386, and ARM packages are fetched from ports.ubuntu.com.
 
