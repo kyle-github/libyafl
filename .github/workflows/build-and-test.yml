@@ -8,9 +8,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
@@ -34,13 +34,13 @@ jobs:
             cmake-generator: Unix Makefiles
 
           # macOS AMD64 (Intel)
-          - runner: macos-13
+          - runner: macos-15-intel
             os: macOS
             arch: AMD64
             cmake-generator: Unix Makefiles
 
           # macOS ARM64 (Apple Silicon)
-          - runner: macos-14
+          - runner: macos-15
             os: macOS
             arch: ARM64
             cmake-generator: Unix Makefiles
