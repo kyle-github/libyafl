@@ -69,6 +69,8 @@ if(APPLE)
     set(OS_TYPE "macos")
 elseif(UNIX AND NOT APPLE)
     set(OS_TYPE "linux")
+elseif(WIN32)
+    set(OS_TYPE "windows")
 else()
     message(FATAL_ERROR "Unsupported operating system")
 endif()
@@ -81,6 +83,12 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
             src/asm/x86_64/make_x86_64_sysv_macho_gas.S
             src/asm/x86_64/jump_x86_64_sysv_macho_gas.S
             src/asm/x86_64/ontop_x86_64_sysv_macho_gas.S
+        )
+    elseif(OS_TYPE STREQUAL "windows")
+        set(ASM_FILES
+            src/asm/x86_64/make_x86_64_ms_pe_gas.S
+            src/asm/x86_64/jump_x86_64_ms_pe_gas.S
+            src/asm/x86_64/ontop_x86_64_ms_pe_gas.S
         )
     else()
         set(ASM_FILES
@@ -97,6 +105,12 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
             src/asm/arm64/make_arm64_aapcs_macho_gas.S
             src/asm/arm64/jump_arm64_aapcs_macho_gas.S
             src/asm/arm64/ontop_arm64_aapcs_macho_gas.S
+        )
+    elseif(OS_TYPE STREQUAL "windows")
+        set(ASM_FILES
+            src/asm/arm64/make_arm64_aapcs_pe_armasm.asm
+            src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
+            src/asm/arm64/ontop_arm64_aapcs_pe_armasm.asm
         )
     else()
         set(ASM_FILES

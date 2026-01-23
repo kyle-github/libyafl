@@ -8,8 +8,9 @@ A portable, low-level C11 fiber/coroutine context switching library derived from
 - ** Symmetric coroutines** - Stackful green threads/coroutines that yield control to each other.
 - **Guard pages** - Memory-efficient mmap-based stack with automatic bounds detection
 - **Page-aware allocation** - Automatically handles varying page sizes (4KB Linux, 16KB macOS ARM, etc.)
-- **Portable across architectures** - x86_64, ARM64, x86, ARM support on Linux and macOS
-- **Zero external dependencies** - Only standard POSIX APIs (mmap, sysconf)
+- **Portable across platforms** - x86_64 and ARM64 on Linux, macOS, and Windows
+- **Portable across architectures** - x86_64, ARM64, x86, ARM support
+- **Zero external dependencies** - Only standard APIs (POSIX mmap on Linux/macOS, Windows VirtualAlloc on Windows)
 
 ## Why This Exists
 
@@ -20,19 +21,40 @@ The POSIX `ucontext` API is:
 
 This library replaces `ucontext`.
 
-## Architecture Support (Tier 1 - Fully Tested)
+## Architecture Support
 
-| Architecture | Linux | macOS |
-|:---|:---:|:---:|
-| x86_64 | ✓ | ✓ |
-| ARM64 (AArch64) | ✓ | ✓ (Apple Silicon) |
-| x86 (i386) | ✓ | ✓ |
-| ARM (32-bit) | ✓ | ✓ |
+### Tier 1 - Fully Tested (Native & Cross-Compiled)
+
+| Architecture | Linux | macOS | Windows |
+|:---|:---:|:---:|:---:|
+| x86_64 (AMD64) | ✓ | ✓ | ✓ |
+| ARM64 (AArch64) | ✓ | ✓ (Apple Silicon) | ✓ |
+| x86 (i386) | ✓ | ✓ | - |
+| ARM (32-bit) | ✓ | ✓ | - |
+
+**Note:** 32-bit architectures not supported on Windows (modern Windows is 64-bit only).
 
 Page sizes automatically detected:
-- **Linux**: 4KB (typical)
+- **Linux/Windows**: 4KB (typical)
 - **macOS ARM64**: 16KB (Apple Silicon requirement)
-- **Other systems**: Detected via `sysconf(_SC_PAGE_SIZE)`
+- **Page size detection**: Via `sysconf(_SC_PAGE_SIZE)` on POSIX, `GetSystemInfo()` on Windows
+
+### Continuous Integration Testing
+
+All combinations below are automatically tested on each push via GitHub Actions:
+
+| Runner | OS | Architecture | Build Type |
+|--------|-------|--------------|------------|
+| ubuntu-latest | Ubuntu | AMD64 | Native |
+| ubuntu-24.04-arm64 | Ubuntu | ARM64 | Native |
+| macos-15-intel | macOS | AMD64 | Native |
+| macos-15 | macOS | ARM64 | Native |
+| ubuntu-22.04 | Ubuntu | i386 | Cross-compile + QEMU |
+| ubuntu-22.04 | Ubuntu | armhf | Cross-compile + QEMU |
+| windows-latest | Windows | AMD64 | Native |
+| windows-arm64 | Windows | ARM64 | Native |
+
+**Note:** Cross-compiled architectures (i386, armhf) use ubuntu-22.04 for full multiarch support. Ubuntu 24.04 dropped 32-bit package repositories.
 
 ## API Overview
 
@@ -143,27 +165,31 @@ void fcontext_destroy(fcontext_stack_t *ctx);
 
 ### Stack Layout
 
-The high-level API uses mmap to allocate with guard pages:
+The high-level API allocates stack with guard pages to detect overflow:
 
 ```
 Address Space Layout:
 ┌─────────────────────┐
-│  Guard Page         │  (unmapped, will fault on access)
+│  Guard Page         │  (protected, will fault on access)
 ├─────────────────────┤
 │  Actual Stack       │  (mapped, readable/writable)
 │  (one+ pages)       │  Size: rounded to page boundary
 ├─────────────────────┤
-│  Guard Page         │  (unmapped, will fault on access)
+│  Guard Page         │  (protected, will fault on access)
 └─────────────────────┘
 
-Total Allocation = page_size + round_up(stack_size) + page_size
-Physical Memory  = stack_size (only one page is resident)
+Total Allocation = page_size + round_up(stack_size) + page_size (address space)
+Physical Memory  = 1 page (only one page of the stack is physically resident)
 ```
 
+**Allocation method by platform:**
+- **Linux/macOS**: `mmap()` + `mprotect()` (POSIX standard)
+- **Windows**: `VirtualAlloc()` + `VirtualProtect()` (Windows API)
+
 Benefits:
-- **Automatic overflow detection** - Stack overflow causes segmentation fault
+- **Automatic overflow detection** - Stack overflow causes segmentation fault (all platforms)
 - **Memory efficient** - Guard pages use address space, not physical memory
-- **Page-aware** - Works correctly with 4KB (Linux) and 16KB (macOS ARM) pages
+- **Page-aware** - Works correctly with 4KB (Linux/Windows) and 16KB (macOS ARM) pages
 
 ### High-Level Example
 
@@ -289,21 +315,22 @@ Individual tests:
 When you call `fcontext_create()`:
 
 1. **Determine system page size** via `sysconf(_SC_PAGE_SIZE)`
-2. **Allocate address space** for 3 pages using `mmap(PROT_NONE)`
-3. **Map middle page** as readable/writable using `mprotect(PROT_READ|PROT_WRITE)`
-4. **Leave guard pages** unmapped (PROT_NONE)
+2. **Round up stack size** to nearest page boundary (resulting in N pages)
+3. **Allocate address space** for N+2 pages total using `mmap(PROT_NONE)` (1 guard + N stack + 1 guard)
+4. **Map stack region** (N pages) as readable/writable using `mprotect(PROT_READ|PROT_WRITE)`
+5. **Leave guard pages** unmapped/protected (PROT_NONE or PAGE_GUARD)
 
 If a fiber overflows or underflows its stack:
-- Access hits unmapped guard page
-- Kernel raises SIGSEGV (segmentation fault)
+- Access hits protected guard page
+- Kernel raises SIGSEGV (segmentation fault on POSIX) or access violation exception (Windows)
 - Program terminates with clear error message
 
 ### Memory Efficiency
 
 For a 24KB fiber on macOS ARM64 (16KB pages):
-- **Virtual memory**: 48KB (3 pages worth of address space)
-- **Physical memory**: 16KB (only the actual stack is paged in)
-- **Overhead**: 24KB per fiber (one page for guard space)
+- **Virtual memory**: 64KB (4 pages worth of address space: 1 guard + 2 stack + 1 guard)
+- **Physical memory**: 16KB (only one page of the stack is physically resident)
+- **Address space overhead**: 32KB per fiber (2 pages for guard pages)
 
 This is much more efficient than pre-allocating large stacks for many fibers.
 
@@ -320,7 +347,7 @@ This is much more efficient than pre-allocating large stacks for many fibers.
    }
    ```
 
-3. **Guard pages are POSIX-only** - Uses `mmap()` and `mprotect()`, which are POSIX standards
+3. **Guard pages are platform-agnostic** - Uses `mmap()`/`mprotect()` on POSIX and `VirtualAlloc()`/`VirtualProtect()` on Windows
 
 4. **Not thread-safe** - Each thread needs its own set of contexts (no shared state)
 

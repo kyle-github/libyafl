@@ -2,7 +2,8 @@
  * fcontext_wrapper.c
  * High-level convenience API for fcontext
  *
- * Implements page-aligned stack allocation with guard pages using mmap.
+ * Implements page-aligned stack allocation with guard pages.
+ * Uses mmap/mprotect on POSIX systems and VirtualAlloc/VirtualProtect on Windows.
  *
  * Derived from Boost.Context (https://github.com/boostorg/context)
  * Copyright Kyle Hayes (2026)
@@ -12,22 +13,46 @@
  */
 
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <errno.h>
 #include "fcontext.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <sys/mman.h>
+#endif
 
 /* ========================================================================
  * Stack Allocation with Guard Pages
  * ======================================================================== */
 
 /**
- * Create a new context with guarded stack using mmap.
+ * Get system page size (platform-agnostic).
+ */
+static size_t get_page_size(void) {
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return (size_t)si.dwPageSize;
+#else
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    if (page_size <= 0) {
+        return 4096;  /* Default to 4KB if sysconf fails */
+    }
+    return (size_t)page_size;
+#endif
+}
+
+/**
+ * Create a new context with guarded stack.
  *
- * Layout (3 pages total):
- *   [Guard Page] [Stack Page] [Guard Page]
- *   unmapped     mapped R/W   unmapped
+ * Allocates stack with guard pages on both ends:
+ *   [Guard Page] [Stack] [Guard Page]
+ *   unmapped     R/W     unmapped
  *
+ * On POSIX systems, uses mmap/mprotect.
+ * On Windows, uses VirtualAlloc/VirtualProtect.
  * This catches overflow/underflow without using extra physical memory.
  */
 fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
@@ -35,7 +60,7 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
         return NULL;
     }
 
-    size_t page_size = fcontext_get_page_size();
+    size_t page_size = get_page_size();
 
     /* Determine stack size */
     if (stack_size == 0) {
@@ -43,24 +68,52 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
     }
 
     /* Align to page size */
-    stack_size = fcontext_align_to_page(stack_size);
+    stack_size = ((stack_size + page_size - 1) / page_size) * page_size;
 
     /* Total allocation: guard_page + stack + guard_page */
     size_t total_size = page_size + stack_size + page_size;
 
-    /* Allocate address space (PROT_NONE means not yet mapped) */
-    void *region = mmap(NULL, total_size, PROT_NONE,
-                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void *region = NULL;
+    void *stack_addr = NULL;
+
+#ifdef _WIN32
+    /* Windows implementation using VirtualAlloc */
+    region = VirtualAlloc(NULL, total_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    if (region == NULL) {
+        return NULL;
+    }
+
+    /* Set guard page at bottom (start of allocation) */
+    DWORD old_protect;
+    if (!VirtualProtect(region, page_size, PAGE_GUARD | PAGE_READWRITE, &old_protect)) {
+        VirtualFree(region, 0, MEM_RELEASE);
+        return NULL;
+    }
+
+    /* Stack is in the middle of the allocation */
+    stack_addr = (char *)region + page_size;
+
+    /* Set guard page at top (end of stack) */
+    if (!VirtualProtect((char *)region + page_size + stack_size, page_size,
+                        PAGE_GUARD | PAGE_READWRITE, &old_protect)) {
+        VirtualFree(region, 0, MEM_RELEASE);
+        return NULL;
+    }
+#else
+    /* POSIX implementation using mmap/mprotect */
+    region = mmap(NULL, total_size, PROT_NONE,
+                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (region == MAP_FAILED) {
         return NULL;
     }
 
     /* Map the middle section (stack) as readable and writable */
-    void *stack_addr = (char *)region + page_size;
+    stack_addr = (char *)region + page_size;
     if (mprotect(stack_addr, stack_size, PROT_READ | PROT_WRITE) != 0) {
         munmap(region, total_size);
         return NULL;
     }
+#endif
 
     /* Create metadata structure at the beginning of the stack */
     fcontext_stack_t *state = (fcontext_stack_t *)stack_addr;
@@ -69,7 +122,11 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
     void *stack_top = (char *)stack_addr + stack_size;
     fcontext_t ctx = make_fcontext(stack_top, stack_size, entry_fn);
     if (ctx == NULL) {
+#ifdef _WIN32
+        VirtualFree(region, 0, MEM_RELEASE);
+#else
         munmap(region, total_size);
+#endif
         return NULL;
     }
 
@@ -84,7 +141,7 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
 
 /**
  * Destroy a context created with fcontext_create().
- * Unmaps the guarded stack region.
+ * Frees the guarded stack region (platform-agnostic).
  */
 void fcontext_destroy(fcontext_stack_t *ctx) {
     if (ctx == NULL) {
@@ -92,6 +149,10 @@ void fcontext_destroy(fcontext_stack_t *ctx) {
     }
 
     if (ctx->mmap_base != NULL && ctx->mmap_size > 0) {
+#ifdef _WIN32
+        VirtualFree(ctx->mmap_base, 0, MEM_RELEASE);
+#else
         munmap(ctx->mmap_base, ctx->mmap_size);
+#endif
     }
 }

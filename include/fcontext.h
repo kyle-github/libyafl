@@ -11,16 +11,17 @@
  * This is a low-level C11 wrapper around Boost.Context assembly code
  * providing portable stackful coroutine/fiber context switching.
  *
- * Supported Architectures:
- * - x86_64 (Linux, macOS)
- * - ARM64/AArch64 (Linux, macOS)
+ * Supported Architectures and Platforms:
+ * - x86_64 (Linux, macOS, Windows)
+ * - ARM64/AArch64 (Linux, macOS, Windows)
  * - x86/i386 (Linux, macOS)
  * - ARM (Linux, macOS)
  *
  * Features:
- * - Page-aligned stack allocation (4KB on Linux, 16KB on macOS ARM)
+ * - Page-aligned stack allocation (4KB on Linux/Windows, 16KB on macOS ARM)
  * - Guard pages to catch stack overflow/underflow
- * - Memory-efficient mmap-based allocation
+ * - Memory-efficient allocation (mmap on POSIX, VirtualAlloc on Windows)
+ * - Cross-platform with MSVC and GCC/Clang support
  */
 
 #ifndef FCONTEXT_H_
@@ -29,8 +30,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/mman.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,15 +143,19 @@ extern fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp,
  * Get the system page size.
  *
  * Returns:
- *   Page size in bytes (4096 on Linux, 16384 on macOS ARM, etc.)
- *   Returns FCONTEXT_DEFAULT_STACK_SIZE (24KB) if sysconf fails
+ *   Page size in bytes (4096 on Linux/Windows, 16384 on macOS ARM, etc.)
+ *   Returns FCONTEXT_DEFAULT_STACK_SIZE (24KB) if detection fails
  */
 static inline size_t fcontext_get_page_size(void) {
+#ifdef _WIN32
+    return 4096;  /* Standard page size on Windows */
+#else
     long page_size = sysconf(_SC_PAGE_SIZE);
     if (page_size <= 0) {
         return FCONTEXT_DEFAULT_STACK_SIZE;
     }
     return (size_t)page_size;
+#endif
 }
 
 /**

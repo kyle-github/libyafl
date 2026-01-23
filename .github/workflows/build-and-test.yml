@@ -46,7 +46,8 @@ jobs:
             cmake-generator: Unix Makefiles
 
           # Linux i386 (cross-compiled)
-          - runner: ubuntu-latest
+          # Note: Uses ubuntu-22.04 for multiarch support (i386 packages may be limited on newer versions)
+          - runner: ubuntu-22.04
             os: Ubuntu
             arch: i386
             build_type: cross
@@ -56,7 +57,8 @@ jobs:
             qemu_arch: i386
 
           # Linux armhf (cross-compiled)
-          - runner: ubuntu-latest
+          # Note: Uses ubuntu-22.04 because Ubuntu 24.04 dropped armhf repository support
+          - runner: ubuntu-22.04
             os: Ubuntu
             arch: armhf
             build_type: cross
@@ -64,6 +66,18 @@ jobs:
             cross_compiler: gcc-arm-linux-gnueabihf
             cross_prefix: arm-linux-gnueabihf
             qemu_arch: arm
+
+          # Windows AMD64
+          - runner: windows-latest
+            os: Windows
+            arch: AMD64
+            cmake-generator: Ninja
+
+          # Windows ARM64
+          - runner: windows-arm64
+            os: Windows
+            arch: ARM64
+            cmake-generator: Ninja
 
     steps:
       - name: Checkout code
@@ -112,6 +126,12 @@ jobs:
         run: |
           brew install cmake
 
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install ninja cmake -y
+          # MSVC is pre-installed on windows-latest runner
+
       - name: Create build directory
         run: mkdir -p build
 
@@ -133,7 +153,13 @@ jobs:
 
       - name: Build
         working-directory: build
-        run: make -j$(nproc || sysctl -n hw.ncpu)
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cmake --build . --config Release --parallel 4
+          else
+            make -j$(nproc || sysctl -n hw.ncpu)
+          fi
+        shell: bash
 
       - name: Verify cross-compilation (Linux cross-arch only)
         if: matrix.build_type == 'cross'
