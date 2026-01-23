@@ -5,7 +5,7 @@ A portable, low-level C11 fiber/coroutine context switching library derived from
 ## Features
 
 - **Pure C11 implementation** - No C++ dependencies, no platform-specific quirks
-- **Asymmetric coroutines** - Stackful fibers that yield control to parent context
+- ** Symmetric coroutines** - Stackful green threads/coroutines that yield control to each other.
 - **Guard pages** - Memory-efficient mmap-based stack with automatic bounds detection
 - **Page-aware allocation** - Automatically handles varying page sizes (4KB Linux, 16KB macOS ARM, etc.)
 - **Portable across architectures** - x86_64, ARM64, x86, ARM support on Linux and macOS
@@ -15,11 +15,10 @@ A portable, low-level C11 fiber/coroutine context switching library derived from
 
 The POSIX `ucontext` API is:
 - **Deprecated** on most modern operating systems
-- **Broken on macOS ARM64** (Apple Silicon) - no native support
-- **No longer maintained** - new POSIX standard removed it
-- **Inconsistent** across platforms (different function signatures, behavior)
+- **Broken on macOS Aarch64** (Apple Silicon) - no native support
+- **No longer maintained** - new POSIX standard removed it in 2008.
 
-This library provides a modern replacement that actually works.
+This library replaces `ucontext`.
 
 ## Architecture Support (Tier 1 - Fully Tested)
 
@@ -40,20 +39,19 @@ Page sizes automatically detected:
 ### Two-Layer Design
 
 1. **Low-Level API** (`make_fcontext`, `jump_fcontext`, `ontop_fcontext`)
-   - Direct assembly interface for maximum control
-   - Use when you need custom context patterns
+   - Written in architecture/OS-specific assembly.
 
 2. **High-Level Convenience API** (`fcontext_create`, `fcontext_destroy`)
-   - Handles memory allocation and guard pages automatically
-   - Recommended for most use cases
+   - Handles memory allocation and guard pages automatically.
+   - Recommended for most use cases.
 
 ## Low-Level API
 
 ### Core Functions
 
-```c
-#include "fcontext.h"
+From `fcontext.h`.
 
+```c
 /* Create a context at a given stack location */
 fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn);
 
@@ -124,9 +122,9 @@ int main(void) {
 
 ### Functions
 
-```c
-#include "fcontext.h"
+Again, from `fcontext.h`.
 
+```c
 /* Get system page size (4KB, 16KB, etc.) */
 size_t fcontext_get_page_size(void);
 
@@ -153,12 +151,12 @@ Address Space Layout:
 │  Guard Page         │  (unmapped, will fault on access)
 ├─────────────────────┤
 │  Actual Stack       │  (mapped, readable/writable)
-│  (one page)         │  Size: rounded to page boundary
+│  (one+ pages)       │  Size: rounded to page boundary
 ├─────────────────────┤
 │  Guard Page         │  (unmapped, will fault on access)
 └─────────────────────┘
 
-Total Allocation = page_size + stack_size + page_size
+Total Allocation = page_size + round_up(stack_size) + page_size
 Physical Memory  = stack_size (only one page is resident)
 ```
 
