@@ -78,9 +78,28 @@ jobs:
           # Install cross-compilation toolchains for tier 2 architectures
           if [[ "${{ matrix.build_type }}" == "cross" ]]; then
             echo "Installing cross-compilation toolchain for ${{ matrix.arch }}..."
+
+            # Enable multiarch support for target architecture
+            if [[ "${{ matrix.arch }}" == "i386" ]]; then
+              sudo dpkg --add-architecture i386
+            elif [[ "${{ matrix.arch }}" == "armhf" ]]; then
+              sudo dpkg --add-architecture armhf
+            fi
+
+            # Update package lists for multiarch
+            sudo apt-get update
+
+            # Install cross-compiler and QEMU
             sudo apt-get install -y \
               ${{ matrix.cross_compiler }} \
               qemu-user-binfmt
+
+            # Install runtime libraries for target architecture
+            if [[ "${{ matrix.arch }}" == "i386" ]]; then
+              sudo apt-get install -y libc6:i386 libgcc1:i386
+            elif [[ "${{ matrix.arch }}" == "armhf" ]]; then
+              sudo apt-get install -y libc6:armhf libgcc1:armhf
+            fi
 
             # Verify QEMU is registered
             echo "QEMU setup verification:"
