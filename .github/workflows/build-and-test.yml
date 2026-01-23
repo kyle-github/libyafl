@@ -13,7 +13,7 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
+  build-and-test-unix:
     name: ${{ matrix.os }} - ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
 
@@ -25,37 +25,21 @@ jobs:
           - runner: ubuntu-latest
             os: Ubuntu
             arch: AMD64
-            cmake-generator: Unix Makefiles
 
           # Ubuntu ARM64
           - runner: ubuntu-24.04-arm
             os: Ubuntu
             arch: ARM64
-            cmake-generator: Unix Makefiles
 
           # macOS AMD64 (Intel)
           - runner: macos-15-intel
             os: macOS
             arch: AMD64
-            cmake-generator: Unix Makefiles
 
           # macOS ARM64 (Apple Silicon)
           - runner: macos-15
             os: macOS
             arch: ARM64
-            cmake-generator: Unix Makefiles
-
-          # Windows AMD64
-          - runner: windows-latest
-            os: Windows
-            arch: AMD64
-            cmake-generator: Ninja
-
-          # Windows ARM64
-          - runner: windows-11-arm
-            os: Windows
-            arch: ARM64
-            cmake-generator: Ninja
 
     steps:
       - name: Checkout code
@@ -72,12 +56,6 @@ jobs:
         run: |
           brew install cmake
 
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          choco install ninja -y
-          # CMake and MSVC are pre-installed on Windows runners
-
       - name: Create clean build directory
         run: |
           rm -rf build
@@ -85,18 +63,11 @@ jobs:
 
       - name: Configure CMake
         working-directory: build
-        run: cmake -G "${{ matrix.cmake-generator }}" ..
+        run: cmake -G "Unix Makefiles" ..
 
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
-        working-directory: build
-        run: cmake --build . --config Release --parallel 4
-
-      - name: Build (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Build
         working-directory: build
         run: make -j$(nproc || sysctl -n hw.ncpu)
-        shell: bash
 
       - name: Run tests
         working-directory: build
@@ -108,11 +79,65 @@ jobs:
         run: |
           echo "=== Build Summary ==="
           echo "OS: ${{ matrix.os }} ${{ matrix.arch }}"
-          echo "CMake Generator: ${{ matrix.cmake-generator }}"
           if [ -f Testing/Temporary/LastTest.log ]; then
             echo "=== Test Log ==="
             cat Testing/Temporary/LastTest.log
           fi
+
+  build-and-test-windows:
+    name: ${{ matrix.os }} - ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows AMD64
+          - runner: windows-latest
+            os: Windows
+            arch: AMD64
+
+          # Windows ARM64
+          - runner: windows-11-arm
+            os: Windows
+            arch: ARM64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          choco install ninja -y
+          # CMake and MSVC are pre-installed on Windows runners
+
+      - name: Create clean build directory
+        run: |
+          Remove-Item -Path build -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path build -Force | Out-Null
+
+      - name: Configure CMake
+        working-directory: build
+        run: cmake -G "Ninja" ..
+
+      - name: Build
+        working-directory: build
+        run: cmake --build . --config Release --parallel 4
+
+      - name: Run tests
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: Display test results
+        if: always()
+        working-directory: build
+        run: |
+          echo "=== Build Summary ==="
+          echo "OS: ${{ matrix.os }} ${{ matrix.arch }}"
+          if (Test-Path Testing/Temporary/LastTest.log) {
+            echo "=== Test Log ==="
+            Get-Content Testing/Temporary/LastTest.log
+          }
 
   # Cross-compilation for i386 (32-bit x86)
   cross-compile-i386:
