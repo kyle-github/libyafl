@@ -45,6 +45,26 @@ jobs:
             arch: ARM64
             cmake-generator: Unix Makefiles
 
+          # Linux i386 (cross-compiled)
+          - runner: ubuntu-latest
+            os: Ubuntu
+            arch: i386
+            build_type: cross
+            cmake-generator: Unix Makefiles
+            cross_compiler: gcc-i686-linux-gnu
+            cross_prefix: i686-linux-gnu
+            qemu_arch: i386
+
+          # Linux armhf (cross-compiled)
+          - runner: ubuntu-latest
+            os: Ubuntu
+            arch: armhf
+            build_type: cross
+            cmake-generator: Unix Makefiles
+            cross_compiler: gcc-arm-linux-gnueabihf
+            cross_prefix: arm-linux-gnueabihf
+            qemu_arch: arm
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -54,6 +74,19 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake build-essential
+
+          # Install cross-compilation toolchains for tier 2 architectures
+          if [[ "${{ matrix.build_type }}" == "cross" ]]; then
+            echo "Installing cross-compilation toolchain for ${{ matrix.arch }}..."
+            sudo apt-get install -y \
+              ${{ matrix.cross_compiler }} \
+              qemu-user-binfmt
+
+            # Verify QEMU is registered
+            echo "QEMU setup verification:"
+            which qemu-${{ matrix.qemu_arch }} || echo "Warning: qemu-${{ matrix.qemu_arch }} not in PATH"
+            cat /proc/sys/fs/binfmt_misc/qemu-${{ matrix.qemu_arch }} 2>/dev/null || echo "binfmt_misc not registered"
+          fi
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
@@ -65,11 +98,46 @@ jobs:
 
       - name: Configure CMake
         working-directory: build
-        run: cmake -G "${{ matrix.cmake-generator }}" ..
+        run: |
+          if [[ "${{ matrix.build_type }}" == "cross" ]]; then
+            # Cross-compilation mode
+            cmake -G "${{ matrix.cmake-generator }}" \
+              -DCMAKE_SYSTEM_NAME=Linux \
+              -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
+              -DCMAKE_C_COMPILER=${{ matrix.cross_prefix }}-gcc \
+              -DCMAKE_ASM_COMPILER=${{ matrix.cross_prefix }}-gcc \
+              ..
+          else
+            # Native compilation mode
+            cmake -G "${{ matrix.cmake-generator }}" ..
+          fi
 
       - name: Build
         working-directory: build
         run: make -j$(nproc || sysctl -n hw.ncpu)
+
+      - name: Verify cross-compilation (Linux cross-arch only)
+        if: matrix.build_type == 'cross'
+        working-directory: build
+        run: |
+          echo "=== Cross-compilation verification for ${{ matrix.arch }} ==="
+
+          # Check binary exists
+          ls -lh bin/test_fcontext_basic
+
+          # Check binary architecture
+          file bin/test_fcontext_basic
+
+          # Verify ELF headers
+          if [[ "${{ matrix.arch }}" == "i386" ]]; then
+            readelf -h bin/test_fcontext_basic | grep "Class.*ELF32" || { echo "ERROR: Not 32-bit binary"; exit 1; }
+            readelf -h bin/test_fcontext_basic | grep "Machine.*Intel 80386" || { echo "ERROR: Not i386 binary"; exit 1; }
+          elif [[ "${{ matrix.arch }}" == "armhf" ]]; then
+            readelf -h bin/test_fcontext_basic | grep "Class.*ELF32" || { echo "ERROR: Not 32-bit binary"; exit 1; }
+            readelf -h bin/test_fcontext_basic | grep "Machine.*ARM" || { echo "ERROR: Not ARM binary"; exit 1; }
+          fi
+
+          echo "✓ Binary architecture verified"
 
       - name: Run tests
         working-directory: build
