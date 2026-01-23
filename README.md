@@ -307,29 +307,32 @@ size_t actual = fcontext_align_to_page(requested);  /* 32768 bytes (2 pages) */
 
 ## Building
 
-### Using Make
+Build artifacts are placed in the `build/` directory and never clutter the source tree.
+
+### Using CMake (Recommended)
 
 ```bash
-cd src/tests/fcontext
-make
-make test
-```
-
-### Using CMake
-
-```bash
-cd src/tests/fcontext
+# Clean build (recommended when switching between build systems)
+rm -rf build
 mkdir build
 cd build
+
+# Configure and build
 cmake ..
 cmake --build .
-ctest
+
+# Run tests
+ctest --output-on-failure
 ```
 
-Both build systems automatically:
-- Detect your OS and architecture
-- Select correct assembly files
-- Configure page size handling
+**Clean builds:** If switching from Make to Ninja (or vice versa), always remove the `build/` directory first to avoid mixing build systems.
+
+The build system automatically:
+- Detects your OS (macOS, Windows, Linux) and architecture
+- Selects correct assembly files for your platform
+- Configures page size handling (4KB on Linux/Windows, 16KB on macOS ARM)
+- Places all binaries in `build/bin/`
+- Places all libraries in `build/lib/`
 
 ## Testing
 

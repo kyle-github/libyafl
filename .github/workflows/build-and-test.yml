@@ -78,8 +78,10 @@ jobs:
           choco install ninja -y
           # CMake and MSVC are pre-installed on Windows runners
 
-      - name: Create build directory
-        run: mkdir -p build
+      - name: Create clean build directory
+        run: |
+          rm -rf build
+          mkdir -p build
 
       - name: Configure CMake
         working-directory: build
@@ -140,8 +142,10 @@ jobs:
             libc6-dev:i386 \
             libgcc-s1:i386
 
-      - name: Create build directory
-        run: mkdir -p build
+      - name: Create clean build directory
+        run: |
+          rm -rf build
+          mkdir -p build
 
       - name: Configure CMake for i386
         working-directory: build
@@ -212,8 +216,10 @@ jobs:
             libc6-dev:armhf \
             libgcc-s1:armhf
 
-      - name: Create build directory
-        run: mkdir -p build
+      - name: Create clean build directory
+        run: |
+          rm -rf build
+          mkdir -p build
 
       - name: Configure CMake for armhf
         working-directory: build
