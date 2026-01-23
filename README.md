@@ -45,18 +45,23 @@ Page sizes automatically detected:
 
 All combinations below are automatically tested on each push via GitHub Actions:
 
-| Runner | OS | Architecture | Build Type |
-|--------|-------|--------------|------------|
-| ubuntu-latest | Ubuntu | AMD64 | Native |
-| ubuntu-24.04-arm | Ubuntu | ARM64 | Native |
-| macos-15-intel | macOS | AMD64 | Native |
-| macos-15 | macOS | ARM64 | Native |
-| ubuntu-24.04 | Ubuntu | i386 | Cross-compile + QEMU |
-| ubuntu-24.04 | Ubuntu | armhf | Cross-compile + QEMU |
-| windows-latest | Windows | AMD64 | Native |
-| windows-11-arm | Windows | ARM64 | Native |
+**Native Builds:**
+| Job | Runner | OS | Architecture |
+|-----|--------|-------|--------------|
+| build-and-test | ubuntu-latest | Ubuntu | AMD64 |
+| build-and-test | ubuntu-24.04-arm | Ubuntu | ARM64 |
+| build-and-test | macos-15-intel | macOS | AMD64 |
+| build-and-test | macos-15 | macOS | ARM64 |
+| build-and-test | windows-latest | Windows | AMD64 |
+| build-and-test | windows-11-arm | Windows | ARM64 |
 
-**Note:** Cross-compiled 32-bit architectures (i386, armhf) use ubuntu-24.04 with custom Ubuntu ports repository configuration. Main repos are restricted to amd64/i386, and ARM packages are fetched from ports.ubuntu.com.
+**Cross-Compiled Builds (with QEMU):**
+| Job | Runner | OS | Architecture |
+|-----|--------|-------|--------------|
+| cross-compile-i386 | ubuntu-24.04 | Ubuntu | i386 (32-bit x86) |
+| cross-compile-armhf | ubuntu-24.04 | Ubuntu | armhf (32-bit ARM) |
+
+**Note:** Cross-compiled builds use separate jobs with dedicated toolchain setup. The i386 packages come from the main Ubuntu archive, while armhf packages require the Ubuntu ports repository (ports.ubuntu.com).
 
 ## API Overview
 
