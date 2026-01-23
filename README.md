@@ -49,12 +49,12 @@ All combinations below are automatically tested on each push via GitHub Actions:
 | ubuntu-24.04-arm64 | Ubuntu | ARM64 | Native |
 | macos-15-intel | macOS | AMD64 | Native |
 | macos-15 | macOS | ARM64 | Native |
-| ubuntu-22.04 | Ubuntu | i386 | Cross-compile + QEMU |
-| ubuntu-22.04 | Ubuntu | armhf | Cross-compile + QEMU |
+| ubuntu-24.04 | Ubuntu | i386 | Cross-compile + QEMU |
+| ubuntu-24.04 | Ubuntu | armhf | Cross-compile + QEMU |
 | windows-latest | Windows | AMD64 | Native |
 | windows-arm64 | Windows | ARM64 | Native |
 
-**Note:** Cross-compiled architectures (i386, armhf) use ubuntu-22.04 for full multiarch support. Ubuntu 24.04 dropped 32-bit package repositories.
+**Note:** Cross-compiled 32-bit architectures (i386, armhf) use ubuntu-24.04 with custom Ubuntu ports repository configuration. Main repos are restricted to amd64/i386, and ARM packages are fetched from ports.ubuntu.com.
 
 ## API Overview
 
