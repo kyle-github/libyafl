@@ -76,7 +76,7 @@ else()
 endif()
 
 # Detect and configure architecture
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "(?i)x86_64|amd64")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
     set(ARCH_TYPE "x86_64")
     if(OS_TYPE STREQUAL "macos")
         set(ASM_FILES
@@ -98,7 +98,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(?i)x86_64|amd64")
         )
     endif()
 
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "(?i)arm64|aarch64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64|AARCH64")
     set(ARCH_TYPE "arm64")
     if(OS_TYPE STREQUAL "macos")
         set(ASM_FILES
