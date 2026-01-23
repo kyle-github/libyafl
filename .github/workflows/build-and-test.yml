@@ -75,8 +75,8 @@ jobs:
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install ninja cmake -y
-          # MSVC is pre-installed on windows-latest runner
+          choco install ninja -y
+          # CMake and MSVC are pre-installed on Windows runners
 
       - name: Create build directory
         run: mkdir -p build
