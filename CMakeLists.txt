@@ -248,18 +248,21 @@ message(STATUS "Building for ${OS_TYPE} ${ARCH_TYPE}")
 # ============================================================================
 
 if(MSVC AND WIN32)
-    # Windows with MSVC: set correct MASM assembler based on architecture
     if(ARCH_TYPE STREQUAL "arm64")
-        # ARM64 uses armasm64.exe
-        set(CMAKE_ASM_MASM_COMPILER armasm64.exe CACHE FILEPATH "ARM64 MASM assembler" FORCE)
-        message(STATUS "Configuring for ARM64: using armasm64.exe")
+        # ARM64 uses armasm64.exe (ARM Assembler, not MASM)
+        # CMake's ASM_MASM doesn't support armasm64, so we'll handle compilation manually
+        find_program(CMAKE_ASM_COMPILER armasm64.exe REQUIRED)
+        message(STATUS "Found ARM64 assembler: ${CMAKE_ASM_COMPILER}")
+        # Enable generic ASM language for ARM64
+        enable_language(ASM)
+        # Set ARM-specific assembler flags
+        set(CMAKE_ASM_FLAGS "-machine ARM64")
     else()
-        # x86_64 uses ml64.exe
+        # x86_64 uses ml64.exe (MASM)
         set(CMAKE_ASM_MASM_COMPILER ml64.exe CACHE FILEPATH "x64 MASM assembler" FORCE)
+        enable_language(ASM_MASM)
         message(STATUS "Configuring for x86_64: using ml64.exe")
     endif()
-    # NOW enable MASM after setting the correct compiler
-    enable_language(ASM_MASM)
 else()
     # Unix-like systems: use GAS (GNU Assembler)
     enable_language(ASM)
@@ -280,11 +283,17 @@ foreach(test ${TESTS})
     add_executable(${test} tests/${test}.c src/fcontext_wrapper.c ${ASM_FILES})
 endforeach()
 
-# For Windows MASM: mark .asm files to be compiled as ASM_MASM language
-if(MSVC)
+# Set language properties for assembly files
+if(MSVC AND WIN32)
     foreach(asm_file ${ASM_FILES})
         if(asm_file MATCHES "\\.asm$")
-            set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
+            if(ARCH_TYPE STREQUAL "arm64")
+                # ARM64 .asm files use generic ASM language with armasm64
+                set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM)
+            else()
+                # x86_64 .asm files use ASM_MASM language with ml64
+                set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
+            endif()
         endif()
     endforeach()
 endif()
