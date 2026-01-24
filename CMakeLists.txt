@@ -51,16 +51,8 @@ set(CMAKE_DEBUG_POSTFIX "")
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Enable appropriate assembly language based on platform
-if(MSVC)
-    # Windows with MSVC: enable MASM (Microsoft Macro Assembler)
-    enable_language(ASM_MASM)
-    # Note: The correct assembler (ml.exe, ml64.exe, or armasm64.exe) will be
-    # set after architecture detection based on the processor type
-else()
-    # Unix-like systems: use GAS (GNU Assembler)
-    enable_language(ASM)
-endif()
+# Note: Assembly language will be enabled after architecture detection
+# This allows us to set the correct compiler before enabling the language
 
 # ============================================================================
 # Compiler Flags
@@ -252,11 +244,11 @@ endif()
 message(STATUS "Building for ${OS_TYPE} ${ARCH_TYPE}")
 
 # ============================================================================
-# Configure MASM Assembler for Windows
+# Enable Assembly Language (after architecture detection)
 # ============================================================================
 
 if(MSVC AND WIN32)
-    # Set the correct MASM assembler based on architecture
+    # Windows with MSVC: set correct MASM assembler based on architecture
     if(ARCH_TYPE STREQUAL "arm64")
         # ARM64 uses armasm64.exe
         set(CMAKE_ASM_MASM_COMPILER armasm64.exe CACHE FILEPATH "ARM64 MASM assembler" FORCE)
@@ -266,6 +258,11 @@ if(MSVC AND WIN32)
         set(CMAKE_ASM_MASM_COMPILER ml64.exe CACHE FILEPATH "x64 MASM assembler" FORCE)
         message(STATUS "Configuring for x86_64: using ml64.exe")
     endif()
+    # NOW enable MASM after setting the correct compiler
+    enable_language(ASM_MASM)
+else()
+    # Unix-like systems: use GAS (GNU Assembler)
+    enable_language(ASM)
 endif()
 
 # ============================================================================
