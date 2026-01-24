@@ -59,15 +59,19 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # ============================================================================
 
 if(MSVC)
-    # MSVC-specific flags
-    add_compile_options(/W4 /WX)
+    # MSVC-specific flags - only for C/C++, not assembly
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/W4>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/WX>)
     # Debug info and optimization are handled by CMAKE_BUILD_TYPE
 else()
-    # GCC/Clang flags
+    # GCC/Clang flags - only for C/C++, not assembly
     if(NOT CMAKE_C_FLAGS MATCHES "-Wall")
-        add_compile_options(-Wall -Wextra -Werror)
+        add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wall>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wextra>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror>)
     endif()
-    add_compile_options(-g -O2)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-g>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-O2>)
 endif()
 
 # ============================================================================
@@ -141,12 +145,25 @@ elseif(OS_TYPE STREQUAL "windows")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64|AARCH64")
         message(STATUS "Detected Windows on arm64 architecture")
         set(ARCH_TYPE "arm64")
-        # ARM64 Windows uses ARMASM syntax (.asm files)
-        set(ASM_FILES
-            src/asm/arm64/make_arm64_aapcs_pe_armasm.asm
-            src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
-            src/asm/arm64/ontop_arm64_aapcs_pe_armasm.asm
-        )
+        # Choose assembly format based on compiler
+        if(MSVC)
+            # MSVC uses ARMASM syntax (.asm files)
+            message(STATUS "Using ARMASM syntax for MSVC")
+            set(ASM_FILES
+                src/asm/arm64/make_arm64_aapcs_pe_armasm.asm
+                src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
+                src/asm/arm64/ontop_arm64_aapcs_pe_armasm.asm
+            )
+        else()
+            # MinGW/Clang use GAS syntax (.S files) - need to use ELF versions
+            # Note: PE versions for GAS on ARM64 may not exist, using ELF as fallback
+            message(STATUS "Using GAS/ELF syntax for MinGW/Clang on ARM64")
+            set(ASM_FILES
+                src/asm/arm64/make_arm64_aapcs_elf_gas.S
+                src/asm/arm64/jump_arm64_aapcs_elf_gas.S
+                src/asm/arm64/ontop_arm64_aapcs_elf_gas.S
+            )
+        endif()
     else()
         message(FATAL_ERROR "Unsupported architecture on Windows: ${CMAKE_SYSTEM_PROCESSOR} (Windows only supports x86_64 and ARM64)")
     endif()
@@ -270,11 +287,27 @@ message(STATUS "Building for ${OS_TYPE} ${ARCH_TYPE}")
 if(WIN32 AND MSVC)
     # MSVC on Windows
     if(ARCH_TYPE STREQUAL "arm64")
-        # ARM64 uses armasm64.exe (ARM Assembler, not MASM)
-        find_program(CMAKE_ASM_COMPILER armasm64.exe REQUIRED)
-        message(STATUS "Found ARM64 assembler: ${CMAKE_ASM_COMPILER}")
-        enable_language(ASM)
-        set(CMAKE_ASM_FLAGS "-machine ARM64")
+        # ARM64 uses armasm64.exe - use custom build rules since CMake's
+        # generic ASM support doesn't work well with armasm64
+        find_program(ARMASM64 armasm64.exe REQUIRED)
+        message(STATUS "Found ARM64 assembler: ${ARMASM64}")
+
+        # Create custom commands for each ARM64 assembly file
+        set(ARM64_ASM_OBJECTS "")
+        foreach(asm_file ${ASM_FILES})
+            get_filename_component(asm_name ${asm_file} NAME_WE)
+            set(obj_file "${CMAKE_CURRENT_BINARY_DIR}/${asm_name}.obj")
+            add_custom_command(
+                OUTPUT ${obj_file}
+                COMMAND ${ARMASM64} -machine ARM64 -o ${obj_file} ${CMAKE_CURRENT_SOURCE_DIR}/${asm_file}
+                DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${asm_file}
+                COMMENT "Assembling ARM64 ${asm_file}"
+                VERBATIM
+            )
+            list(APPEND ARM64_ASM_OBJECTS ${obj_file})
+        endforeach()
+        # Replace ASM_FILES with the object files for linking
+        set(ASM_FILES ${ARM64_ASM_OBJECTS})
     else()
         # x86_64 uses ml64.exe (MASM)
         set(CMAKE_ASM_MASM_COMPILER ml64.exe CACHE FILEPATH "x64 MASM assembler" FORCE)
@@ -302,16 +335,12 @@ foreach(test ${TESTS})
 endforeach()
 
 # Set language properties for assembly files
-if(MSVC AND WIN32)
+# Note: ARM64 MSVC uses custom commands, so ASM_FILES contains .obj files, not .asm
+if(MSVC AND WIN32 AND NOT ARCH_TYPE STREQUAL "arm64")
     foreach(asm_file ${ASM_FILES})
         if(asm_file MATCHES "\\.asm$")
-            if(ARCH_TYPE STREQUAL "arm64")
-                # ARM64 .asm files use generic ASM language with armasm64
-                set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM)
-            else()
-                # x86_64 .asm files use ASM_MASM language with ml64
-                set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
-            endif()
+            # x86_64 .asm files use ASM_MASM language with ml64
+            set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
         endif()
     endforeach()
 endif()
