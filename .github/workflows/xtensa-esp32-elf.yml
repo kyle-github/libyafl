@@ -16,7 +16,7 @@ jobs:
               run: |
                   docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
                     bash -c "mkdir -p build && cd build && \
-                    cmake -DTRIPLE=xtensa-esp32-elf \
+                    cmake -DTARGET=xtensa-esp32-elf \
                           -DCMAKE_C_COMPILER=xtensa-esp32-elf-gcc \
                           -DCMAKE_C_FLAGS='-mlongcalls -mtext-section-literals' \
                           -DCMAKE_SYSTEM_NAME=Linux \

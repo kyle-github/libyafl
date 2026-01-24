@@ -16,7 +16,7 @@ jobs:
               run: |
                   docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
                     bash -c "mkdir -p build && cd build && \
-                    cmake -DTRIPLE=i386-unknown-linux-gnu \
+                    cmake -DTARGET=i386-unknown-linux-gnu \
                           -DCMAKE_C_COMPILER=gcc \
                           -DCMAKE_C_FLAGS='-m32 -static' \
                           -DCMAKE_SYSTEM_NAME=Linux \

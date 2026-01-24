@@ -18,6 +18,6 @@ jobs:
             - name: Build and Test
               run: |
                   mkdir -p build && cd build
-                  cmake -G "Unix Makefiles" -DTRIPLE=aarch64-pc-linux-gnu ..
+                  cmake -G "Unix Makefiles" -DTARGET=aarch64-pc-linux-gnu ..
                   make -j$(nproc)
                   ctest --output-on-failure

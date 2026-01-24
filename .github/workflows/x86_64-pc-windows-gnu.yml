@@ -23,7 +23,7 @@ jobs:
               shell: msys2 {0}
               run: |
                   mkdir build; cd build
-                  cmake -G "Ninja" -DTRIPLE=x86_64-pc-windows-gnu -DCMAKE_C_COMPILER=gcc -DCMAKE_ASM_COMPILER=gcc ..
+                  cmake -G "Ninja" -DTARGET=x86_64-pc-windows-gnu -DCMAKE_C_COMPILER=gcc -DCMAKE_ASM_COMPILER=gcc ..
             - name: Build
               shell: msys2 {0}
               run: cmake --build build --parallel 4

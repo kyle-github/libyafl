@@ -16,6 +16,6 @@ jobs:
             - name: Build and Test
               run: |
                   mkdir -p build && cd build
-                  cmake -G "Unix Makefiles" -DTRIPLE=aarch64-apple-darwin ..
+                  cmake -G "Unix Makefiles" -DTARGET=aarch64-apple-darwin ..
                   make -j$(sysctl -n hw.ncpu)
                   ctest --output-on-failure

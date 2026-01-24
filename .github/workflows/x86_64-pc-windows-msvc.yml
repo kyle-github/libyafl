@@ -20,7 +20,7 @@ jobs:
             - name: Configure
               run: |
                   mkdir build; cd build
-                  cmake -G "Ninja" -DTRIPLE=x86_64-pc-windows-msvc -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
+                  cmake -G "Ninja" -DTARGET=x86_64-pc-windows-msvc -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
             - name: Build
               run: cmake --build build --config Release --parallel 4
             - name: Test

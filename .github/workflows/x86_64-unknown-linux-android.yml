@@ -27,7 +27,7 @@ jobs:
               run: |
                   cmake \
                     -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
-                    -DTRIPLE=x86_64-unknown-linux-android \
+                    -DTARGET=x86_64-unknown-linux-android \
                     -DANDROID_ABI=x86_64 \
                     -DANDROID_PLATFORM=android-29 \
                     -DCMAKE_CROSSCOMPILING_EMULATOR=$(pwd)/run_android.sh \

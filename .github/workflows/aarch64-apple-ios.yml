@@ -18,7 +18,7 @@ jobs:
               run: |
                   cmake -G Xcode \
                     -DCMAKE_SYSTEM_NAME=iOS \
-                    -DTRIPLE=aarch64-apple-ios \
+                    -DTARGET=aarch64-apple-ios \
                     -DCMAKE_OSX_ARCHITECTURES=arm64 \
                     -B build
 
