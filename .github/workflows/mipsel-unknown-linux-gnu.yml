@@ -1,9 +1,7 @@
 name: mipsel-unknown-linux-gnu
 on:
     push:
-        branches: [main]
     pull_request:
-        branches: [main]
 
 jobs:
     build-and-test:

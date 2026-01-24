@@ -1,9 +1,7 @@
 name: s390x-ibm-linux-gnu
 on:
     push:
-        branches: [main]
     pull_request:
-        branches: [main]
 
 jobs:
     build-and-test:

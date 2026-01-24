@@ -2,9 +2,7 @@ name: x86_64-pc-windows-gnu
 
 on:
     push:
-        branches: [main]
     pull_request:
-        branches: [main]
 
 jobs:
     build-and-test:
