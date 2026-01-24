@@ -82,6 +82,11 @@
 ;  |       FCTX        |        DATA        |                                       |
 ;  ----------------------------------------------------------------------------------
 
+; Define BOOST_CONTEXT_EXPORT as empty if not already defined
+IFNDEF BOOST_CONTEXT_EXPORT
+BOOST_CONTEXT_EXPORT EQU <>
+ENDIF
+
 .code
 
 ontop_fcontext PROC BOOST_CONTEXT_EXPORT FRAME

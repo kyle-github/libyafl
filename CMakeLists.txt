@@ -155,13 +155,12 @@ elseif(OS_TYPE STREQUAL "windows")
                 src/asm/arm64/ontop_arm64_aapcs_pe_armasm.asm
             )
         else()
-            # MinGW/Clang use GAS syntax (.S files) - need to use ELF versions
-            # Note: PE versions for GAS on ARM64 may not exist, using ELF as fallback
-            message(STATUS "Using GAS/ELF syntax for MinGW/Clang on ARM64")
+            # MinGW/Clang use GAS syntax (.S files) with PE format
+            message(STATUS "Using GAS/PE syntax for MinGW/Clang on ARM64")
             set(ASM_FILES
-                src/asm/arm64/make_arm64_aapcs_elf_gas.S
-                src/asm/arm64/jump_arm64_aapcs_elf_gas.S
-                src/asm/arm64/ontop_arm64_aapcs_elf_gas.S
+                src/asm/arm64/make_arm64_aapcs_pe_armclang.S
+                src/asm/arm64/jump_arm64_aapcs_pe_armclang.S
+                src/asm/arm64/ontop_arm64_aapcs_pe_armclang.S
             )
         endif()
     else()
