@@ -58,11 +58,17 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Compiler Flags
 # ============================================================================
 
-if(NOT CMAKE_C_FLAGS MATCHES "-Wall")
-    add_compile_options(-Wall -Wextra -Werror)
+if(MSVC)
+    # MSVC-specific flags
+    add_compile_options(/W4 /WX)
+    # Debug info and optimization are handled by CMAKE_BUILD_TYPE
+else()
+    # GCC/Clang flags
+    if(NOT CMAKE_C_FLAGS MATCHES "-Wall")
+        add_compile_options(-Wall -Wextra -Werror)
+    endif()
+    add_compile_options(-g -O2)
 endif()
-
-add_compile_options(-g -O2)
 
 # ============================================================================
 # Include Directories
