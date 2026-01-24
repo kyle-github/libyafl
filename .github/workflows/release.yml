@@ -1,0 +1,118 @@
+name: Release
+
+on:
+    workflow_run:
+        workflows:
+            - x86_64-pc-linux-gnu
+            - aarch64-pc-linux-gnu
+            - x86_64-apple-darwin
+            - aarch64-apple-darwin
+            - x86_64-pc-windows-msvc
+            - aarch64-pc-windows-msvc
+            - x86_64-pc-windows-gnu
+            - aarch64-pc-windows-gnu
+            - x86_64-unknown-linux-android
+            - aarch64-apple-ios
+            - arm-unknown-linux-gnueabihf
+            - aarch64-unknown-linux-gnu
+            - riscv64-unknown-linux-gnu
+            - mipsel-unknown-linux-gnu
+            - mips64el-unknown-linux-gnuabi64
+            - powerpc64le-unknown-linux-gnu
+            - s390x-ibm-linux-gnu
+            - sparc64-unknown-linux-gnu
+            - powerpc-unknown-linux-gnu
+            - xtensa-esp32-elf
+            - i386-unknown-linux-gnu
+        types:
+            - completed
+
+jobs:
+    check-and-release:
+        runs-on: ubuntu-latest
+        # Only run if the triggering workflow succeeded
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        steps:
+            - name: Check all workflow statuses
+              id: check-all
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const target_workflows = [
+                        "x86_64-pc-linux-gnu",
+                        "aarch64-pc-linux-gnu",
+                        "x86_64-apple-darwin",
+                        "aarch64-apple-darwin",
+                        "x86_64-pc-windows-msvc",
+                        "aarch64-pc-windows-msvc",
+                        "x86_64-pc-windows-gnu",
+                        "aarch64-pc-windows-gnu",
+                        "x86_64-unknown-linux-android",
+                        "aarch64-apple-ios",
+                        "arm-unknown-linux-gnueabihf",
+                        "aarch64-unknown-linux-gnu",
+                        "riscv64-unknown-linux-gnu",
+                        "mipsel-unknown-linux-gnu",
+                        "mips64el-unknown-linux-gnuabi64",
+                        "powerpc64le-unknown-linux-gnu",
+                        "s390x-ibm-linux-gnu",
+                        "sparc64-unknown-linux-gnu",
+                        "powerpc-unknown-linux-gnu",
+                        "xtensa-esp32-elf",
+                        "i386-unknown-linux-gnu"
+                      ];
+
+                      const commit_sha = context.payload.workflow_run.head_sha;
+                      const { owner, repo } = context.repo;
+
+                      console.log(`Checking workflow statuses for commit: ${commit_sha}`);
+
+                      // Fetch all runs for this commit
+                      const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRunsForRepo({
+                        owner,
+                        repo,
+                        head_sha: commit_sha,
+                        per_page: 100
+                      });
+
+                      // Map workflow name to its latest run
+                      const latest_runs = {};
+                      for (const run of workflow_runs) {
+                        if (target_workflows.includes(run.name)) {
+                          // If we haven't seen this workflow yet, or this run is newer
+                          if (!latest_runs[run.name] || new Date(run.created_at) > new Date(latest_runs[run.name].created_at)) {
+                            latest_runs[run.name] = run;
+                          }
+                        }
+                      }
+
+                      const failed = [];
+                      const pending = [];
+
+                      for (const name of target_workflows) {
+                        const run = latest_runs[name];
+                        if (!run || run.status !== 'completed') {
+                          pending.push(name);
+                        } else if (run.conclusion !== 'success') {
+                          failed.push(name);
+                        }
+                      }
+
+                      if (failed.length > 0) {
+                        core.setFailed(`One or more workflows failed: ${failed.join(', ')}`);
+                        return;
+                      }
+
+                      if (pending.length > 0) {
+                        console.log(`Waiting for other workflows to complete: ${pending.join(', ')}`);
+                        return; // Exit successfully but do nothing; wait for next trigger
+                      }
+
+                      console.log("All target workflows passed successfully!");
+                      core.setOutput("ready", "true");
+
+            - name: Perform Release
+              if: steps.check-all.outputs.ready == 'true'
+              run: |
+                  echo "All checks passed. Performing release steps..."
+                  # Add your release logic here (e.g., create GitHub Release, upload artifacts)

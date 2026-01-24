@@ -1,0 +1,27 @@
+name: x86_64-pc-linux-gnu
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y cmake build-essential
+            - name: Build and Test
+              run: |
+                  mkdir -p build && cd build
+                  cmake -G "Unix Makefiles" -DTRIPLE=x86_64-pc-linux-gnu -DENABLE_COVERAGE=ON ..
+                  make -j$(nproc)
+                  ctest --output-on-failure
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v4
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}

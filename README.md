@@ -1,5 +1,28 @@
 # fcontext - Portable Context Switching Library
 
+![x86_64-pc-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)
+![aarch64-pc-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)
+![x86_64-apple-darwin](https://github.com/libplctag/fcontext/actions/workflows/x86_64-apple-darwin.yml/badge.svg)
+![aarch64-apple-darwin](https://github.com/libplctag/fcontext/actions/workflows/aarch64-apple-darwin.yml/badge.svg)
+![x86_64-pc-windows-msvc](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)
+![aarch64-pc-windows-msvc](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)
+![x86_64-pc-windows-gnu](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)
+![aarch64-pc-windows-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)
+![x86_64-unknown-linux-android](https://github.com/libplctag/fcontext/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)
+![aarch64-apple-ios](https://github.com/libplctag/fcontext/actions/workflows/aarch64-apple-ios.yml/badge.svg)
+![arm-unknown-linux-gnueabihf](https://github.com/libplctag/fcontext/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)
+![aarch64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-unknown-linux-gnu.yml/badge.svg)
+![riscv64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)
+![mipsel-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)
+![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/fcontext/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)
+![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)
+![s390x-ibm-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
+![sparc64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
+![powerpc-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
+![xtensa-esp32-elf](https://github.com/libplctag/fcontext/actions/workflows/xtensa-esp32-elf.yml/badge.svg)
+![i386-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
+[![codecov](https://codecov.io/gh/libplctag/fcontext/graph/badge.svg)](https://codecov.io/gh/libplctag/fcontext)
+
 A portable, low-level C11 fiber/coroutine context switching library derived from Boost.Context, designed to replace the deprecated and unsupported `ucontext` API.
 
 ## Features
@@ -10,7 +33,7 @@ A portable, low-level C11 fiber/coroutine context switching library derived from
 - **Stack watermark checking** - Detects high water mark (maximum stack usage) with 0xA5 pattern
 - **16-byte stack alignment** - Automatic ABI-compliant alignment for x86_64 and ARM64
 - **Page-aware allocation** - Automatically handles varying page sizes (4KB Linux, 16KB macOS ARM, etc.)
-- **Portable across platforms** - x86_64 and ARM64 on Linux, macOS, and Windows
+- **Portable across platforms** - x86_64 and ARM64 on Linux, macOS, iOS, Android, and Windows
 - **Portable across architectures** - x86_64, ARM64, x86, ARM support
 - **Zero external dependencies** - Only standard APIs (POSIX mmap on Linux/macOS, Windows VirtualAlloc on Windows)
 
@@ -27,14 +50,29 @@ This library replaces `ucontext`.
 
 ### Tier 1 - Fully Tested (Native & Cross-Compiled)
 
-| Architecture | Linux | macOS | Windows |
-|:---|:---:|:---:|:---:|
-| x86_64 (AMD64) | ✓ | ✓ | ✓ |
-| ARM64 (AArch64) | ✓ | ✓ (Apple Silicon) | ✓ |
-| x86 (i386) | ✓ | ✓ | - |
-| ARM (32-bit) | ✓ | ✓ | - |
-
-**Note:** 32-bit architectures not supported on Windows (modern Windows is 64-bit only).
+| Architecture | Vendor | OS | Environment | Build/Test Method |
+|---|---|---|---|---|
+| x86_64 | pc | linux | gnu | Native (Ubuntu) |
+| aarch64 | pc | linux | gnu | Native (Ubuntu ARM64) |
+| x86_64 | apple | darwin | macho | Native (macOS Intel) |
+| aarch64 | apple | darwin | macho | Native (macOS Silicon) |
+| aarch64 | apple | ios | macho | Simulator (macOS) |
+| x86_64 | unknown | linux | android | Emulator (Ubuntu) |
+| x86_64 | pc | windows | msvc | Native (Windows MSVC) |
+| aarch64 | pc | windows | msvc | Native (Windows ARM64) |
+| x86_64 | pc | windows | gnu | Native (Windows MinGW) |
+| aarch64 | pc | windows | gnu | Native (Windows MinGW) |
+| i386 | unknown | linux | gnu | Cross (Debian + QEMU) |
+| arm | unknown | linux | gnueabihf | Cross (Debian + QEMU) |
+| aarch64 | unknown | linux | gnu | Cross (Debian + QEMU) |
+| riscv64 | unknown | linux | gnu | Cross (Debian + QEMU) |
+| mipsel | unknown | linux | gnu | Cross (Debian + QEMU) |
+| mips64el | unknown | linux | gnuabi64 | Cross (Debian + QEMU) |
+| powerpc64le | unknown | linux | gnu | Cross (Debian + QEMU) |
+| s390x | ibm | linux | gnu | Cross (Debian + QEMU) |
+| sparc64 | unknown | linux | gnu | Cross (Debian + QEMU) |
+| powerpc | unknown | linux | gnu | Cross (Debian + QEMU) |
+| xtensa | espressif | esp32 | elf | Cross (Debian + QEMU) |
 
 Page sizes automatically detected:
 - **Linux/Windows**: 4KB (typical)
@@ -54,14 +92,6 @@ All combinations below are automatically tested on each push via GitHub Actions:
 | build-and-test | macos-15 | macOS | ARM64 |
 | build-and-test | windows-latest | Windows | AMD64 |
 | build-and-test | windows-11-arm | Windows | ARM64 |
-
-**Cross-Compiled Builds (with QEMU):**
-| Job | Runner | OS | Architecture |
-|-----|--------|-------|--------------|
-| cross-compile-i386 | ubuntu-24.04 | Ubuntu | i386 (32-bit x86) |
-| cross-compile-armhf | ubuntu-24.04 | Ubuntu | armhf (32-bit ARM) |
-
-**Note:** Cross-compiled builds use separate jobs with dedicated toolchain setup. The i386 packages come from the main Ubuntu archive, while armhf packages require the Ubuntu ports repository (ports.ubuntu.com).
 
 ## API Overview
 

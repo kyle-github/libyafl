@@ -1,0 +1,21 @@
+name: aarch64-apple-darwin
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        runs-on: macos-15
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              run: brew install cmake
+            - name: Build and Test
+              run: |
+                  mkdir -p build && cd build
+                  cmake -G "Unix Makefiles" -DTRIPLE=aarch64-apple-darwin ..
+                  make -j$(sysctl -n hw.ncpu)
+                  ctest --output-on-failure

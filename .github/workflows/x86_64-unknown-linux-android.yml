@@ -1,0 +1,48 @@
+name: x86_64-unknown-linux-android
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        name: Android Emulator (x86_64)
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Create Test Runner Script
+              run: |
+                  echo '#!/bin/bash' > run_android.sh
+                  echo 'EXE_NAME=$(basename "$1")' >> run_android.sh
+                  echo 'adb push "$1" "/data/local/tmp/$EXE_NAME" > /dev/null' >> run_android.sh
+                  echo 'shift' >> run_android.sh
+                  echo 'adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME $@"' >> run_android.sh
+                  chmod +x run_android.sh
+
+            - name: Configure CMake
+              run: |
+                  cmake \
+                    -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+                    -DTRIPLE=x86_64-unknown-linux-android \
+                    -DANDROID_ABI=x86_64 \
+                    -DANDROID_PLATFORM=android-29 \
+                    -DCMAKE_CROSSCOMPILING_EMULATOR=$(pwd)/run_android.sh \
+                    -B build
+
+            - name: Build
+              run: cmake --build build --config Debug
+
+            - name: Run Tests on Emulator
+              uses: reactivecircus/android-emulator-runner@v2
+              with:
+                  api-level: 29
+                  arch: x86_64
+                  script: |
+                      # Wait for emulator to be fully ready
+                      adb wait-for-device
+                      cd build
+                      ctest --output-on-failure

@@ -13,9 +13,9 @@
  *
  * Supported Architectures and Platforms:
  * - x86_64 (Linux, macOS, Windows)
- * - ARM64/AArch64 (Linux, macOS, Windows)
+ * - ARM64/AArch64 (Linux, macOS, iOS, Android, Windows)
  * - x86/i386 (Linux, macOS)
- * - ARM (Linux, macOS)
+ * - ARM (Linux, macOS, Android)
  *
  * Features:
  * - Page-aligned stack allocation (4KB on Linux/Windows, 16KB on macOS ARM)
@@ -34,6 +34,10 @@
 #ifndef _WIN32
 #include <unistd.h>
 #include <sys/mman.h>
+#endif
+
+#ifdef __SANITIZE_ADDRESS__
+#include <sanitizer/asan_interface.h>
 #endif
 
 #ifdef __cplusplus
@@ -215,12 +219,19 @@ static inline void* fcontext_align_stack_pointer(void* ptr) {
  *
  * This catches stack overflow/underflow while using minimal memory.
  */
+typedef enum {
+    FCONTEXT_ALLOC_MMAP,
+    FCONTEXT_ALLOC_MALLOC
+} fcontext_alloc_type_t;
+
 typedef struct {
     fcontext_t context;
-    void *mmap_base;        /* Base of mmap'd region (for cleanup) */
+    fcontext_alloc_type_t alloc_type;
+    void *alloc_base;       /* Base of allocated region (mmap or malloc) */
     void *stack_base;       /* Base of actual stack (after bottom guard page) */
-    size_t mmap_size;       /* Total size of mmap'd region */
+    size_t alloc_size;      /* Total size of allocated region */
     size_t stack_size;      /* Size of actual stack (excludes guard pages) */
+    size_t guard_size;      /* Size of guard pages/zones */
 } fcontext_stack_t;
 
 /**
@@ -247,6 +258,34 @@ typedef struct {
  */
 extern fcontext_stack_t *fcontext_create(size_t stack_size,
                                          fcontext_fn_t entry_fn);
+
+/**
+ * Create a new context using malloc with software guard zones.
+ *
+ * Allocates: [Guard] [Stack] [Guard]
+ * Guards are filled with 0xCD pattern.
+ * Stack is filled with watermark pattern.
+ *
+ * Parameters:
+ *   stack_size - Size of stack
+ *   guard_size - Size of guard zones (canaries)
+ *   entry_fn   - Entry point
+ */
+extern fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_size,
+                                                fcontext_fn_t entry_fn);
+
+/**
+ * Create a new context using mmap/VirtualAlloc with hardware guard pages.
+ *
+ * Parameters:
+ *   stack_size - Size of stack
+ *   guard_size - Size of guard pages (rounded up to page size)
+ *                Both stack_size and guard_size will be rounded up to the
+ *                nearest system page size.
+ *   entry_fn   - Entry point
+ */
+extern fcontext_stack_t *fcontext_create_mmap(size_t stack_size, size_t guard_size,
+                                              fcontext_fn_t entry_fn);
 
 /**
  * Destroy a context created with fcontext_create().
@@ -291,7 +330,15 @@ extern size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx);
  *   Transfer structure with previous context and data
  */
 static inline fcontext_transfer_t fcontext_swap(fcontext_t ctx, void *vp) {
-    return jump_fcontext(ctx, vp);
+#ifdef __SANITIZE_ADDRESS__
+    void *fake_stack_save = NULL;
+    __sanitizer_start_switch_fiber(&fake_stack_save, NULL, 0);
+#endif
+    fcontext_transfer_t t = jump_fcontext(ctx, vp);
+#ifdef __SANITIZE_ADDRESS__
+    __sanitizer_finish_switch_fiber(fake_stack_save, NULL, NULL);
+#endif
+    return t;
 }
 
 #ifdef __cplusplus

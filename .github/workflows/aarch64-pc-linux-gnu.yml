@@ -1,0 +1,23 @@
+name: aarch64-pc-linux-gnu
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-24.04-arm
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y cmake build-essential
+            - name: Build and Test
+              run: |
+                  mkdir -p build && cd build
+                  cmake -G "Unix Makefiles" -DTRIPLE=aarch64-pc-linux-gnu ..
+                  make -j$(nproc)
+                  ctest --output-on-failure

@@ -47,186 +47,180 @@ static size_t get_page_size(void) {
 }
 
 /**
- * Create a new context with guarded stack.
- *
- * Allocates stack with guard pages on both ends:
- *   [Guard Page] [Stack] [Guard Page]
- *   unmapped     R/W     unmapped
- *
- * On POSIX systems, uses mmap/mprotect.
- * On Windows, uses VirtualAlloc/VirtualProtect.
- * This catches overflow/underflow without using extra physical memory.
+ * Create a new context using malloc with software guard zones.
  */
-fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
-    if (entry_fn == NULL) {
-        return NULL;
+fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_size, fcontext_fn_t entry_fn) {
+    fcontext_stack_t *ctx = (fcontext_stack_t *)malloc(sizeof(fcontext_stack_t));
+    if (!ctx) return NULL;
+
+    if (!entry_fn) { free(ctx); return NULL; }
+    if (stack_size == 0) stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
+
+    /* Align both stack and guard sizes to ensure offsets maintain alignment */
+    stack_size = (stack_size + FCONTEXT_STACK_ALIGNMENT - 1) & ~(FCONTEXT_STACK_ALIGNMENT - 1);
+    guard_size = (guard_size + FCONTEXT_STACK_ALIGNMENT - 1) & ~(FCONTEXT_STACK_ALIGNMENT - 1);
+
+    size_t inner_size = guard_size + stack_size + guard_size;
+    /* Over-allocate to guarantee we can find an aligned spot for the block */
+    size_t total_alloc_size = inner_size + FCONTEXT_STACK_ALIGNMENT;
+
+    void *raw_alloc = malloc(total_alloc_size);
+    if (!raw_alloc) { free(ctx); return NULL; }
+
+    /* Find an aligned address inside the allocation for our [guard][stack][guard] block */
+    uintptr_t aligned_addr = ((uintptr_t)raw_alloc + FCONTEXT_STACK_ALIGNMENT - 1) & ~(FCONTEXT_STACK_ALIGNMENT - 1);
+    void *aligned_base = (void*)aligned_addr;
+
+    void *stack_base = (char *)aligned_base + guard_size;
+    void *sp = (char *)stack_base + stack_size;
+
+    /* Setup guard zones (canaries) */
+    if (guard_size > 0) {
+        memset(aligned_base, 0xCD, guard_size);
+        memset(sp, 0xCD, guard_size);
     }
+
+    /* Setup watermark */
+#if FCONTEXT_ENABLE_STACK_WATERMARK
+    memset(stack_base, FCONTEXT_STACK_WATERMARK, stack_size);
+#endif
+
+    /* The stack pointer passed to make_fcontext must be aligned */
+    sp = fcontext_align_stack_pointer(sp);
+    
+    ctx->context = make_fcontext(sp, stack_size, entry_fn);
+    ctx->alloc_type = FCONTEXT_ALLOC_MALLOC;
+    ctx->alloc_base = raw_alloc; /* Store original malloc pointer for free() */
+    ctx->stack_base = stack_base;
+    ctx->alloc_size = total_alloc_size;
+    ctx->stack_size = stack_size;
+    ctx->guard_size = guard_size;
+
+    return ctx;
+}
+
+/**
+ * Create a new context using mmap/VirtualAlloc with hardware guard pages.
+ */
+fcontext_stack_t *fcontext_create_mmap(size_t stack_size, size_t guard_size, fcontext_fn_t entry_fn) {
+    if (!entry_fn) return NULL;
 
     size_t page_size = get_page_size();
+    if (stack_size == 0) stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
 
-    /* Determine stack size */
-    if (stack_size == 0) {
-        stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
-    }
-
-    /* Align to page size */
+    /* Align sizes to page boundary */
     stack_size = ((stack_size + page_size - 1) / page_size) * page_size;
+    guard_size = ((guard_size + page_size - 1) / page_size) * page_size;
 
-    /* Total allocation: guard_page + stack + guard_page */
-    size_t total_size = page_size + stack_size + page_size;
+    size_t total_size = guard_size + stack_size + guard_size;
 
     void *region = NULL;
-    void *stack_addr = NULL;
+    void *stack_base = NULL;
 
 #ifdef _WIN32
-    /* Windows implementation using VirtualAlloc */
     region = VirtualAlloc(NULL, total_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    if (region == NULL) {
-        return NULL;
-    }
+    if (!region) return NULL;
 
-    /* Set guard page at bottom (start of allocation) */
-    DWORD old_protect;
-    if (!VirtualProtect(region, page_size, PAGE_GUARD | PAGE_READWRITE, &old_protect)) {
-        VirtualFree(region, 0, MEM_RELEASE);
-        return NULL;
-    }
-
-    /* Stack is in the middle of the allocation */
-    stack_addr = (char *)region + page_size;
-
-    /* Set guard page at top (end of stack) */
-    if (!VirtualProtect((char *)region + page_size + stack_size, page_size,
-                        PAGE_GUARD | PAGE_READWRITE, &old_protect)) {
-        VirtualFree(region, 0, MEM_RELEASE);
-        return NULL;
-    }
-#else
-    /* POSIX implementation using mmap/mprotect */
-    region = mmap(NULL, total_size, PROT_NONE,
-                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (region == MAP_FAILED) {
-        return NULL;
-    }
-
-    /* Map the middle section (stack) as readable and writable */
-    stack_addr = (char *)region + page_size;
-    if (mprotect(stack_addr, stack_size, PROT_READ | PROT_WRITE) != 0) {
-        munmap(region, total_size);
-        return NULL;
-    }
-#endif
-
-    /* Allocate metadata structure SEPARATELY from stack to prevent corruption on overflow */
-    fcontext_stack_t *state = (fcontext_stack_t *)malloc(sizeof(fcontext_stack_t));
-    if (state == NULL) {
-#ifdef _WIN32
-        VirtualFree(region, 0, MEM_RELEASE);
-#else
-        munmap(region, total_size);
-#endif
-        return NULL;
-    }
-
-#if FCONTEXT_ENABLE_STACK_WATERMARK
-    /* Fill the ENTIRE stack with watermark pattern for high water mark detection */
-    /* No metadata stored on stack, so we can fill it all */
-    memset(stack_addr, FCONTEXT_STACK_WATERMARK, stack_size);
-#endif
-
-    /* Initialize context at top of stack (stacks grow downward) */
-    /* Note: Stack pointer is automatically aligned to 16 bytes by make_fcontext assembly */
-    void *stack_top = (char *)stack_addr + stack_size;
-    /* Ensure 16-byte alignment for ABI compliance */
-    stack_top = fcontext_align_stack_pointer(stack_top);
-    fcontext_t ctx = make_fcontext(stack_top, stack_size, entry_fn);
-    if (ctx == NULL) {
-#ifdef _WIN32
-        VirtualFree(region, 0, MEM_RELEASE);
-#else
-        munmap(region, total_size);
-#endif
-        free(state);
-        return NULL;
-    }
-
-    /* Store allocation info for cleanup */
-    state->context = ctx;
-    state->mmap_base = region;
-    state->stack_base = stack_addr;
-    state->mmap_size = total_size;
-    state->stack_size = stack_size;
-
-    return state;
-}
-
-/**
- * Get the stack usage (high water mark) for a context.
- *
- * Scans the stack from bottom to top looking for the watermark pattern.
- * Returns the maximum stack depth used.
- */
-size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx) {
-    if (ctx == NULL || ctx->stack_size == 0 || ctx->stack_base == NULL) {
-        return 0;
-    }
-
-#if FCONTEXT_ENABLE_STACK_WATERMARK
-    /* Stack base pointer points to the actual stack (after bottom guard page) */
-    const uint8_t *stack_bottom = (const uint8_t *)ctx->stack_base;
-
-    /* Scan from bottom to top to find where watermark pattern ends */
-    /* No metadata on stack, so we scan the entire stack region */
-    size_t unused_bytes = 0;
-    for (size_t i = 0; i < ctx->stack_size; i++) {
-        if (stack_bottom[i] != FCONTEXT_STACK_WATERMARK) {
-            /* Found modified stack memory - this is where stack usage started */
-            break;
+    if (guard_size > 0) {
+        DWORD old;
+        if (!VirtualProtect(region, guard_size, PAGE_GUARD | PAGE_READWRITE, &old)) {
+            VirtualFree(region, 0, MEM_RELEASE);
+            return NULL;
         }
-        unused_bytes++;
+        if (!VirtualProtect((char *)region + guard_size + stack_size, guard_size, PAGE_GUARD | PAGE_READWRITE, &old)) {
+            VirtualFree(region, 0, MEM_RELEASE);
+            return NULL;
+        }
+    }
+    stack_base = (char *)region + guard_size;
+#else
+    region = mmap(NULL, total_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (region == MAP_FAILED) return NULL;
+
+    if (guard_size > 0) {
+        if (mprotect(region, guard_size, PROT_NONE) == -1) {
+            munmap(region, total_size);
+            return NULL;
+        }
+        if (mprotect((char *)region + guard_size + stack_size, guard_size, PROT_NONE) == -1) {
+            munmap(region, total_size);
+            return NULL;
+        }
+    }
+    stack_base = (char *)region + guard_size;
+#endif
+
+    fcontext_stack_t *ctx = (fcontext_stack_t *)malloc(sizeof(fcontext_stack_t));
+    if (!ctx) {
+#ifdef _WIN32
+        VirtualFree(region, 0, MEM_RELEASE);
+#else
+        munmap(region, total_size);
+#endif
+        return NULL;
     }
 
-    /* Return bytes used (total - unused) */
-    size_t used_bytes = ctx->stack_size - unused_bytes;
-    return used_bytes;
-#else
-    return 0;  /* Watermark checking disabled */
+#if FCONTEXT_ENABLE_STACK_WATERMARK
+    memset(stack_base, FCONTEXT_STACK_WATERMARK, stack_size);
 #endif
+
+    void *sp = (char *)stack_base + stack_size;
+    ctx->context = make_fcontext(sp, stack_size, entry_fn);
+    ctx->alloc_type = FCONTEXT_ALLOC_MMAP;
+    ctx->alloc_base = region;
+    ctx->stack_base = stack_base;
+    ctx->alloc_size = total_size;
+    ctx->stack_size = stack_size;
+    ctx->guard_size = guard_size;
+
+    return ctx;
 }
 
-/**
- * Destroy a context created with fcontext_create().
- * Frees the guarded stack region and metadata (platform-agnostic).
- */
+fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn) {
+    /* Default to mmap with 1 page guard size */
+    return fcontext_create_mmap(stack_size, get_page_size(), entry_fn);
+}
+
 void fcontext_destroy(fcontext_stack_t *ctx) {
-    if (ctx == NULL) {
-        return;
-    }
+    if (!ctx) return;
 
+#ifndef NDEBUG /* In Debug builds, NDEBUG is not defined */
 #if FCONTEXT_ENABLE_STACK_WATERMARK
-    /* Check and report stack usage before destroying */
-    size_t used = fcontext_get_stack_usage(ctx);
-    if (used > 0) {
-        size_t percent = (used * 100) / ctx->stack_size;
-        fprintf(stderr, "fcontext: stack usage: %zu / %zu bytes (%zu%%)\n",
-                used, ctx->stack_size, percent);
-
-        /* Warn if stack usage is high */
-        if (percent > 90) {
-            fprintf(stderr, "fcontext: WARNING: stack usage exceeded 90%% - consider increasing stack size\n");
+    if (ctx->stack_size > 0) {
+        size_t used = fcontext_get_stack_usage(ctx);
+        double usage_percent = (double)used / ctx->stack_size * 100.0;
+        fprintf(stderr, "fcontext_destroy [Debug]: stack usage: %zu / %zu bytes (%.1f%%)\n",
+                used, ctx->stack_size, usage_percent);
+        if (usage_percent > 90.0) {
+            fprintf(stderr, "fcontext_destroy [Debug]: WARNING: stack usage is over 90%%!\n");
         }
     }
 #endif
-
-    /* Free the stack region */
-    if (ctx->mmap_base != NULL && ctx->mmap_size > 0) {
-#ifdef _WIN32
-        VirtualFree(ctx->mmap_base, 0, MEM_RELEASE);
-#else
-        munmap(ctx->mmap_base, ctx->mmap_size);
 #endif
-    }
 
-    /* Free the metadata structure (allocated separately with malloc) */
+    if (ctx->alloc_type == FCONTEXT_ALLOC_MMAP) {
+#ifdef _WIN32
+        VirtualFree(ctx->alloc_base, 0, MEM_RELEASE);
+#else
+        munmap(ctx->alloc_base, ctx->alloc_size);
+#endif
+    } else {
+        free(ctx->alloc_base);
+    }
     free(ctx);
+}
+
+size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx) {
+    if (!ctx || !ctx->stack_base || ctx->stack_size == 0) return 0;
+
+#if FCONTEXT_ENABLE_STACK_WATERMARK
+    unsigned char *ptr = (unsigned char *)ctx->stack_base;
+    size_t unused = 0;
+    while (unused < ctx->stack_size && ptr[unused] == FCONTEXT_STACK_WATERMARK) {
+        unused++;
+    }
+    return ctx->stack_size - unused;
+#else
+    return 0;
+#endif
 }

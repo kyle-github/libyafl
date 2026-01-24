@@ -1,0 +1,32 @@
+name: x86_64-pc-windows-gnu
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        runs-on: windows-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              run: choco install ninja -y
+            - name: Setup MinGW
+              uses: msys2/setup-msys2@v2
+              with:
+                  msystem: MINGW64
+                  update: true
+                  install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+            - name: Configure
+              shell: msys2 {0}
+              run: |
+                  mkdir build; cd build
+                  cmake -G "Ninja" -DTRIPLE=x86_64-pc-windows-gnu -DCMAKE_C_COMPILER=gcc -DCMAKE_ASM_COMPILER=gcc ..
+            - name: Build
+              shell: msys2 {0}
+              run: cmake --build build --parallel 4
+            - name: Test
+              shell: msys2 {0}
+              run: cd build && ctest --output-on-failure
