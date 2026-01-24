@@ -5,7 +5,11 @@
 # See LICENSE file for details
 
 cmake_minimum_required(VERSION 3.10)
-project(fcontext_tests C)
+
+# Read version from file
+file(READ "VERSION" PROJECT_VERSION_FULL)
+string(STRIP "${PROJECT_VERSION_FULL}" PROJECT_VERSION_FULL)
+project(fcontext VERSION ${PROJECT_VERSION_FULL} LANGUAGES C)
 
 # ============================================================================
 # Enforce Out-of-Source Builds
@@ -139,6 +143,33 @@ else()
 endif()
 
 # ============================================================================
+# Stack Direction Check
+# ============================================================================
+
+# We need to ensure the stack grows downward (high to low addresses).
+# This is required by the assembly implementation.
+
+if(NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
+    message(STATUS "Checking stack direction...")
+    try_run(STACK_DIR_EXITCODE STACK_DIR_COMPILED
+        "${CMAKE_BINARY_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_stack_direction.c"
+    )
+
+    if(STACK_DIR_COMPILED)
+        if(STACK_DIR_EXITCODE EQUAL 0)
+            message(STATUS "Stack grows downward (supported)")
+        else()
+            message(FATAL_ERROR "Stack grows upward! This architecture is not supported by fcontext.")
+        endif()
+    else()
+         message(WARNING "Failed to compile stack direction check. Assuming downward stack.")
+    endif()
+else()
+    message(STATUS "Cross-compiling without emulator: Skipping stack direction check (assuming downward)")
+endif()
+
+# ============================================================================
 # Test Executables
 # ============================================================================
 
@@ -150,10 +181,18 @@ set(TESTS
     test_fcontext_guard
     test_fcontext_watermark_mmap
     test_fcontext_watermark_malloc
+    test_fcontext_ontop
+    test_fcontext_low_level
 )
 
+# Create static library
+add_library(fcontext STATIC src/fcontext_wrapper.c ${ASM_FILES})
+target_include_directories(fcontext PUBLIC include)
+set_target_properties(fcontext PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+
 foreach(test ${TESTS})
-    add_executable(${test} tests/${test}.c src/fcontext_wrapper.c ${ASM_FILES})
+    add_executable(${test} tests/${test}.c)
+    target_link_libraries(${test} PRIVATE fcontext)
 endforeach()
 
 # ============================================================================
@@ -178,3 +217,11 @@ set_tests_properties(test_fcontext_guard PROPERTIES WILL_FAIL TRUE)
 # ============================================================================
 
 message(STATUS "Tests to build: ${TESTS}")
+
+# Target to update Boost.Context assembly files
+# Usage: cmake -DBOOST_VERSION=1.81.0 .. && make update_boost
+add_custom_target(update_boost
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/update_boost.sh ${BOOST_VERSION}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Updating Boost.Context assembly files"
+)

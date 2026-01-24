@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<CodeLite_Workspace Name="fcontext_tests">
-	<Project Name="fcontext_tests" Path="fcontext_tests.project" Active="No"/>
-	<BuildMatrix>
-		<WorkspaceConfiguration Name="NoConfig" Selected="yes">
-			<Project Name="fcontext_tests" ConfigName="NoConfig"/>
-		</WorkspaceConfiguration>
-	</BuildMatrix>
-</CodeLite_Workspace>
