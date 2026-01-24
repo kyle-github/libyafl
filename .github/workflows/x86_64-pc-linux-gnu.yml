@@ -1,8 +1,6 @@
 name: x86_64-pc-linux-gnu
 
-on:
-    push:
-    pull_request:
+on: [push, pull_request]
 
 jobs:
     build-and-test:

@@ -1,7 +1,5 @@
 name: mips64el-unknown-linux-gnuabi64
-on:
-    push:
-    pull_request:
+on: [push, pull_request]
 
 jobs:
     build-and-test:

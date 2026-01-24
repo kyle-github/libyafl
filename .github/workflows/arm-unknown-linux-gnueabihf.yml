@@ -1,7 +1,5 @@
 name: arm-unknown-linux-gnueabihf
-on:
-    push:
-    pull_request:
+on: [push, pull_request]
 
 jobs:
     build-and-test:

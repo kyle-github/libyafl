@@ -1,7 +1,5 @@
 name: i386-unknown-linux-gnu
-on:
-    push:
-    pull_request:
+on: [push, pull_request]
 
 jobs:
     build-and-test:

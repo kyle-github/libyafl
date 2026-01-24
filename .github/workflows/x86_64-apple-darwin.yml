@@ -1,8 +1,6 @@
 name: x86_64-apple-darwin
 
-on:
-    push:
-    pull_request:
+on: [push, pull_request]
 
 jobs:
     build-and-test:

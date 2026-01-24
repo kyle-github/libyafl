@@ -9,7 +9,9 @@ cmake_minimum_required(VERSION 3.10)
 # Read version from file
 file(READ "VERSION" PROJECT_VERSION_FULL)
 string(STRIP "${PROJECT_VERSION_FULL}" PROJECT_VERSION_FULL)
-project(fcontext VERSION ${PROJECT_VERSION_FULL} LANGUAGES C)
+# CMake project version must be numeric (major.minor.patch.tweak)
+string(REPLACE "-" "." PROJECT_VERSION_CMAKE "${PROJECT_VERSION_FULL}")
+project(fcontext VERSION ${PROJECT_VERSION_CMAKE} LANGUAGES C)
 
 # ============================================================================
 # Enforce Out-of-Source Builds

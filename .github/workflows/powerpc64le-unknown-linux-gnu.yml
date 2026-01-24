@@ -1,7 +1,5 @@
 name: powerpc64le-unknown-linux-gnu
-on:
-    push:
-    pull_request:
+on: [push, pull_request]
 
 jobs:
     build-and-test:
