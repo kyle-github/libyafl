@@ -27,11 +27,15 @@ on:
         types:
             - completed
 
+permissions:
+    contents: write
+    pull-requests: read
+
 jobs:
     check-and-release:
         runs-on: ubuntu-latest
-        # Only run if the triggering workflow succeeded
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        # Only run if the triggering workflow succeeded AND it ran on the release branch
+        if: ${{ github.event.workflow_run.head_branch == 'release' && github.event.workflow_run.conclusion == 'success' }}
         steps:
             - name: Check all workflow statuses
               id: check-all
@@ -113,6 +117,80 @@ jobs:
 
             - name: Perform Release
               if: steps.check-all.outputs.ready == 'true'
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.workflow_run.head_sha }}
+                  fetch-depth: 0
+
+            - name: Get Version
+              if: steps.check-all.outputs.ready == 'true'
+              run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+
+            - name: Get Release Details
+              if: steps.check-all.outputs.ready == 'true'
+              id: release_details
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const commit_sha = "${{ github.event.workflow_run.head_sha }}";
+                      const { owner, repo } = context.repo;
+
+                      // Try to find a PR associated with this commit
+                      const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                        owner,
+                        repo,
+                        commit_sha,
+                      });
+
+                      let title = "";
+                      let body = "";
+
+                      if (prs.data.length > 0) {
+                        const pr = prs.data[0];
+                        title = pr.title;
+                        body = pr.body || "";
+                      } else {
+                        // Fallback to commit message
+                        const commit = await github.rest.repos.getCommit({
+                          owner,
+                          repo,
+                          ref: commit_sha,
+                        });
+                        const message = commit.data.commit.message;
+                        const lines = message.split('\n');
+                        title = lines[0];
+                        body = lines.slice(1).join('\n').trim();
+                      }
+
+                      core.setOutput("title", title);
+                      core.setOutput("body", body);
+
+            - name: Create Release
+              if: steps.check-all.outputs.ready == 'true'
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: v${{ env.VERSION }}
+                  name: v${{ env.VERSION }} - ${{ steps.release_details.outputs.title }}
+                  body: ${{ steps.release_details.outputs.body }}
+                  target_commitish: ${{ github.event.workflow_run.head_sha }}
+                  draft: false
+                  prerelease: false
+
+            - name: Update prerelease version
+              if: steps.check-all.outputs.ready == 'true'
               run: |
-                  echo "All checks passed. Performing release steps..."
-                  # Add your release logic here (e.g., create GitHub Release, upload artifacts)
+                  git config user.name "GitHub Actions"
+                  git config user.email "actions@github.com"
+
+                  git fetch origin prerelease
+                  git checkout prerelease
+
+                  # Increment version
+                  chmod +x scripts/increment_version.sh
+                  ./scripts/increment_version.sh
+
+                  # Commit and push
+                  git add VERSION
+                  NEW_VER=$(cat VERSION)
+                  git commit -m "Bump version to $NEW_VER [skip ci]"
+                  git push origin prerelease

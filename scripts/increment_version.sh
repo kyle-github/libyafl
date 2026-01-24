@@ -21,4 +21,6 @@ NEW_VERSION="${BASE_VERSION}-${NEW_RELEASE_NUM}"
 echo "$NEW_VERSION" > "$VERSION_FILE"
 
 echo "Version bumped: $CURRENT_VERSION -> $NEW_VERSION"
-echo "::set-output name=version::$NEW_VERSION"
+if [ -n "$GITHUB_OUTPUT" ]; then
+    echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+fi
