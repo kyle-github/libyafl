@@ -349,66 +349,6 @@ jobs:
         run: ctest --output-on-failure
 
   # Cross-compilation for s390x (IBM System/390 64-bit)
-  cross-compile-s390x:
-    name: Ubuntu - s390x (cross-compiled)
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-
-          # Add s390x architecture
-          sudo dpkg --add-architecture s390x
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-s390x-linux-gnu \
-            qemu-user-binfmt \
-            libc6-dev:s390x \
-            libgcc-s1:s390x
-
-      - name: Create clean build directory
-        run: |
-          rm -rf build
-          mkdir -p build
-
-      - name: Configure CMake for s390x
-        working-directory: build
-        run: |
-          cmake -G "Unix Makefiles" \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=s390x \
-            -DCMAKE_C_COMPILER=s390x-linux-gnu-gcc \
-            -DCMAKE_ASM_COMPILER=s390x-linux-gnu-gcc \
-            ..
-
-      - name: Build
-        working-directory: build
-        run: make -j$(nproc)
-
-      - name: Verify binary architecture
-        working-directory: build
-        run: |
-          echo "=== Binary verification ==="
-          ls -lh bin/test_fcontext_basic
-          file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF64" || { echo "ERROR: Not 64-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*S/390" || { echo "ERROR: Not s390x binary"; exit 1; }
-          echo "✓ Binary architecture verified"
-
-      - name: Run tests
-        working-directory: build
-        run: ctest --output-on-failure
-
   # Cross-compilation in Debian container for additional architectures
   cross-compile-debian:
     name: Debian - ${{ matrix.arch }} (container cross-compile)
@@ -423,8 +363,6 @@ jobs:
           - arch: loongarch64
             compiler_pkg: gcc-loongarch64-linux-gnu
             qemu_pkg: qemu-user-binfmt
-            libc_pkg: libc6-dev:loongarch64
-            libgcc_pkg: libgcc-s1:loongarch64
             processor: loongarch64
             elf_class: ELF64
             elf_machine: LoongArch
@@ -433,8 +371,6 @@ jobs:
           - arch: mips
             compiler_pkg: gcc-mips-linux-gnu
             qemu_pkg: qemu-user-binfmt
-            libc_pkg: libc6-dev:mips
-            libgcc_pkg: libgcc-s1:mips
             processor: mips
             elf_class: ELF32
             elf_machine: MIPS
@@ -443,8 +379,6 @@ jobs:
           - arch: mips64
             compiler_pkg: gcc-mips64-linux-gnuabi64
             qemu_pkg: qemu-user-binfmt
-            libc_pkg: libc6-dev:mips64
-            libgcc_pkg: libgcc-s1:mips64
             processor: mips64
             elf_class: ELF64
             elf_machine: MIPS
@@ -453,8 +387,6 @@ jobs:
           - arch: powerpc
             compiler_pkg: gcc-powerpc-linux-gnu
             qemu_pkg: qemu-user-binfmt
-            libc_pkg: libc6-dev:powerpc
-            libgcc_pkg: libgcc-s1:powerpc
             processor: powerpc
             elf_class: ELF32
             elf_machine: PowerPC
@@ -463,8 +395,6 @@ jobs:
           - arch: ppc64
             compiler_pkg: gcc-powerpc64-linux-gnu
             qemu_pkg: qemu-user-binfmt
-            libc_pkg: libc6-dev:ppc64
-            libgcc_pkg: libgcc-s1:ppc64
             processor: powerpc64
             elf_class: ELF64
             elf_machine: PowerPC
@@ -473,11 +403,17 @@ jobs:
           - arch: sparc64
             compiler_pkg: gcc-sparc64-linux-gnu
             qemu_pkg: qemu-user-binfmt
-            libc_pkg: libc6-dev:sparc64
-            libgcc_pkg: libgcc-s1:sparc64
             processor: sparc64
             elf_class: ELF64
             elf_machine: Sparc
+
+          # IBM System z (s390x)
+          - arch: s390x
+            compiler_pkg: gcc-s390x-linux-gnu
+            qemu_pkg: qemu-user-binfmt
+            processor: s390x
+            elf_class: ELF64
+            elf_machine: S/390
 
     steps:
       - name: Checkout code
@@ -495,18 +431,11 @@ jobs:
         run: |
           apt-get update
 
-          # Add target architecture
-          dpkg --add-architecture ${{ matrix.arch }}
-
-          # Update package lists
-          apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
+          # Install cross-compiler and QEMU
+          # Note: The cross-compiler includes its own libc and libgcc libraries
           apt-get install -y \
             ${{ matrix.compiler_pkg }} \
-            ${{ matrix.qemu_pkg }} \
-            ${{ matrix.libc_pkg }} \
-            ${{ matrix.libgcc_pkg }}
+            ${{ matrix.qemu_pkg }}
 
       - name: Create clean build directory
         run: |
