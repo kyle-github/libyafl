@@ -348,376 +348,6 @@ jobs:
         working-directory: build
         run: ctest --output-on-failure
 
-  # Cross-compilation for loongarch64
-  cross-compile-loongarch64:
-    name: Ubuntu - loongarch64 (cross-compiled)
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-
-          # Add loongarch64 architecture
-          sudo dpkg --add-architecture loongarch64
-
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add loongarch64 ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/loongarch64-ports.list
-          deb [arch=loongarch64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=loongarch64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=loongarch64] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=loongarch64] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-loongarch64-linux-gnu \
-            qemu-user-binfmt \
-            libc6-dev:loongarch64 \
-            libgcc-s1:loongarch64
-
-      - name: Create clean build directory
-        run: |
-          rm -rf build
-          mkdir -p build
-
-      - name: Configure CMake for loongarch64
-        working-directory: build
-        run: |
-          cmake -G "Unix Makefiles" \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=loongarch64 \
-            -DCMAKE_C_COMPILER=loongarch64-linux-gnu-gcc \
-            -DCMAKE_ASM_COMPILER=loongarch64-linux-gnu-gcc \
-            ..
-
-      - name: Build
-        working-directory: build
-        run: make -j$(nproc)
-
-      - name: Verify binary architecture
-        working-directory: build
-        run: |
-          echo "=== Binary verification ==="
-          ls -lh bin/test_fcontext_basic
-          file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF64" || { echo "ERROR: Not 64-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*LoongArch" || { echo "ERROR: Not LoongArch binary"; exit 1; }
-          echo "✓ Binary architecture verified"
-
-      - name: Run tests
-        working-directory: build
-        run: ctest --output-on-failure
-
-  # Cross-compilation for mips (32-bit, O32 ABI)
-  cross-compile-mips:
-    name: Ubuntu - mips (cross-compiled)
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-
-          # Add mips architecture
-          sudo dpkg --add-architecture mips
-
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add mips ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/mips-ports.list
-          deb [arch=mips] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=mips] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=mips] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=mips] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-mips-linux-gnu \
-            qemu-user-binfmt \
-            libc6-dev:mips \
-            libgcc-s1:mips
-
-      - name: Create clean build directory
-        run: |
-          rm -rf build
-          mkdir -p build
-
-      - name: Configure CMake for mips
-        working-directory: build
-        run: |
-          cmake -G "Unix Makefiles" \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=mips \
-            -DCMAKE_C_COMPILER=mips-linux-gnu-gcc \
-            -DCMAKE_ASM_COMPILER=mips-linux-gnu-gcc \
-            ..
-
-      - name: Build
-        working-directory: build
-        run: make -j$(nproc)
-
-      - name: Verify binary architecture
-        working-directory: build
-        run: |
-          echo "=== Binary verification ==="
-          ls -lh bin/test_fcontext_basic
-          file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF32" || { echo "ERROR: Not 32-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*MIPS" || { echo "ERROR: Not MIPS binary"; exit 1; }
-          echo "✓ Binary architecture verified"
-
-      - name: Run tests
-        working-directory: build
-        run: ctest --output-on-failure
-
-  # Cross-compilation for mips64 (64-bit, N64 ABI)
-  cross-compile-mips64:
-    name: Ubuntu - mips64 (cross-compiled)
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-
-          # Add mips64 architecture
-          sudo dpkg --add-architecture mips64
-
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add mips64 ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/mips64-ports.list
-          deb [arch=mips64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=mips64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=mips64] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=mips64] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-mips64-linux-gnuabi64 \
-            qemu-user-binfmt \
-            libc6-dev:mips64 \
-            libgcc-s1:mips64
-
-      - name: Create clean build directory
-        run: |
-          rm -rf build
-          mkdir -p build
-
-      - name: Configure CMake for mips64
-        working-directory: build
-        run: |
-          cmake -G "Unix Makefiles" \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=mips64 \
-            -DCMAKE_C_COMPILER=mips64-linux-gnuabi64-gcc \
-            -DCMAKE_ASM_COMPILER=mips64-linux-gnuabi64-gcc \
-            ..
-
-      - name: Build
-        working-directory: build
-        run: make -j$(nproc)
-
-      - name: Verify binary architecture
-        working-directory: build
-        run: |
-          echo "=== Binary verification ==="
-          ls -lh bin/test_fcontext_basic
-          file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF64" || { echo "ERROR: Not 64-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*MIPS" || { echo "ERROR: Not MIPS binary"; exit 1; }
-          echo "✓ Binary architecture verified"
-
-      - name: Run tests
-        working-directory: build
-        run: ctest --output-on-failure
-
-  # Cross-compilation for ppc32 (PowerPC 32-bit)
-  cross-compile-ppc32:
-    name: Ubuntu - ppc32 (cross-compiled)
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-
-          # Add powerpc architecture
-          sudo dpkg --add-architecture powerpc
-
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add powerpc ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/powerpc-ports.list
-          deb [arch=powerpc] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=powerpc] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=powerpc] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=powerpc] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-powerpc-linux-gnu \
-            qemu-user-binfmt \
-            libc6-dev:powerpc \
-            libgcc-s1:powerpc
-
-      - name: Create clean build directory
-        run: |
-          rm -rf build
-          mkdir -p build
-
-      - name: Configure CMake for ppc32
-        working-directory: build
-        run: |
-          cmake -G "Unix Makefiles" \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=powerpc \
-            -DCMAKE_C_COMPILER=powerpc-linux-gnu-gcc \
-            -DCMAKE_ASM_COMPILER=powerpc-linux-gnu-gcc \
-            ..
-
-      - name: Build
-        working-directory: build
-        run: make -j$(nproc)
-
-      - name: Verify binary architecture
-        working-directory: build
-        run: |
-          echo "=== Binary verification ==="
-          ls -lh bin/test_fcontext_basic
-          file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF32" || { echo "ERROR: Not 32-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*PowerPC" || { echo "ERROR: Not PowerPC binary"; exit 1; }
-          echo "✓ Binary architecture verified"
-
-      - name: Run tests
-        working-directory: build
-        run: ctest --output-on-failure
-
-  # Cross-compilation for ppc64 (PowerPC 64-bit)
-  cross-compile-ppc64:
-    name: Ubuntu - ppc64 (cross-compiled)
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-
-          # Add powerpc64 architecture
-          sudo dpkg --add-architecture ppc64
-
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add ppc64 ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/ppc64-ports.list
-          deb [arch=ppc64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=ppc64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=ppc64] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=ppc64] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
-
-          # Update package lists
-          sudo apt-get update
-
-          # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-powerpc64-linux-gnu \
-            qemu-user-binfmt \
-            libc6-dev:ppc64 \
-            libgcc-s1:ppc64
-
-      - name: Create clean build directory
-        run: |
-          rm -rf build
-          mkdir -p build
-
-      - name: Configure CMake for ppc64
-        working-directory: build
-        run: |
-          cmake -G "Unix Makefiles" \
-            -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=powerpc64 \
-            -DCMAKE_C_COMPILER=powerpc64-linux-gnu-gcc \
-            -DCMAKE_ASM_COMPILER=powerpc64-linux-gnu-gcc \
-            ..
-
-      - name: Build
-        working-directory: build
-        run: make -j$(nproc)
-
-      - name: Verify binary architecture
-        working-directory: build
-        run: |
-          echo "=== Binary verification ==="
-          ls -lh bin/test_fcontext_basic
-          file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF64" || { echo "ERROR: Not 64-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*PowerPC" || { echo "ERROR: Not PowerPC binary"; exit 1; }
-          echo "✓ Binary architecture verified"
-
-      - name: Run tests
-        working-directory: build
-        run: ctest --output-on-failure
-
   # Cross-compilation for s390x (IBM System/390 64-bit)
   cross-compile-s390x:
     name: Ubuntu - s390x (cross-compiled)
@@ -733,19 +363,6 @@ jobs:
 
           # Add s390x architecture
           sudo dpkg --add-architecture s390x
-
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add s390x ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/s390x-ports.list
-          deb [arch=s390x] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=s390x] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=s390x] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=s390x] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
 
           # Update package lists
           sudo apt-get update
@@ -792,60 +409,118 @@ jobs:
         working-directory: build
         run: ctest --output-on-failure
 
-  # Cross-compilation for sparc64 (SPARC 64-bit)
-  cross-compile-sparc64:
-    name: Ubuntu - sparc64 (cross-compiled)
+  # Cross-compilation in Debian container for additional architectures
+  cross-compile-debian:
+    name: Debian - ${{ matrix.arch }} (container cross-compile)
     runs-on: ubuntu-24.04
+    container: debian:bookworm
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # LoongArch64
+          - arch: loongarch64
+            compiler_pkg: gcc-loongarch64-linux-gnu
+            qemu_pkg: qemu-user-binfmt
+            libc_pkg: libc6-dev:loongarch64
+            libgcc_pkg: libgcc-s1:loongarch64
+            processor: loongarch64
+            elf_class: ELF64
+            elf_machine: LoongArch
+
+          # MIPS 32-bit (O32 ABI)
+          - arch: mips
+            compiler_pkg: gcc-mips-linux-gnu
+            qemu_pkg: qemu-user-binfmt
+            libc_pkg: libc6-dev:mips
+            libgcc_pkg: libgcc-s1:mips
+            processor: mips
+            elf_class: ELF32
+            elf_machine: MIPS
+
+          # MIPS 64-bit (N64 ABI)
+          - arch: mips64
+            compiler_pkg: gcc-mips64-linux-gnuabi64
+            qemu_pkg: qemu-user-binfmt
+            libc_pkg: libc6-dev:mips64
+            libgcc_pkg: libgcc-s1:mips64
+            processor: mips64
+            elf_class: ELF64
+            elf_machine: MIPS
+
+          # PowerPC 32-bit
+          - arch: powerpc
+            compiler_pkg: gcc-powerpc-linux-gnu
+            qemu_pkg: qemu-user-binfmt
+            libc_pkg: libc6-dev:powerpc
+            libgcc_pkg: libgcc-s1:powerpc
+            processor: powerpc
+            elf_class: ELF32
+            elf_machine: PowerPC
+
+          # PowerPC 64-bit
+          - arch: ppc64
+            compiler_pkg: gcc-powerpc64-linux-gnu
+            qemu_pkg: qemu-user-binfmt
+            libc_pkg: libc6-dev:ppc64
+            libgcc_pkg: libgcc-s1:ppc64
+            processor: powerpc64
+            elf_class: ELF64
+            elf_machine: PowerPC
+
+          # SPARC 64-bit
+          - arch: sparc64
+            compiler_pkg: gcc-sparc64-linux-gnu
+            qemu_pkg: qemu-user-binfmt
+            libc_pkg: libc6-dev:sparc64
+            libgcc_pkg: libgcc-s1:sparc64
+            processor: sparc64
+            elf_class: ELF64
+            elf_machine: Sparc
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install cross-compilation toolchain
+      - name: Install dependencies
         run: |
-          sudo apt-get update
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            cmake \
+            git
 
-          # Add sparc64 architecture
-          sudo dpkg --add-architecture sparc64
+      - name: Install cross-compilation toolchain for ${{ matrix.arch }}
+        run: |
+          apt-get update
 
-          # Ubuntu 24.04 uses DEB822 format - restrict main repos to amd64/i386
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb$/Types: deb\nArchitectures: amd64 i386/' /etc/apt/sources.list.d/ubuntu.sources
-          fi
-
-          # Add sparc64 ports repository
-          cat << EOF | sudo tee /etc/apt/sources.list.d/sparc64-ports.list
-          deb [arch=sparc64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse
-          deb [arch=sparc64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse
-          deb [arch=sparc64] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
-          deb [arch=sparc64] http://ports.ubuntu.com/ubuntu-ports/ noble-security main restricted universe multiverse
-          EOF
+          # Add target architecture
+          dpkg --add-architecture ${{ matrix.arch }}
 
           # Update package lists
-          sudo apt-get update
+          apt-get update
 
           # Install cross-compiler, QEMU, and runtime libraries
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            gcc-sparc64-linux-gnu \
-            qemu-user-binfmt \
-            libc6-dev:sparc64 \
-            libgcc-s1:sparc64
+          apt-get install -y \
+            ${{ matrix.compiler_pkg }} \
+            ${{ matrix.qemu_pkg }} \
+            ${{ matrix.libc_pkg }} \
+            ${{ matrix.libgcc_pkg }}
 
       - name: Create clean build directory
         run: |
           rm -rf build
           mkdir -p build
 
-      - name: Configure CMake for sparc64
+      - name: Configure CMake for ${{ matrix.arch }}
         working-directory: build
         run: |
           cmake -G "Unix Makefiles" \
             -DCMAKE_SYSTEM_NAME=Linux \
-            -DCMAKE_SYSTEM_PROCESSOR=sparc64 \
-            -DCMAKE_C_COMPILER=sparc64-linux-gnu-gcc \
-            -DCMAKE_ASM_COMPILER=sparc64-linux-gnu-gcc \
+            -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.processor }} \
+            -DCMAKE_C_COMPILER=${{ matrix.arch }}-linux-gnu-gcc \
+            -DCMAKE_ASM_COMPILER=${{ matrix.arch }}-linux-gnu-gcc \
             ..
 
       - name: Build
@@ -858,8 +533,8 @@ jobs:
           echo "=== Binary verification ==="
           ls -lh bin/test_fcontext_basic
           file bin/test_fcontext_basic
-          readelf -h bin/test_fcontext_basic | grep "Class.*ELF64" || { echo "ERROR: Not 64-bit binary"; exit 1; }
-          readelf -h bin/test_fcontext_basic | grep "Machine.*Sparc" || { echo "ERROR: Not SPARC binary"; exit 1; }
+          readelf -h bin/test_fcontext_basic | grep "Class.*${{ matrix.elf_class }}" || { echo "ERROR: Binary class mismatch"; exit 1; }
+          readelf -h bin/test_fcontext_basic | grep "Machine.*${{ matrix.elf_machine }}" || { echo "ERROR: Machine type mismatch"; exit 1; }
           echo "✓ Binary architecture verified"
 
       - name: Run tests

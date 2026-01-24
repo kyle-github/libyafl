@@ -50,7 +50,17 @@ set(CMAKE_DEBUG_POSTFIX "")
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-enable_language(ASM)
+
+# Enable appropriate assembly language based on platform
+if(MSVC)
+    # Windows with MSVC: enable MASM (Microsoft Macro Assembler)
+    enable_language(ASM_MASM)
+    # Set the ASM_MASM compiler (MSVC's ml64.exe or ml.exe)
+    set(CMAKE_ASM_MASM_COMPILER ml.exe CACHE FILEPATH "MASM assembler" FORCE)
+else()
+    # Unix-like systems: use GAS (GNU Assembler)
+    enable_language(ASM)
+endif()
 
 # ============================================================================
 # Compiler Flags
@@ -255,6 +265,15 @@ set(TESTS
 foreach(test ${TESTS})
     add_executable(${test} tests/${test}.c src/fcontext_wrapper.c ${ASM_FILES})
 endforeach()
+
+# For Windows MASM: mark .asm files to be compiled as ASM_MASM language
+if(MSVC)
+    foreach(asm_file ${ASM_FILES})
+        if(asm_file MATCHES "\\.asm$")
+            set_source_files_properties(${asm_file} PROPERTIES LANGUAGE ASM_MASM)
+        endif()
+    endforeach()
+endif()
 
 # ============================================================================
 # Testing
