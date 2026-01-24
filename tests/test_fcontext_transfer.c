@@ -16,9 +16,9 @@
 #include <stdint.h>
 #include "fcontext.h"
 
-#define TEST_DATA_1 ((void *)0xDEADBEEF)
-#define TEST_DATA_2 ((void *)0xCAFEBABE)
-#define TEST_DATA_3 ((void *)0x12345678)
+#define TEST_DATA_1 ((void *)(uintptr_t)0xDEADBEEF)
+#define TEST_DATA_2 ((void *)(uintptr_t)0xCAFEBABE)
+#define TEST_DATA_3 ((void *)(uintptr_t)0x12345678)
 
 static void *received_data = NULL;
 
