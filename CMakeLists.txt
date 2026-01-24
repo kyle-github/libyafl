@@ -55,8 +55,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 if(MSVC)
     # Windows with MSVC: enable MASM (Microsoft Macro Assembler)
     enable_language(ASM_MASM)
-    # Set the ASM_MASM compiler (MSVC's ml64.exe or ml.exe)
-    set(CMAKE_ASM_MASM_COMPILER ml.exe CACHE FILEPATH "MASM assembler" FORCE)
+    # Note: The correct assembler (ml.exe, ml64.exe, or armasm64.exe) will be
+    # set after architecture detection based on the processor type
 else()
     # Unix-like systems: use GAS (GNU Assembler)
     enable_language(ASM)
@@ -250,6 +250,23 @@ else()
 endif()
 
 message(STATUS "Building for ${OS_TYPE} ${ARCH_TYPE}")
+
+# ============================================================================
+# Configure MASM Assembler for Windows
+# ============================================================================
+
+if(MSVC AND WIN32)
+    # Set the correct MASM assembler based on architecture
+    if(ARCH_TYPE STREQUAL "arm64")
+        # ARM64 uses armasm64.exe
+        set(CMAKE_ASM_MASM_COMPILER armasm64.exe CACHE FILEPATH "ARM64 MASM assembler" FORCE)
+        message(STATUS "Configuring for ARM64: using armasm64.exe")
+    else()
+        # x86_64 uses ml64.exe
+        set(CMAKE_ASM_MASM_COMPILER ml64.exe CACHE FILEPATH "x64 MASM assembler" FORCE)
+        message(STATUS "Configuring for x86_64: using ml64.exe")
+    endif()
+endif()
 
 # ============================================================================
 # Test Executables

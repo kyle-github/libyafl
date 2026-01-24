@@ -359,53 +359,29 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # LoongArch64
-          - arch: loongarch64
-            compiler_pkg: gcc-loongarch64-linux-gnu
-            qemu_pkg: qemu-user-binfmt
-            processor: loongarch64
-            elf_class: ELF64
-            elf_machine: LoongArch
-
-          # MIPS 32-bit (O32 ABI)
-          - arch: mips
-            compiler_pkg: gcc-mips-linux-gnu
+          # MIPS 32-bit little-endian (O32 ABI)
+          - arch: mipsel
+            compiler_pkg: gcc-mipsel-linux-gnu
             qemu_pkg: qemu-user-binfmt
             processor: mips
             elf_class: ELF32
             elf_machine: MIPS
 
-          # MIPS 64-bit (N64 ABI)
-          - arch: mips64
-            compiler_pkg: gcc-mips64-linux-gnuabi64
+          # MIPS 64-bit little-endian (N64 ABI)
+          - arch: mips64el
+            compiler_pkg: gcc-mips64el-linux-gnuabi64
             qemu_pkg: qemu-user-binfmt
             processor: mips64
             elf_class: ELF64
             elf_machine: MIPS
 
-          # PowerPC 32-bit
-          - arch: powerpc
-            compiler_pkg: gcc-powerpc-linux-gnu
-            qemu_pkg: qemu-user-binfmt
-            processor: powerpc
-            elf_class: ELF32
-            elf_machine: PowerPC
-
-          # PowerPC 64-bit
-          - arch: ppc64
-            compiler_pkg: gcc-powerpc64-linux-gnu
+          # PowerPC 64-bit little-endian
+          - arch: ppc64el
+            compiler_pkg: gcc-powerpc64le-linux-gnu
             qemu_pkg: qemu-user-binfmt
             processor: powerpc64
             elf_class: ELF64
             elf_machine: PowerPC
-
-          # SPARC 64-bit
-          - arch: sparc64
-            compiler_pkg: gcc-sparc64-linux-gnu
-            qemu_pkg: qemu-user-binfmt
-            processor: sparc64
-            elf_class: ELF64
-            elf_machine: Sparc
 
           # IBM System z (s390x)
           - arch: s390x
@@ -425,7 +401,8 @@ jobs:
           apt-get install -y \
             build-essential \
             cmake \
-            git
+            git \
+            file
 
       - name: Install cross-compilation toolchain for ${{ matrix.arch }}
         run: |
