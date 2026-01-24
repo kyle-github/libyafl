@@ -32,12 +32,12 @@
 #include <stdlib.h>
 
 #ifndef _WIN32
-#include <unistd.h>
-#include <sys/mman.h>
+    #include <sys/mman.h>
+    #include <unistd.h>
 #endif
 
 #ifdef __SANITIZE_ADDRESS__
-#include <sanitizer/asan_interface.h>
+    #include <sanitizer/asan_interface.h>
 #endif
 
 #ifdef __cplusplus
@@ -50,12 +50,12 @@ extern "C" {
 
 /* Default stack size for new contexts (24KB) */
 #ifndef FCONTEXT_DEFAULT_STACK_SIZE
-#define FCONTEXT_DEFAULT_STACK_SIZE (24 * 1024)
+    #define FCONTEXT_DEFAULT_STACK_SIZE (24 * 1024)
 #endif
 
 /* Enable stack watermark checking for high water mark detection */
 #ifndef FCONTEXT_ENABLE_STACK_WATERMARK
-#define FCONTEXT_ENABLE_STACK_WATERMARK 1
+    #define FCONTEXT_ENABLE_STACK_WATERMARK 1
 #endif
 
 /* Stack watermark fill pattern (0xA5 = 10100101) */
@@ -79,8 +79,8 @@ typedef struct fcontext_opaque_t *fcontext_t;
  * Contains the previous context pointer and optional user data.
  */
 typedef struct {
-    fcontext_t prev_context;  /* Context we switched away from */
-    void *data;               /* User data passed on switch */
+    fcontext_t prev_context; /* Context we switched away from */
+    void *data;              /* User data passed on switch */
 } fcontext_transfer_t;
 
 /**
@@ -147,8 +147,7 @@ extern fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp);
  * Advanced feature: fn will be called with the context transfer and can
  * modify the return value before control passes back.
  */
-extern fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp,
-                                          fcontext_ontop_fn_t fn);
+extern fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp, fcontext_ontop_fn_t fn);
 
 /* ========================================================================
  * Page Size and Stack Alignment Utilities
@@ -163,12 +162,10 @@ extern fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp,
  */
 static inline size_t fcontext_get_page_size(void) {
 #ifdef _WIN32
-    return 4096;  /* Standard page size on Windows */
+    return 4096; /* Standard page size on Windows */
 #else
     long page_size = sysconf(_SC_PAGE_SIZE);
-    if (page_size <= 0) {
-        return FCONTEXT_DEFAULT_STACK_SIZE;
-    }
+    if(page_size <= 0) { return FCONTEXT_DEFAULT_STACK_SIZE; }
     return (size_t)page_size;
 #endif
 }
@@ -199,9 +196,9 @@ static inline size_t fcontext_align_to_page(size_t size) {
  * Returns:
  *   Aligned pointer (rounded down to 16-byte boundary)
  */
-static inline void* fcontext_align_stack_pointer(void* ptr) {
+static inline void *fcontext_align_stack_pointer(void *ptr) {
     uintptr_t addr = (uintptr_t)ptr;
-    return (void*)(addr & ~(FCONTEXT_STACK_ALIGNMENT - 1));
+    return (void *)(addr & ~(FCONTEXT_STACK_ALIGNMENT - 1));
 }
 
 /* ========================================================================
@@ -219,19 +216,16 @@ static inline void* fcontext_align_stack_pointer(void* ptr) {
  *
  * This catches stack overflow/underflow while using minimal memory.
  */
-typedef enum {
-    FCONTEXT_ALLOC_MMAP,
-    FCONTEXT_ALLOC_MALLOC
-} fcontext_alloc_type_t;
+typedef enum { FCONTEXT_ALLOC_MMAP, FCONTEXT_ALLOC_MALLOC } fcontext_alloc_type_t;
 
 typedef struct {
     fcontext_t context;
     fcontext_alloc_type_t alloc_type;
-    void *alloc_base;       /* Base of allocated region (mmap or malloc) */
-    void *stack_base;       /* Base of actual stack (after bottom guard page) */
-    size_t alloc_size;      /* Total size of allocated region */
-    size_t stack_size;      /* Size of actual stack (excludes guard pages) */
-    size_t guard_size;      /* Size of guard pages/zones */
+    void *alloc_base;  /* Base of allocated region (mmap or malloc) */
+    void *stack_base;  /* Base of actual stack (after bottom guard page) */
+    size_t alloc_size; /* Total size of allocated region */
+    size_t stack_size; /* Size of actual stack (excludes guard pages) */
+    size_t guard_size; /* Size of guard pages/zones */
 } fcontext_stack_t;
 
 /**
@@ -254,10 +248,10 @@ typedef struct {
  *   - Stack is page-aligned for system page size (4KB on Linux, 16KB on macOS ARM)
  *   - Uses mmap for efficient guard page implementation
  *   - Guard pages catch overflow/underflow with segmentation fault
+ *   - To catch this signal, use sigaltstack() and SA_ONSTACK, as the fiber stack will be invalid
  *   - Use fcontext_destroy() to clean up
  */
-extern fcontext_stack_t *fcontext_create(size_t stack_size,
-                                         fcontext_fn_t entry_fn);
+extern fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn);
 
 /**
  * Create a new context using malloc with software guard zones.
@@ -271,8 +265,7 @@ extern fcontext_stack_t *fcontext_create(size_t stack_size,
  *   guard_size - Size of guard zones (canaries)
  *   entry_fn   - Entry point
  */
-extern fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_size,
-                                                fcontext_fn_t entry_fn);
+extern fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_size, fcontext_fn_t entry_fn);
 
 /**
  * Create a new context using mmap/VirtualAlloc with hardware guard pages.
@@ -284,8 +277,7 @@ extern fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_
  *                nearest system page size.
  *   entry_fn   - Entry point
  */
-extern fcontext_stack_t *fcontext_create_mmap(size_t stack_size, size_t guard_size,
-                                              fcontext_fn_t entry_fn);
+extern fcontext_stack_t *fcontext_create_mmap(size_t stack_size, size_t guard_size, fcontext_fn_t entry_fn);
 
 /**
  * Destroy a context created with fcontext_create().

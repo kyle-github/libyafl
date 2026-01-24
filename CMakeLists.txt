@@ -7,8 +7,17 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Read version from file
-file(READ "VERSION" PROJECT_VERSION_FULL)
-string(STRIP "${PROJECT_VERSION_FULL}" PROJECT_VERSION_FULL)
+set(PROJECT_VERSION_FULL "0.0.0-0")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VER_FILE_CONTENT)
+    if(VER_FILE_CONTENT)
+        string(STRIP "${VER_FILE_CONTENT}" VER_FILE_CONTENT_STRIPPED)
+        if(VER_FILE_CONTENT_STRIPPED)
+            set(PROJECT_VERSION_FULL "${VER_FILE_CONTENT_STRIPPED}")
+        endif()
+    endif()
+endif()
+
 # CMake project version must be numeric (major.minor.patch.tweak)
 string(REPLACE "-" "." PROJECT_VERSION_CMAKE "${PROJECT_VERSION_FULL}")
 project(fcontext VERSION ${PROJECT_VERSION_CMAKE} LANGUAGES C)
@@ -195,6 +204,10 @@ set_target_properties(fcontext PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION $
 foreach(test ${TESTS})
     add_executable(${test} tests/${test}.c)
     target_link_libraries(${test} PRIVATE fcontext)
+    # Link dl library for test_fcontext_guard on Linux/Unix for dladdr
+    if("${test}" STREQUAL "test_fcontext_guard" AND UNIX)
+        target_link_libraries(${test} PRIVATE ${CMAKE_DL_LIBS})
+    endif()
 endforeach()
 
 # ============================================================================
@@ -212,7 +225,7 @@ foreach(test ${TESTS})
 endforeach()
 
 # test_fcontext_guard is expected to crash (segfault) due to stack overflow
-set_tests_properties(test_fcontext_guard PROPERTIES WILL_FAIL TRUE)
+# set_tests_properties(test_fcontext_guard PROPERTIES WILL_FAIL TRUE)
 
 # ============================================================================
 # Summary
