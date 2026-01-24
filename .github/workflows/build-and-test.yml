@@ -85,22 +85,36 @@ jobs:
           fi
 
   build-and-test-windows:
-    name: ${{ matrix.os }} - ${{ matrix.arch }}
+    name: ${{ matrix.os }} - ${{ matrix.arch }} (${{ matrix.compiler }})
     runs-on: ${{ matrix.runner }}
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows AMD64
+          # Windows AMD64 with MSVC
           - runner: windows-latest
             os: Windows
             arch: AMD64
+            compiler: MSVC
 
-          # Windows ARM64
+          # Windows ARM64 with MSVC
           - runner: windows-11-arm
             os: Windows
             arch: ARM64
+            compiler: MSVC
+
+          # Windows AMD64 with MinGW
+          - runner: windows-latest
+            os: Windows
+            arch: AMD64
+            compiler: MinGW
+
+          # Windows ARM64 with MinGW
+          - runner: windows-11-arm
+            os: Windows
+            arch: ARM64
+            compiler: MinGW
 
     steps:
       - name: Checkout code
@@ -109,28 +123,65 @@ jobs:
       - name: Install dependencies
         run: |
           choco install ninja -y
-          # CMake and MSVC are pre-installed on Windows runners
+          # CMake is pre-installed on Windows runners
 
       - name: Setup MSVC environment
+        if: matrix.compiler == 'MSVC'
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.arch == 'ARM64' && 'arm64' || 'x64' }}
+
+      - name: Setup MinGW environment
+        if: matrix.compiler == 'MinGW'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.arch == 'ARM64' && 'CLANGARM64' || 'MINGW64' }}
+          update: true
+          install: >-
+            ${{ matrix.arch == 'ARM64' && 'mingw-w64-clang-aarch64-toolchain' || 'mingw-w64-x86_64-toolchain' }}
+            ${{ matrix.arch == 'ARM64' && 'mingw-w64-clang-aarch64-cmake' || 'mingw-w64-x86_64-cmake' }}
 
       - name: Create clean build directory
         run: |
           Remove-Item -Path build -Recurse -Force -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Path build -Force | Out-Null
 
-      - name: Configure CMake
+      - name: Configure CMake (MSVC)
+        if: matrix.compiler == 'MSVC'
         working-directory: build
         run: cmake -G "Ninja" -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
 
-      - name: Build
+      - name: Configure CMake (MinGW)
+        if: matrix.compiler == 'MinGW'
+        working-directory: build
+        shell: msys2 {0}
+        run: |
+          if [ "${{ matrix.arch }}" = "ARM64" ]; then
+            cmake -G "Ninja" -DCMAKE_C_COMPILER=clang -DCMAKE_ASM_COMPILER=clang ..
+          else
+            cmake -G "Ninja" -DCMAKE_C_COMPILER=gcc -DCMAKE_ASM_COMPILER=gcc ..
+          fi
+
+      - name: Build (MSVC)
+        if: matrix.compiler == 'MSVC'
         working-directory: build
         run: cmake --build . --config Release --parallel 4
 
-      - name: Run tests
+      - name: Build (MinGW)
+        if: matrix.compiler == 'MinGW'
         working-directory: build
+        shell: msys2 {0}
+        run: cmake --build . --parallel 4
+
+      - name: Run tests (MSVC)
+        if: matrix.compiler == 'MSVC'
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: Run tests (MinGW)
+        if: matrix.compiler == 'MinGW'
+        working-directory: build
+        shell: msys2 {0}
         run: ctest --output-on-failure
 
       - name: Display test results

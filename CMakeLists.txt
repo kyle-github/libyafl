@@ -120,14 +120,28 @@ elseif(OS_TYPE STREQUAL "windows")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
         message(STATUS "Detected Windows on x86_64 architecture")
         set(ARCH_TYPE "x86_64")
-        set(ASM_FILES
-            src/asm/x86_64/make_x86_64_ms_pe_gas.S
-            src/asm/x86_64/jump_x86_64_ms_pe_gas.S
-            src/asm/x86_64/ontop_x86_64_ms_pe_gas.S
-        )
+        # Choose assembly format based on compiler
+        if(MSVC)
+            # MSVC uses MASM syntax (.asm files)
+            message(STATUS "Using MASM syntax for MSVC")
+            set(ASM_FILES
+                src/asm/x86_64/make_x86_64_ms_pe_masm.asm
+                src/asm/x86_64/jump_x86_64_ms_pe_masm.asm
+                src/asm/x86_64/ontop_x86_64_ms_pe_masm.asm
+            )
+        else()
+            # MinGW/Clang use GAS syntax (.S files)
+            message(STATUS "Using GAS syntax for MinGW/Clang")
+            set(ASM_FILES
+                src/asm/x86_64/make_x86_64_ms_pe_gas.S
+                src/asm/x86_64/jump_x86_64_ms_pe_gas.S
+                src/asm/x86_64/ontop_x86_64_ms_pe_gas.S
+            )
+        endif()
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64|AARCH64")
         message(STATUS "Detected Windows on arm64 architecture")
         set(ARCH_TYPE "arm64")
+        # ARM64 Windows uses ARMASM syntax (.asm files)
         set(ASM_FILES
             src/asm/arm64/make_arm64_aapcs_pe_armasm.asm
             src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
@@ -253,15 +267,13 @@ message(STATUS "Building for ${OS_TYPE} ${ARCH_TYPE}")
 # Enable Assembly Language (after architecture detection)
 # ============================================================================
 
-if(MSVC AND WIN32)
+if(WIN32 AND MSVC)
+    # MSVC on Windows
     if(ARCH_TYPE STREQUAL "arm64")
         # ARM64 uses armasm64.exe (ARM Assembler, not MASM)
-        # CMake's ASM_MASM doesn't support armasm64, so we'll handle compilation manually
         find_program(CMAKE_ASM_COMPILER armasm64.exe REQUIRED)
         message(STATUS "Found ARM64 assembler: ${CMAKE_ASM_COMPILER}")
-        # Enable generic ASM language for ARM64
         enable_language(ASM)
-        # Set ARM-specific assembler flags
         set(CMAKE_ASM_FLAGS "-machine ARM64")
     else()
         # x86_64 uses ml64.exe (MASM)
@@ -270,7 +282,7 @@ if(MSVC AND WIN32)
         message(STATUS "Configuring for x86_64: using ml64.exe")
     endif()
 else()
-    # Unix-like systems: use GAS (GNU Assembler)
+    # Unix-like systems OR MinGW/Clang on Windows: use GAS (GNU Assembler)
     enable_language(ASM)
 endif()
 
