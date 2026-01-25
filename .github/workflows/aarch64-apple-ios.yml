@@ -24,11 +24,11 @@ jobs:
             - name: Run Tests
               run: |
                   # Run tests using xcodebuild with iOS Simulator destination
-                  xcodebuild test -scheme test_fcontext_basic -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_simple -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_transfer -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_alignment -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_guard -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_watermark_mmap -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_watermark_malloc -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
-                  xcodebuild test -scheme test_fcontext_low_level -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' -derivedDataPath build/DerivedData
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_basic -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_simple -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_transfer -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_alignment -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_guard -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_watermark_mmap -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_watermark_malloc -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
+                  xcodebuild test -project build/fcontext.xcodeproj -scheme test_fcontext_low_level -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest'
