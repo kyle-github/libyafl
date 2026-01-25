@@ -19,7 +19,6 @@
 ![s390x-ibm-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
 ![sparc64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
 ![powerpc-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
-![xtensa-esp32-elf](https://github.com/libplctag/fcontext/actions/workflows/xtensa-esp32-elf.yml/badge.svg)
 ![i386-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
 [![codecov](https://codecov.io/gh/libplctag/fcontext/graph/badge.svg)](https://codecov.io/gh/libplctag/fcontext)
 

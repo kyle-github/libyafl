@@ -22,7 +22,6 @@ on:
             - s390x-ibm-linux-gnu
             - sparc64-unknown-linux-gnu
             - powerpc-unknown-linux-gnu
-            - xtensa-esp32-elf
             - i386-unknown-linux-gnu
         types:
             - completed
@@ -62,7 +61,6 @@ jobs:
                         "s390x-ibm-linux-gnu",
                         "sparc64-unknown-linux-gnu",
                         "powerpc-unknown-linux-gnu",
-                        "xtensa-esp32-elf",
                         "i386-unknown-linux-gnu"
                       ];
 
