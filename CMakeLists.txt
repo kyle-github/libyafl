@@ -153,9 +153,6 @@ else()
     message(FATAL_ERROR "Configuration for triple '${TRIPLE}' not found in toolchains/")
 endif()
 
-# Remove any ontop assembly files that might have been added by toolchains
-list(FILTER ASM_FILES EXCLUDE REGEX "ontop")
-
 # ============================================================================
 # Stack Direction Check
 # ============================================================================

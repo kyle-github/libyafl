@@ -1,7 +1,6 @@
 set(ASM_FILES
     src/asm/arm64/make_arm64_aapcs_pe_armasm.asm
     src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
-    src/asm/arm64/ontop_arm64_aapcs_pe_armasm.asm
 )
 
 find_program(ARMASM64 armasm64.exe REQUIRED)

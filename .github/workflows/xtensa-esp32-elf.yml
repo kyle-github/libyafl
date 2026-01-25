@@ -1,4 +1,6 @@
-name: xtensa-esp32-elf
+# DISABLED - Xtensa/ESP32 support is not maintained
+# This workflow file is kept for historical reference only
+name: xtensa-esp32-elf (DISABLED)
 on: [push, pull_request]
 
 jobs:
