@@ -10,11 +10,11 @@
  *  http://www.boost.org/LICENSE_1_0.txt)
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "fcontext.h"
 #include <assert.h>
 #include <stdint.h>
-#include "fcontext.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #define TEST_DATA_1 ((void *)(uintptr_t)0xDEADBEEF)
 #define TEST_DATA_2 ((void *)(uintptr_t)0xCAFEBABE)
@@ -22,7 +22,7 @@
 
 static void *received_data = NULL;
 
-void transfer_fiber(fcontext_transfer_t t) {
+fcontext_transfer_t transfer_fiber(fcontext_transfer_t t) {
     printf("  [fiber] received data: %p\n", t.data);
     fflush(stdout);
     assert(t.data == TEST_DATA_1);
@@ -36,6 +36,9 @@ void transfer_fiber(fcontext_transfer_t t) {
     fflush(stdout);
     assert(t.data == TEST_DATA_3);
     received_data = t.data;
+
+    /* Return to trampoline */
+    return t;
 }
 
 int main(void) {

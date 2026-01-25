@@ -37,7 +37,7 @@ static void *g_stack_base = NULL;
 static size_t g_stack_size = 0;
 
 /* Recursive function to consume stack until overflow */
-void overflow_fiber(fcontext_transfer_t t) {
+fcontext_transfer_t overflow_fiber(fcontext_transfer_t t) {
     /* Allocate 1KB on stack */
     /* Force alignment to avoid potential SIGILL from SIMD instructions on unaligned stack */
 #if defined(_MSC_VER)
@@ -58,6 +58,7 @@ void overflow_fiber(fcontext_transfer_t t) {
 
     /* Prevent tail call optimization */
     (void)buffer[0];
+    return t;
 }
 
 #ifndef _WIN32

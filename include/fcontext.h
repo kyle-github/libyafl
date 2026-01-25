@@ -88,7 +88,7 @@ typedef struct {
  * Called when context is first entered via jump_fcontext.
  * The transfer_t contains the previous context and initial data.
  */
-typedef void (*fcontext_fn_t)(fcontext_transfer_t);
+typedef fcontext_transfer_t (*fcontext_fn_t)(fcontext_transfer_t);
 
 /**
  * Function run "on top" of an existing context.

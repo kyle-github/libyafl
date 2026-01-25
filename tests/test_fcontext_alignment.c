@@ -10,15 +10,15 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "fcontext.h"
 #include <assert.h>
 #include <stdint.h>
-#include "fcontext.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 static int alignment_ok = 0;
 
-void align_fiber(fcontext_transfer_t t) {
+fcontext_transfer_t align_fiber(fcontext_transfer_t t) {
     uintptr_t sp = 0;
 
     /* Capture Stack Pointer using inline assembly */
@@ -60,29 +60,29 @@ void align_fiber(fcontext_transfer_t t) {
      * Call pushes 8-byte return address.
      * On entry: RSP % 16 == 8.
      */
-    if ((sp & 0xF) == 0x8) {
+    if((sp & 0xF) == 0x8) {
         printf("  [fiber] x86_64 ABI verified (RSP %% 16 == 8)\n");
         alignment_ok = 1;
-    } else if ((sp & 0xF) == 0x0) {
+    } else if((sp & 0xF) == 0x0) {
         /* Some runtimes/compilers might force 16-byte alignment on entry for SIMD optimization */
         printf("  [fiber] 16-byte alignment verified (RSP %% 16 == 0)\n");
         alignment_ok = 1;
     }
 #elif defined(__aarch64__)
     /* AAPCS64: SP must be 16-byte aligned at all times */
-    if ((sp & 0xF) == 0x0) {
+    if((sp & 0xF) == 0x0) {
         printf("  [fiber] ARM64 AAPCS verified (SP %% 16 == 0)\n");
         alignment_ok = 1;
     }
 #else
     /* Default check: 8-byte or 16-byte alignment is generally acceptable for others */
-    if ((sp & 0x7) == 0x0) {
+    if((sp & 0x7) == 0x0) {
         printf("  [fiber] Basic alignment verified (>= 8 bytes)\n");
         alignment_ok = 1;
     }
 #endif
 
-    jump_fcontext(t.prev_context, NULL);
+    return t;
 }
 
 int main(void) {
@@ -95,7 +95,7 @@ int main(void) {
 
     fcontext_destroy(state);
 
-    if (alignment_ok) {
+    if(alignment_ok) {
         printf("\n✓ PASS: Stack alignment requirements met\n");
         return 0;
     } else {

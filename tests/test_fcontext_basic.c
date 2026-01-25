@@ -11,18 +11,18 @@
  *  http://www.boost.org/LICENSE_1_0.txt)
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "fcontext.h"
 #include <assert.h>
 #include <stdint.h>
-#include "fcontext.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 static int test_phase = 0;
 
 /**
  * Fiber function - entry point for new context
  */
-void fiber_func(fcontext_transfer_t t) {
+fcontext_transfer_t fiber_func(fcontext_transfer_t t) {
     printf("  [fiber] entered context\n");
     fflush(stdout);
     assert(test_phase == 0);
@@ -39,6 +39,9 @@ void fiber_func(fcontext_transfer_t t) {
 
     printf("  [fiber] finishing\n");
     fflush(stdout);
+
+    /* Return to trampoline to switch back */
+    return t;
 }
 
 int main(void) {
@@ -47,7 +50,7 @@ int main(void) {
 
     /* Create context with guarded stack using mmap */
     fcontext_stack_t *state = fcontext_create(24 * 1024, fiber_func);
-    if (state == NULL) {
+    if(state == NULL) {
         fprintf(stderr, "Failed to create context\n");
         return 1;
     }

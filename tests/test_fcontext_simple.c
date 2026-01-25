@@ -10,18 +10,19 @@
  *  http://www.boost.org/LICENSE_1_0.txt)
  */
 
+#include "fcontext.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include "fcontext.h"
 
 static int called = 0;
 
-void simple_fiber(fcontext_transfer_t t) {
+fcontext_transfer_t simple_fiber(fcontext_transfer_t t) {
     called = 1;
     printf("  [fiber] entry function called\n");
-    /* Return to caller - will cause jump_fcontext to return */
-    jump_fcontext(t.prev_context, (void *)0x42);
+    /* Return transfer - trampoline will handle the jump back to main */
+    t.data = (void *)0x42;
+    return t;
 }
 
 int main(void) {
