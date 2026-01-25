@@ -24,10 +24,6 @@
  *                                                                                      *
  ****************************************************************************************/
 
-#ifdef __x86_64__
-#include "jump_x86_64_sysv_elf_gas.S"
-#else
-
 .file "jump_i386_sysv_elf_gas.S"
 .text
 .globl jump_fcontext
@@ -96,5 +92,3 @@ jump_fcontext:
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits
-
-#endif
