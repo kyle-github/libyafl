@@ -94,7 +94,7 @@ All combinations below are automatically tested on each push via GitHub Actions:
 
 ### Two-Layer Design
 
-1. **Low-Level API** (`make_fcontext`, `jump_fcontext`)
+1. **Low-Level API** (`fcontext_init`, `fcontext_switch`)
    - Written in architecture/OS-specific assembly. Note: `ontop_fcontext` is not available.
 
 2. **High-Level Convenience API** (`fcontext_create`, `fcontext_destroy`)
@@ -109,10 +109,10 @@ From `fcontext.h`.
 
 ```c
 /* Create a context at a given stack location */
-fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn);
+fcontext_t fcontext_init(void *sp, size_t size, fcontext_fn_t fn);
 
 /* Switch to a context */
-fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp);
+fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp);
 ```
 
 ### Types
@@ -144,7 +144,7 @@ typedef fcontext_transfer_t (*fcontext_ontop_fn_t)(fcontext_transfer_t);
 void fiber_entry(fcontext_transfer_t t) {
     printf("Fiber executing\n");
     /* Switch back to caller */
-    jump_fcontext(t.prev_context, NULL);
+    fcontext_switch(t.prev_context, NULL);
 }
 
 int main(void) {
@@ -153,14 +153,14 @@ int main(void) {
     void *stack = malloc(stack_size);
 
     /* Create context at top of stack */
-    fcontext_t ctx = make_fcontext(
+    fcontext_t ctx = fcontext_init(
         (char *)stack + stack_size,  /* Stack pointer (top of stack) */
         stack_size,                   /* Stack size */
         fiber_entry                   /* Entry function */
     );
 
     /* Enter context */
-    fcontext_transfer_t t = jump_fcontext(ctx, NULL);
+    fcontext_transfer_t t = fcontext_switch(ctx, NULL);
 
     /* When execution returns here, fiber has completed */
     printf("Back in main\n");
@@ -190,7 +190,7 @@ fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn);
 void fcontext_destroy(fcontext_stack_t *ctx);
 
 /* Switch to context */
-#define fcontext_swap(ctx, data) jump_fcontext((ctx)->context, (data))
+#define fcontext_swap(ctx, data) fcontext_switch((ctx)->context, (data))
 ```
 
 ### Stack Layout
@@ -230,7 +230,7 @@ When enabled (default), the entire stack is filled with pattern `0xA5` at creati
 fcontext_stack_t *ctx = fcontext_create(16 * 1024, my_fiber);
 
 /* Run the fiber */
-jump_fcontext(ctx->context, NULL);
+fcontext_switch(ctx->context, NULL);
 
 /* Check stack usage */
 size_t used = fcontext_get_stack_usage(ctx);
@@ -261,7 +261,7 @@ void fiber_func(fcontext_transfer_t t) {
     printf("Fiber running\n");
     int *counter = (int *)t.data;
     (*counter)++;
-    jump_fcontext(t.prev_context, NULL);
+    fcontext_switch(t.prev_context, NULL);
 }
 
 int main(void) {
@@ -273,7 +273,7 @@ int main(void) {
     fcontext_stack_t *ctx = fcontext_create(24 * 1024, fiber_func);
 
     /* Enter context, passing counter via data */
-    fcontext_transfer_t t = jump_fcontext(ctx->context, &counter);
+    fcontext_transfer_t t = fcontext_switch(ctx->context, &counter);
 
     printf("Counter after fiber: %d\n", counter);  /* Should be 1 */
 
@@ -295,9 +295,9 @@ ev_fiber_t scheduler = ev_fiber_current();
 
 void fiber_a(fcontext_transfer_t t) {
     printf("A1\n");
-    jump_fcontext(scheduler, NULL);  /* Yield to scheduler */
+    fcontext_switch(scheduler, NULL);  /* Yield to scheduler */
     printf("A2\n");
-    jump_fcontext(scheduler, NULL);  /* Yield to scheduler again */
+    fcontext_switch(scheduler, NULL);  /* Yield to scheduler again */
 }
 
 int main() {
@@ -306,10 +306,10 @@ int main() {
     fcontext_stack_t *a = fcontext_create(4096, fiber_a);
 
     /* First entry */
-    fcontext_transfer_t t = jump_fcontext(a->context, NULL);  /* A1 printed */
+    fcontext_transfer_t t = fcontext_switch(a->context, NULL);  /* A1 printed */
 
     /* Resume */
-    t = jump_fcontext(t.prev_context, NULL);  /* A2 printed */
+    t = fcontext_switch(t.prev_context, NULL);  /* A2 printed */
 
     fcontext_destroy(a);
 }
@@ -401,11 +401,11 @@ This is much more efficient than pre-allocating large stacks for many fibers.
 
 1. **Stack grows downward** - Not suitable for systems with upward-growing stacks (uncommon)
 
-2. **Entry function doesn't return** - Fiber function should call `jump_fcontext()` to exit:
+2. **Entry function doesn't return** - Fiber function should call `fcontext_switch()` to exit:
    ```c
    void fiber_func(fcontext_transfer_t t) {
        // ... do work ...
-       jump_fcontext(t.prev_context, NULL);  /* Must explicitly yield */
+       fcontext_switch(t.prev_context, NULL);  /* Must explicitly yield */
        /* If we reach here after being resumed, handle that */
    }
    ```

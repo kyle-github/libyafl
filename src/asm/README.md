@@ -19,12 +19,12 @@ Each architecture has three types of functions:
 1. **make_*_*.S** - Create/initialize a context
    - Sets up stack frame and instruction pointer
    - Called once per new context
-   - Maps to: `fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn)`
+   - Maps to: `fcontext_t fcontext_init(void *sp, size_t size, fcontext_fn_t fn)`
 
 2. **jump_*_*.S** - Switch to a context
    - Saves current state, restores new context
    - Called frequently (on every context switch)
-   - Maps to: `fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp)`
+   - Maps to: `fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp)`
 
 ## ABI and OS-Specific Suffixes
 
