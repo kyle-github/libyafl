@@ -15,32 +15,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int called = 0;
+static bool called = false;
 
-fcontext_transfer_t simple_fiber(fcontext_transfer_t t) {
-    called = 1;
+void simple_fiber(fcontext_transfer_t t) {
+    called = true;
     printf("  [fiber] entry function called\n");
-    /* Return transfer - trampoline will handle the jump back to main */
-    t.data = (void *)0x42;
-    return t;
+    (void)t;
 }
 
 int main(void) {
     printf("=== fcontext Simple Test ===\n");
 
-    fcontext_stack_t *state = fcontext_create(24 * 1024, simple_fiber);
+    fcontext_stack_t *state = fcontext_vmem_stack(24 * 1024);
     assert(state != NULL);
-    printf("[main] created context with guarded stack\n");
+    printf("[main] allocated stack with guarded pages\n");
 
-    called = 0;
+    state->context = fcontext_init(state->stack_top, state->stack_size, simple_fiber);
+    printf("[main] initialized context\n");
+
+    called = false;
     printf("[main] entering context...\n");
-    fcontext_transfer_t t = jump_fcontext(state->context, NULL);
+    fcontext_transfer_t t = fcontext_switch(state->context, NULL);
 
-    assert(called == 1);
+    assert(called);
     assert(t.data == (void *)0x42);
     printf("[main] context called fiber correctly\n");
 
-    fcontext_destroy(state);
+    fcontext_stack_destroy(state);
     printf("\n✓ PASS: Simple context entry works\n");
     fflush(stdout);
     return 0;

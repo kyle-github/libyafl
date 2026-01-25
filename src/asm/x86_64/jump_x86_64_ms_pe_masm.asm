@@ -89,7 +89,7 @@ ENDIF
 
 .code
 
-jump_fcontext PROC BOOST_CONTEXT_EXPORT FRAME
+fcontext_switch PROC BOOST_CONTEXT_EXPORT FRAME
     .endprolog
 
     ; prepare stack
@@ -206,5 +206,5 @@ ENDIF
 
     ; indirect jump to context
     jmp  r10
-jump_fcontext ENDP
+fcontext_switch ENDP
 END

@@ -16,9 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int alignment_ok = 0;
+static bool alignment_ok = false;
 
-fcontext_transfer_t align_fiber(fcontext_transfer_t t) {
+void align_fiber(fcontext_transfer_t t) {
     uintptr_t sp = 0;
 
     /* Capture Stack Pointer using inline assembly */
@@ -62,38 +62,41 @@ fcontext_transfer_t align_fiber(fcontext_transfer_t t) {
      */
     if((sp & 0xF) == 0x8) {
         printf("  [fiber] x86_64 ABI verified (RSP %% 16 == 8)\n");
-        alignment_ok = 1;
+        alignment_ok = true;
     } else if((sp & 0xF) == 0x0) {
         /* Some runtimes/compilers might force 16-byte alignment on entry for SIMD optimization */
         printf("  [fiber] 16-byte alignment verified (RSP %% 16 == 0)\n");
-        alignment_ok = 1;
+        alignment_ok = true;
     }
 #elif defined(__aarch64__)
     /* AAPCS64: SP must be 16-byte aligned at all times */
     if((sp & 0xF) == 0x0) {
         printf("  [fiber] ARM64 AAPCS verified (SP %% 16 == 0)\n");
-        alignment_ok = 1;
+        alignment_ok = true;
     }
 #else
     /* Default check: 8-byte or 16-byte alignment is generally acceptable for others */
     if((sp & 0x7) == 0x0) {
         printf("  [fiber] Basic alignment verified (>= 8 bytes)\n");
-        alignment_ok = 1;
+        alignment_ok = true;
     }
 #endif
 
-    return t;
+    (void)t;
 }
 
 int main(void) {
     printf("=== fcontext Stack Alignment Test ===\n");
 
-    fcontext_stack_t *state = fcontext_create(24 * 1024, align_fiber);
+    fcontext_stack_t *state = fcontext_vmem_stack(24 * 1024);
     assert(state != NULL);
 
-    jump_fcontext(state->context, NULL);
+    state->context = fcontext_init(state->stack_top, state->stack_size, align_fiber);
+    assert(state->context != NULL);
 
-    fcontext_destroy(state);
+    fcontext_switch(state->context, NULL);
+
+    fcontext_stack_destroy(state);
 
     if(alignment_ok) {
         printf("\n✓ PASS: Stack alignment requirements met\n");

@@ -63,10 +63,10 @@
 .text
 .balign 4
 
-.globl	make_fcontext
-.def	make_fcontext;	.scl	2;	.type	32;	.endef
-.seh_proc	make_fcontext
-make_fcontext:
+.globl	fcontext_init
+.def	fcontext_init;	.scl	2;	.type	32;	.endef
+.seh_proc	fcontext_init
+fcontext_init:
 .seh_endprologue
     // save stack top address to x3
     mov x3, x0
@@ -85,7 +85,7 @@ make_fcontext:
     // save 0 as 'fiber data'
     str  xzr, [x0, #0xb8]
 
-    // third arg of make_fcontext() == address of context-function
+    // third arg of fcontext_init() == address of context-function
     // store address as x19 for trampoline
     str  x2, [x0, #0x40]
     // store trampoline address as pc
@@ -115,4 +115,4 @@ finish:
 .def	_exit;	.scl	2;	.type	32;	.endef  /* standard C library function */
 
 .section .drectve
-.ascii " -export:\"make_fcontext\""
+.ascii " -export:\"fcontext_init\""

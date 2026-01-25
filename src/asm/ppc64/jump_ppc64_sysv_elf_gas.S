@@ -67,34 +67,34 @@
  *******************************************************/
 
 .file "jump_ppc64_sysv_elf_gas.S"
-.globl jump_fcontext
-.hidden jump_fcontext
+.globl fcontext_switch
+.hidden fcontext_switch
 #if _CALL_ELF == 2
 	.text
 	.align 2
-jump_fcontext:
-        addis   %r2, %r12, .TOC.-jump_fcontext@ha
-        addi    %r2, %r2, .TOC.-jump_fcontext@l
-        .localentry jump_fcontext, . - jump_fcontext
+fcontext_switch:
+        addis   %r2, %r12, .TOC.-fcontext_switch@ha
+        addi    %r2, %r2, .TOC.-fcontext_switch@l
+        .localentry fcontext_switch, . - fcontext_switch
 #else
 	.section ".opd","aw"
 	.align 3
-jump_fcontext:
+fcontext_switch:
 # ifdef _CALL_LINUX
-        .quad   .L.jump_fcontext,.TOC.@tocbase,0
-        .type   jump_fcontext,@function
+        .quad   .L.fcontext_switch,.TOC.@tocbase,0
+        .type   fcontext_switch,@function
         .text
         .align 2
-.L.jump_fcontext:
+.L.fcontext_switch:
 # else
-        .hidden .jump_fcontext
-        .globl  .jump_fcontext
-        .quad   .jump_fcontext,.TOC.@tocbase,0
-        .size   jump_fcontext,24
-        .type   .jump_fcontext,@function
+        .hidden .fcontext_switch
+        .globl  .fcontext_switch
+        .quad   .fcontext_switch,.TOC.@tocbase,0
+        .size   fcontext_switch,24
+        .type   .fcontext_switch,@function
         .text
         .align 2
-.jump_fcontext:
+.fcontext_switch:
 # endif
 #endif
     # reserve space on stack
@@ -199,7 +199,7 @@ jump_fcontext:
 
     # jump to context
     bctr
-	.size jump_fcontext, .-jump_fcontext
+	.size fcontext_switch, .-fcontext_switch
 #else
     # zero in r3 indicates first jump to context-function
     cmpdi %r3, 0
@@ -220,9 +220,9 @@ use_entry_arg:
     # jump to context
     bctr
 # ifdef _CALL_LINUX
-	.size .jump_fcontext, .-.L.jump_fcontext
+	.size .fcontext_switch, .-.L.fcontext_switch
 # else
-	.size .jump_fcontext, .-.jump_fcontext
+	.size .fcontext_switch, .-.fcontext_switch
 # endif
 #endif
 

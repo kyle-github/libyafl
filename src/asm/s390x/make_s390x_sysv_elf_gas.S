@@ -45,9 +45,9 @@
 
 .text
 .align	8
-.global	make_fcontext
-.hidden make_fcontext
-.type	make_fcontext, @function
+.global	fcontext_init
+.hidden fcontext_init
+.type	fcontext_init, @function
 
 #define ARG_OFFSET         0
 #define GR_OFFSET          16
@@ -59,7 +59,7 @@
 
 /*
 
-fcontext_t make_fcontext( void * sp, std::size_t size, void (* fn)( transfer_t) );
+fcontext_t fcontext_init( void * sp, std::size_t size, void (* fn)( transfer_t) );
 
 Create and return a context below SP to call FN.
 
@@ -70,7 +70,7 @@ r4 - The address of the context function
 
 */
 
-make_fcontext:
+fcontext_init:
 	.machine "z10"
 	/* Align the stack to an 8 byte boundary.  */
 	nill    %r2,0xfff8
@@ -78,7 +78,7 @@ make_fcontext:
 	/* Allocate stack space for the context.  */
 	aghi	%r2,-CONTEXT_SIZE
 
-	/* Set the r2 save slot to zero.  This indicates jump_fcontext
+	/* Set the r2 save slot to zero.  This indicates fcontext_switch
 	   that this is a special context.  */
 	mvghi	GR_OFFSET(%r2),0
 
@@ -100,10 +100,10 @@ make_fcontext:
 
 finish:
 	/* In finish tasks, you load the exit code and exit the
-	   make_fcontext This is called when the context-function is
+	   fcontext_init This is called when the context-function is
 	   entirely executed.  */
 	lghi	%r2,0
 	brasl	%r14,_exit@PLT
 
-.size   make_fcontext,.-make_fcontext
+.size   fcontext_init,.-fcontext_init
 .section .note.GNU-stack,"",%progbits

@@ -1,3 +1,8 @@
+# CMake toolchain configuration for mips64el-unknown-linux-gnuabi64
+# Copyright Kyle Hayes (2026)
+# Distributed under the Boost Software License, Version 1.0.
+# See LICENSE file for details
+
 set(ASM_FILES
     src/asm/mips64/make_mips64_n64_elf_gas.S
     src/asm/mips64/jump_mips64_n64_elf_gas.S

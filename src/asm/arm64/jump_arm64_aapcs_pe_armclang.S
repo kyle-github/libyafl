@@ -63,9 +63,9 @@
 .text
 .balign 4
 
-.def	jump_fcontext;	.scl	2;	.type	32;	.endef
-.seh_proc	jump_fcontext
-jump_fcontext:
+.def	fcontext_switch;	.scl	2;	.type	32;	.endef
+.seh_proc	fcontext_switch
+fcontext_switch:
 .seh_endprologue
     // prepare stack for GP + FPU
     sub  sp, sp, #0xd0
@@ -138,4 +138,4 @@ jump_fcontext:
 .seh_endproc
 
 .section .drectve
-.ascii " -export:\"jump_fcontext\""
+.ascii " -export:\"fcontext_switch\""

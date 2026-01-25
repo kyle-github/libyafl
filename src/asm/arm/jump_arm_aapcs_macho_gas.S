@@ -39,10 +39,10 @@
  *******************************************************/
 
 .text
-.private_extern _jump_fcontext
-.globl _jump_fcontext
+.private_extern _fcontext_switch
+.globl _fcontext_switch
 .align 2
-_jump_fcontext:
+_fcontext_switch:
     @ save LR as PC
     push {lr}
     @ save hidden,V1-V8,LR

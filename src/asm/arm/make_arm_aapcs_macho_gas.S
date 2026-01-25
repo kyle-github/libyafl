@@ -39,17 +39,17 @@
  *******************************************************/
 
 .text
-.private_extern _make_fcontext
-.globl _make_fcontext
+.private_extern _fcontext_init
+.globl _fcontext_init
 .align 2
-_make_fcontext:
+_fcontext_init:
     @ shift address in A1 to lower 16 byte boundary
     bic  a1, a1, #15
 
     @ reserve space for context-data on context-stack
     sub  a1, a1, #124
 
-    @ third arg of make_fcontext() == address of context-function
+    @ third arg of fcontext_init() == address of context-function
     str  a3, [a1, #108]
 
     @ compute address of returned transfer_t

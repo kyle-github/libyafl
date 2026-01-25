@@ -45,9 +45,9 @@
 
 .text
 .align	8
-.global	jump_fcontext
-.hidden jump_fcontext
-.type	jump_fcontext, @function
+.global	fcontext_switch
+.hidden fcontext_switch
+.type	fcontext_switch, @function
 
 #define ARG_OFFSET         0
 #define GR_OFFSET          16
@@ -68,7 +68,7 @@ struct transfer_t {
    void    *   data;
 };
 
-transfer_t jump_fcontext( fcontext_t const to,
+transfer_t fcontext_switch( fcontext_t const to,
 			  void * data);
 
 Incoming args
@@ -78,7 +78,7 @@ r4 - Data pointer
 
 */
 
-jump_fcontext:
+fcontext_switch:
 	.machine "z10"
 	/* Reserve stack space to store the current context.  */
 	aghi	%r15,-CONTEXT_SIZE
@@ -133,7 +133,7 @@ jump_fcontext:
 	ltg	%r2,GR_OFFSET(%r15)
 	jnz	use_return_slot
 
-	/* We're restoring a context created by make_fcontext.
+	/* We're restoring a context created by fcontext_init.
 	   This is going to be the argument of the entry point
 	   of the fiber. We're placing it on top of the ABI
 	   defined register save area of the fiber's own stack. */
@@ -144,9 +144,9 @@ jump_fcontext:
 
 use_return_slot:
 	/* Save the two fields in transfer_t.  When calling a
-	   make_fcontext function this becomes the function argument of
+	   fcontext_init function this becomes the function argument of
 	   the target function, otherwise it will be the return value of
-	   jump_fcontext.  */
+	   fcontext_switch.  */
 	stg	%r1,0(%r2)
 	stg	%r4,8(%r2)
 
@@ -157,5 +157,5 @@ use_return_slot:
 	br	%r5
 
 
-.size   jump_fcontext,.-jump_fcontext
+.size   fcontext_switch,.-fcontext_switch
 .section .note.GNU-stack,"",%progbits

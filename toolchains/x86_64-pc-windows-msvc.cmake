@@ -1,3 +1,8 @@
+# CMake toolchain configuration for x86_64-pc-windows-msvc
+# Copyright Kyle Hayes (2026)
+# Distributed under the Boost Software License, Version 1.0.
+# See LICENSE file for details
+
 set(ASM_FILES
     src/asm/x86_64/make_x86_64_ms_pe_masm.asm
     src/asm/x86_64/jump_x86_64_ms_pe_masm.asm

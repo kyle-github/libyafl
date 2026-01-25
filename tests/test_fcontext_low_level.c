@@ -1,8 +1,8 @@
 /**
  * test_fcontext_low_level.c
- * Tests the low-level API (make_fcontext) directly.
+ * Tests the low-level API (fcontext_init) directly.
  *
- * Verifies that make_fcontext works with a manually allocated stack,
+ * Verifies that fcontext_init works with a manually allocated stack,
  * bypassing the fcontext_create wrapper.
  *
  * Copyright Kyle Hayes (2026)
@@ -14,23 +14,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int fiber_ran = 0;
+static bool fiber_ran = false;
 
 void low_level_fiber(fcontext_transfer_t t) {
     printf("  [fiber] entered low-level fiber\n");
 
     /* Verify data passed */
-    int *value = (int *)t.data;
+    int32_t *value = (int32_t *)t.data;
     assert(*value == 123);
 
-    fiber_ran = 1;
+    fiber_ran = true;
 
     printf("  [fiber] jumping back\n");
-    jump_fcontext(t.prev_context, NULL);
+    fcontext_switch(t.prev_context, NULL);
 }
 
 int main(void) {
-    printf("=== fcontext Low-Level API Test (make_fcontext) ===\n");
+    printf("=== fcontext Low-Level API Test (fcontext_init) ===\n");
 
     /* 1. Manually allocate stack */
     size_t stack_size = 16 * 1024;
@@ -47,20 +47,20 @@ int main(void) {
     printf("[main] Stack allocated at %p, SP aligned to %p\n", stack_buffer, sp);
 
     /* 3. Create context directly */
-    fcontext_t ctx = make_fcontext(sp, stack_size, low_level_fiber);
+    fcontext_t ctx = fcontext_init(sp, stack_size, low_level_fiber);
     assert(ctx != NULL);
 
     /* 4. Jump to context */
-    int data = 123;
+    int32_t data = 123;
     printf("[main] Jumping to fiber...\n");
-    jump_fcontext(ctx, &data);
+    fcontext_switch(ctx, &data);
 
     printf("[main] Returned from fiber\n");
-    assert(fiber_ran == 1);
+    assert(fiber_ran);
 
     /* 5. Cleanup */
     free(stack_buffer);
 
-    printf("\n✓ PASS: Low-level make_fcontext test completed.\n");
+    printf("\n✓ PASS: Low-level fcontext_init test completed.\n");
     return 0;
 }

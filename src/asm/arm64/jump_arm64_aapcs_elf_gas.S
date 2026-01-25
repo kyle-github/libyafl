@@ -69,10 +69,10 @@
     .popsection
 #endif
 .align  2
-.global jump_fcontext
-.hidden jump_fcontext
-.type   jump_fcontext, %function
-jump_fcontext:
+.global fcontext_switch
+.hidden fcontext_switch
+.type   fcontext_switch, %function
+fcontext_switch:
 #if defined(__ARM_FEATURE_BTI_DEFAULT) && (__ARM_FEATURE_BTI_DEFAULT == 1)
     hint    #34                    /* bti c: valid indirect-entry target */
 #endif
@@ -128,6 +128,6 @@ jump_fcontext:
     add  sp, sp, #0xb0
 
     ret x4
-.size   jump_fcontext,.-jump_fcontext
+.size   fcontext_switch,.-fcontext_switch
 # Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits

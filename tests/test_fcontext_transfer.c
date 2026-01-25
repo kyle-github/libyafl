@@ -20,48 +20,44 @@
 #define TEST_DATA_2 ((void *)(uintptr_t)0xCAFEBABE)
 #define TEST_DATA_3 ((void *)(uintptr_t)0x12345678)
 
-static void *received_data = NULL;
-
-fcontext_transfer_t transfer_fiber(fcontext_transfer_t t) {
+void transfer_fiber(fcontext_transfer_t t) {
     printf("  [fiber] received data: %p\n", t.data);
     fflush(stdout);
     assert(t.data == TEST_DATA_1);
-    received_data = t.data;
 
     printf("  [fiber] sending data back: %p\n", TEST_DATA_2);
     fflush(stdout);
-    t = jump_fcontext(t.prev_context, TEST_DATA_2);
+    t = fcontext_switch(t.prev_context, TEST_DATA_2);
 
     printf("  [fiber] received data again: %p\n", t.data);
     fflush(stdout);
     assert(t.data == TEST_DATA_3);
-    received_data = t.data;
-
-    /* Return to trampoline */
-    return t;
 }
 
 int main(void) {
     printf("=== fcontext Data Transfer Test ===\n");
 
-    fcontext_stack_t *state = fcontext_create(24 * 1024, transfer_fiber);
+    fcontext_stack_t *state = fcontext_vmem_stack(24 * 1024);
     assert(state != NULL);
+
+    state->context = fcontext_init(state->stack_top, state->stack_size, transfer_fiber);
+    printf("[main] initialized context\n");
 
     /* First transfer: send TEST_DATA_1 */
     printf("[main] sending initial data: %p\n", TEST_DATA_1);
-    fcontext_transfer_t t = jump_fcontext(state->context, TEST_DATA_1);
+    fcontext_transfer_t t = fcontext_switch(state->context, TEST_DATA_1);
 
     assert(t.data == TEST_DATA_2);
     printf("[main] received data: %p\n", t.data);
 
     /* Resume and send TEST_DATA_3 */
     printf("[main] sending second data: %p\n", TEST_DATA_3);
-    t = jump_fcontext(t.prev_context, TEST_DATA_3);
+    t = fcontext_switch(t.prev_context, TEST_DATA_3);
 
     assert(t.prev_context != NULL);
     printf("[main] fiber finished\n");
 
-    fcontext_destroy(state);
+    fcontext_stack_destroy(state);
     printf("\n✓ PASS: Data transfer works correctly\n");
     fflush(stdout);
     return 0;

@@ -69,10 +69,10 @@
     .popsection
 #endif
 .align  2
-.global make_fcontext
-.hidden make_fcontext
-.type   make_fcontext, %function
-make_fcontext:
+.global fcontext_init
+.hidden fcontext_init
+.type   fcontext_init, %function
+fcontext_init:
 #if defined(__ARM_FEATURE_BTI_DEFAULT) && (__ARM_FEATURE_BTI_DEFAULT == 1)
     hint    #34    /* bti c */
 #endif
@@ -82,7 +82,7 @@ make_fcontext:
     # reserve space for context-data on context-stack
     sub  x0, x0, #0xb0
 
-    # third arg of make_fcontext() == address of context-function
+    # third arg of fcontext_init() == address of context-function
     # store address as a PC to jump in
     str  x2, [x0, #0xa0]
 
@@ -99,6 +99,6 @@ finish:
     # exit application
     bl  _exit
 
-.size   make_fcontext,.-make_fcontext
+.size   fcontext_init,.-fcontext_init
 # Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits

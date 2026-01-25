@@ -25,10 +25,10 @@
  ****************************************************************************************/
 
 .text
-.private_extern _jump_fcontext
-.globl _jump_fcontext
+.private_extern _fcontext_switch
+.globl _fcontext_switch
 .align 8
-_jump_fcontext:
+_fcontext_switch:
     leaq  -0x38(%rsp), %rsp /* prepare stack */
 
 #if !defined(BOOST_USE_TSX)

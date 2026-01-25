@@ -17,12 +17,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int test_phase = 0;
+static int32_t test_phase = 0;
 
 /**
  * Fiber function - entry point for new context
  */
-fcontext_transfer_t fiber_func(fcontext_transfer_t t) {
+void fiber_func(fcontext_transfer_t t) {
     printf("  [fiber] entered context\n");
     fflush(stdout);
     assert(test_phase == 0);
@@ -30,7 +30,7 @@ fcontext_transfer_t fiber_func(fcontext_transfer_t t) {
 
     printf("  [fiber] yielding back to main\n");
     fflush(stdout);
-    t = jump_fcontext(t.prev_context, (void *)0x1234);
+    t = fcontext_switch(t.prev_context, (void *)0x1234);
 
     printf("  [fiber] resumed from main\n");
     fflush(stdout);
@@ -39,26 +39,27 @@ fcontext_transfer_t fiber_func(fcontext_transfer_t t) {
 
     printf("  [fiber] finishing\n");
     fflush(stdout);
-
-    /* Return to trampoline to switch back */
-    return t;
 }
 
 int main(void) {
     printf("=== fcontext Basic Test ===\n");
     printf("[main] page size: %zu bytes\n", fcontext_get_page_size());
 
-    /* Create context with guarded stack using mmap */
-    fcontext_stack_t *state = fcontext_create(24 * 1024, fiber_func);
+    /* Allocate stack with guard pages using vmem */
+    fcontext_stack_t *state = fcontext_vmem_stack(24 * 1024);
     if(state == NULL) {
-        fprintf(stderr, "Failed to create context\n");
+        fprintf(stderr, "Failed to allocate stack\n");
         return 1;
     }
-    printf("[main] created fiber context with guard pages\n");
+    printf("[main] allocated fiber stack with guard pages\n");
+
+    /* Initialize context */
+    state->context = fcontext_init(state->stack_top, state->stack_size, fiber_func);
+    printf("[main] initialized fiber context\n");
 
     /* First switch: Enter fiber for first time */
     printf("[main] switching to fiber...\n");
-    fcontext_transfer_t t = jump_fcontext(state->context, NULL);
+    fcontext_transfer_t t = fcontext_switch(state->context, NULL);
     printf("[main] fiber returned to us\n");
 
     /* Verify fiber executed first phase */
@@ -69,14 +70,14 @@ int main(void) {
     /* Resume fiber */
     printf("[main] resuming fiber...\n");
     test_phase = 2;
-    t = jump_fcontext(t.prev_context, NULL);
+    t = fcontext_switch(t.prev_context, NULL);
     printf("[main] fiber returned again\n");
 
     /* Verify fiber completed */
     assert(test_phase == 3);
     printf("[main] fiber reached phase 3 correctly\n");
 
-    fcontext_destroy(state);
+    fcontext_stack_destroy(state);
     printf("[main] destroyed context and freed guarded stack\n");
     printf("\n✓ PASS: Basic context creation and switching works\n");
     fflush(stdout);

@@ -26,12 +26,12 @@
 
 .file "make_i386_sysv_elf_gas.S"
 .text
-.globl make_fcontext
-.hidden make_fcontext
+.globl fcontext_init
+.hidden fcontext_init
 .align 2
-.type make_fcontext,@function
-make_fcontext:
-    /* first arg of make_fcontext() == top of context-stack */
+.type fcontext_init,@function
+fcontext_init:
+    /* first arg of fcontext_init() == top of context-stack */
     movl  0x4(%esp), %eax
 
     /* reserve space for first argument of context-function
@@ -44,7 +44,7 @@ make_fcontext:
     /* reserve space for context-data on context-stack, and align the stack */
     leal  -0x34(%eax), %eax
 
-    /* third arg of make_fcontext() == address of context-function */
+    /* third arg of fcontext_init() == address of context-function */
     /* stored in EBX */
     movl  0xc(%esp), %ecx
     movl  %ecx, 0x14(%eax)
@@ -72,7 +72,7 @@ make_fcontext:
     /* compute abs address of label trampoline */
     addl  $trampoline-1b, %ecx
     /* save address of trampoline as return address */
-    /* will be entered after calling jump_fcontext() first time */
+    /* will be entered after calling fcontext_switch() first time */
     movl  %ecx, 0x1c(%eax)
 
     /* compute abs address of label finish */
@@ -108,7 +108,7 @@ finish:
     /* exit application */
     call  _exit@PLT
     hlt
-.size make_fcontext,.-make_fcontext
+.size fcontext_init,.-fcontext_init
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits

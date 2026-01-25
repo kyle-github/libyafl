@@ -43,11 +43,11 @@
 #  endif
 .file "jump_x86_64_sysv_elf_gas.S"
 .text
-.globl jump_fcontext
-.hidden jump_fcontext
-.type jump_fcontext,@function
+.globl fcontext_switch
+.hidden fcontext_switch
+.type fcontext_switch,@function
 .align 16
-jump_fcontext:
+fcontext_switch:
     _CET_ENDBR
     leaq  -0x40(%rsp), %rsp /* prepare stack */
 
@@ -93,7 +93,7 @@ jump_fcontext:
     /* on previous shadow stack after saveprevssp */
     saveprevssp
 
-    /* when return, jump_fcontext jump to restored return address */
+    /* when return, fcontext_switch jump to restored return address */
     /* (r8) instead of RET. This miss of RET implies us to unwind */
     /* shadow stack accordingly. Otherwise mismatch occur */
     movq  $1, %rcx
@@ -140,7 +140,7 @@ jump_fcontext:
 
     /* indirect jump to context */
     jmp  *%r8
-.size jump_fcontext,.-jump_fcontext
+.size fcontext_switch,.-fcontext_switch
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits

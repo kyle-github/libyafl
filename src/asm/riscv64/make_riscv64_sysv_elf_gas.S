@@ -60,17 +60,17 @@
 .file "make_riscv64_sysv_elf_gas.S"
 .text
 .align  1
-.global make_fcontext
-.hidden make_fcontext
-.type   make_fcontext, %function
-make_fcontext:
+.global fcontext_init
+.hidden fcontext_init
+.type   fcontext_init, %function
+fcontext_init:
     # shift address in a0 (allocated stack) to lower 16 byte boundary
     andi a0, a0, ~0xF
 
     # reserve space for context-data on context-stack
     addi  a0, a0, -0xd0
 
-    # third arg of make_fcontext() == address of context-function
+    # third arg of fcontext_init() == address of context-function
     # store address as a PC to jump in
     sd  a2, 0xc8(a0)
 
@@ -87,6 +87,6 @@ finish:
     # exit application
     tail  _exit@plt
 
-.size   make_fcontext,.-make_fcontext
+.size   fcontext_init,.-fcontext_init
 # Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits

@@ -1,8 +1,10 @@
-/**
+/*
  * fcontext - Stackful coroutine/fiber context switching
  *
  * Derived from Boost.Context (https://github.com/boostorg/context)
  * and DaoWen/fcontext (https://github.com/DaoWen/fcontext)
+ *
+ * Changes copyright Kyle Hayes (2026)
  *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying file LICENSE or copy at
@@ -24,11 +26,11 @@
  * - Cross-platform with MSVC and GCC/Clang support
  */
 
-#ifndef FCONTEXT_H_
-#define FCONTEXT_H_
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #ifndef _WIN32
@@ -85,7 +87,7 @@ typedef struct {
 
 /**
  * Entry point function for a new context.
- * Called when context is first entered via jump_fcontext.
+ * Called when context is first entered via fcontext_switch.
  * The transfer_t contains the previous context and initial data.
  */
 typedef fcontext_transfer_t (*fcontext_fn_t)(fcontext_transfer_t);
@@ -114,9 +116,9 @@ typedef void (*fcontext_entry_t)(fcontext_transfer_t);
  * Note: Stack grows downward. sp should be the highest address of the stack.
  * Example:
  *   char stack[24*1024];
- *   fcontext_t ctx = make_fcontext(&stack[24*1024], 24*1024, my_func);
+ *   fcontext_t ctx = fcontext_init(&stack[24*1024], 24*1024, my_func);
  */
-extern fcontext_t make_fcontext(void *sp, size_t size, fcontext_entry_t fn);
+extern fcontext_t fcontext_init(void *sp, size_t size, fcontext_entry_t fn);
 
 /**
  * Switch to a different context.
@@ -131,7 +133,7 @@ extern fcontext_t make_fcontext(void *sp, size_t size, fcontext_entry_t fn);
  * Note: This function does NOT return until another context switches back to us.
  * When called again on a saved context, execution resumes from where we left off.
  */
-extern fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp);
+extern fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp);
 
 /* ========================================================================
  * Page Size and Stack Alignment Utilities
@@ -154,21 +156,7 @@ static inline size_t fcontext_get_page_size(void) {
 #endif
 }
 
-/**
- * Round size up to nearest multiple of page size.
- *
- * Parameters:
- *   size - Size to align
- *
- * Returns:
- *   Size rounded up to next page boundary
- */
-static inline size_t fcontext_align_to_page(size_t size) {
-    size_t page_size = fcontext_get_page_size();
-    return ((size + page_size - 1) / page_size) * page_size;
-}
-
-/**
+/*
  * Align a pointer to the required stack alignment boundary (16 bytes).
  *
  * Stack pointers must be 16-byte aligned on x86_64 and ARM64 for ABI compliance.
@@ -190,113 +178,215 @@ static inline void *fcontext_align_stack_pointer(void *ptr) {
  * ======================================================================== */
 
 /**
- * Context with allocated stack and guard pages.
+ * Stack metadata and handle.
  *
- * Metadata structure is allocated separately from the stack to prevent
- * corruption on stack overflow. The stack region contains only:
- * - Guard page at bottom (unmapped)
- * - Actual stack in middle (mapped, readable/writable, filled with watermark)
- * - Guard page at top (unmapped)
+ * Stores metadata about an allocated stack including allocation method,
+ * sizes, and watermark fill state. The returned pointer from stack allocation
+ * functions points to this struct, from which the actual stack_top can be accessed.
  *
- * This catches stack overflow/underflow while using minimal memory.
+ * The stack_top pointer should be passed to fcontext_init() along with stack_size.
+ *
+ * Typical usage:
+ *   fcontext_stack_t *stack = fcontext_malloc_stack(16 * 1024);
+ *   fcontext_stack_t *stack = fcontext_vmem_stack(16 * 1024);
+ *   fcontext_stack_fill_watermark(stack);  // Optional
+ *   fcontext_t ctx = fcontext_init(stack->stack_top, stack->stack_size, my_fn);
+ *   ...
+ *   fcontext_stack_destroy(stack);
  */
-typedef enum { FCONTEXT_ALLOC_MMAP, FCONTEXT_ALLOC_MALLOC } fcontext_alloc_type_t;
+typedef enum { FCONTEXT_ALLOC_MALLOC, FCONTEXT_ALLOC_VMEM } fcontext_alloc_type_t;
 
 typedef struct {
-    fcontext_t context;
-    fcontext_alloc_type_t alloc_type;
-    void *alloc_base;  /* Base of allocated region (mmap or malloc) */
-    void *stack_base;  /* Base of actual stack (after bottom guard page) */
-    size_t alloc_size; /* Total size of allocated region */
-    size_t stack_size; /* Size of actual stack (excludes guard pages) */
-    size_t guard_size; /* Size of guard pages/zones */
+    uint32_t magic;                    /* Validation (0x5A5A5A5A) */
+    fcontext_alloc_type_t type;        /* MALLOC or VMEM allocation */
+    size_t total_size;                 /* Total bytes allocated (for cleanup) */
+    size_t stack_size;                 /* Usable stack size for fcontext_init() */
+    void *stack_top;                   /* Top of usable stack, pass to fcontext_init() */
+    bool watermark_enabled;            /* True if filled with 0xA5 pattern */
+    void *region;                      /* Original alloc region (for mmap/VirtualAlloc cleanup) */
+    fcontext_t context;                /* Initialized context for convenience */
 } fcontext_stack_t;
 
 /**
- * Create a new context with guarded stack using mmap.
+ * Allocate a stack using malloc.
  *
- * Allocates address space for (page_size + stack_size + page_size):
- * - Bottom guard page (unmapped, will fault on overflow)
- * - Stack page (mapped and accessible)
- * - Top guard page (unmapped, will fault on underflow)
+ * Allocates memory for a stack without filling the watermark pattern.
+ * The returned stack_t contains stack_top and stack_size to pass to fcontext_init().
  *
  * Parameters:
- *   stack_size - Requested stack size in bytes (default: FCONTEXT_DEFAULT_STACK_SIZE)
- *                Will be rounded up to nearest page boundary
- *   entry_fn   - Entry point function
+ *   stack_size - Requested stack size in bytes.
+ *                Will be rounded up to FCONTEXT_STACK_ALIGNMENT boundary.
  *
  * Returns:
- *   Context with allocated and guarded stack, or NULL on failure
+ *   Stack metadata handle (containing stack_top and stack_size), or NULL on failure
  *
  * Notes:
- *   - Stack is page-aligned for system page size (4KB on Linux, 16KB on macOS ARM)
- *   - Uses mmap for efficient guard page implementation
+ *   - Stack is NOT automatically filled with watermark pattern
+ *   - Call fcontext_stack_fill_watermark() if you want high water mark detection
+ *   - Use fcontext_stack_destroy() to clean up
+ *
+ * Typical usage:
+ *   fcontext_stack_t *stack = fcontext_malloc_stack(16 * 1024);
+ *   fcontext_stack_fill_watermark(stack);  // Optional, enables high water mark tracking
+ *   fcontext_t ctx = fcontext_init(stack->stack_top, stack->stack_size, my_fn);
+ *   fcontext_transfer_t t = fcontext_switch(ctx, NULL);
+ *   size_t used = fcontext_max_stack_use(stack);
+ *   fcontext_stack_destroy(stack);
+ */
+extern fcontext_stack_t *fcontext_malloc_stack(size_t stack_size);
+
+/**
+ * Allocate a stack using virtual memory (mmap/VirtualAlloc).
+ *
+ * Allocates virtual address space with guard pages:
+ * - Bottom guard page (unmapped, will fault on underflow)
+ * - Usable stack (mapped, readable/writable)
+ * - Top guard page (unmapped, will fault on overflow)
+ *
+ * Stack is NOT automatically filled with watermark pattern.
+ * The returned stack_t contains stack_top and stack_size to pass to fcontext_init().
+ *
+ * Parameters:
+ *   stack_size - Requested stack size in bytes.
+ *                Will be rounded up to nearest page boundary.
+ *
+ * Returns:
+ *   Stack metadata handle (containing stack_top and stack_size), or NULL on failure
+ *
+ * Notes:
+ *   - Stack is NOT automatically filled with watermark pattern
  *   - Guard pages catch overflow/underflow with segmentation fault
- *   - To catch this signal, use sigaltstack() and SA_ONSTACK, as the fiber stack will be invalid
- *   - Use fcontext_destroy() to clean up
- */
-extern fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn);
-
-/**
- * Create a new context using malloc with software guard zones.
+ *   - Filling stack with watermark pattern via fcontext_stack_fill_watermark() will
+ *     cause virtual pages to get physical backing memory
+ *   - Use fcontext_stack_destroy() to clean up
  *
- * Allocates: [Guard] [Stack] [Guard]
- * Guards are filled with 0xCD pattern.
- * Stack is filled with watermark pattern.
+ * Typical usage:
+ *   fcontext_stack_t *stack = fcontext_vmem_stack(16 * 1024);
+ *   // Don't fill watermark unless you want the memory cost
+ *   fcontext_t ctx = fcontext_init(stack->stack_top, stack->stack_size, my_fn);
+ *   fcontext_transfer_t t = fcontext_switch(ctx, NULL);
+ *   fcontext_stack_destroy(stack);
+ */
+extern fcontext_stack_t *fcontext_vmem_stack(size_t stack_size);
+
+/*
+ * Fill stack memory with watermark pattern for high water mark detection.
+ *
+ * Fills the entire stack with 0xA5 pattern to enable detection of maximum
+ * stack usage via fcontext_max_stack_use().
  *
  * Parameters:
- *   stack_size - Size of stack
- *   guard_size - Size of guard zones (canaries)
- *   entry_fn   - Entry point
- */
-extern fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_size, fcontext_fn_t entry_fn);
-
-/**
- * Create a new context using mmap/VirtualAlloc with hardware guard pages.
+ *   stack - Stack allocated via fcontext_malloc_stack() or fcontext_vmem_stack()
  *
- * Parameters:
- *   stack_size - Size of stack
- *   guard_size - Size of guard pages (rounded up to page size)
- *                Both stack_size and guard_size will be rounded up to the
- *                nearest system page size.
- *   entry_fn   - Entry point
- */
-extern fcontext_stack_t *fcontext_create_mmap(size_t stack_size, size_t guard_size, fcontext_fn_t entry_fn);
-
-/**
- * Destroy a context created with fcontext_create().
- *
- * Parameters:
- *   ctx - Context to free (can be NULL)
+ * Returns:
+ *   true on success, false on error or if already filled
  *
  * Notes:
- *   - Unmaps the guarded stack region
- *   - Safe to call on NULL
+ *   - For mmap'd stacks, this causes virtual pages to get physical backing
+ *   - Safe to call; watermark_enabled is checked/set to prevent double-filling
+ *   - Only call this if you want to track stack usage (it has a cost for mmap stacks)
+ *   - After calling, use fcontext_max_stack_use() to query the high water mark
+ *
+ * Typical usage:
+ *   fcontext_stack_t *stack = fcontext_malloc_stack(16 * 1024);
+ *   if(fcontext_stack_fill_watermark(stack)) {
+ *       fcontext_t ctx = fcontext_init(stack->stack_top, stack->stack_size, my_fn);
+ *       fcontext_transfer_t t = fcontext_switch(ctx, NULL);
+ *       size_t used = fcontext_max_stack_use(stack);
+ *       printf("Stack used: %zu / %zu bytes\n", used, stack->stack_size);
+ *   }
+ *   fcontext_stack_destroy(stack);
  */
-extern void fcontext_destroy(fcontext_stack_t *ctx);
+extern bool fcontext_stack_fill_watermark(fcontext_stack_t *stack);
 
 /**
- * Get the stack usage (high water mark) for a context.
+ * Get the maximum stack usage (high water mark) for a stack.
  *
  * Scans the stack from bottom to top looking for the watermark pattern (0xA5).
- * Returns the maximum stack depth used by the coroutine.
+ * Returns the number of bytes from the bottom that were overwritten.
  *
  * Parameters:
- *   ctx - Context to check
+ *   stack - Stack allocated via fcontext_malloc_stack() or fcontext_vmem_stack()
  *
  * Returns:
- *   Number of bytes used from the stack (0 if watermark checking is disabled)
+ *   Number of bytes used from the stack bottom, or SIZE_MAX if error/not filled
  *
  * Notes:
- *   - Only works if FCONTEXT_ENABLE_STACK_WATERMARK is enabled
- *   - Stack must have been filled with watermark pattern at creation
- *   - Returns 0 if ctx is NULL or watermark checking is disabled
+ *   - Only accurate if fcontext_stack_fill_watermark() was called first
+ *   - Returns SIZE_MAX if watermark not filled or ctx is NULL
+ *   - Must be called on a terminated/paused context (not currently running)
+ *
+ * Typical usage:
+ *   fcontext_stack_fill_watermark(stack);
+ *   // ... run the context ...
+ *   size_t max_used = fcontext_max_stack_use(stack);
+ *   if (max_used != SIZE_MAX) {
+ *       printf("Stack used: %zu bytes\n", max_used);
+ *   }
  */
-extern size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx);
+extern size_t fcontext_max_stack_use(fcontext_stack_t *stack);
 
 /**
- * Switch to a context created with fcontext_create().
- * Convenience wrapper around jump_fcontext.
+ * Check if stack was underflowed (wrote below the guard zone).
+ *
+ * For malloc-allocated stacks, checks if the guard zone below the stack
+ * was corrupted (pattern != 0xCD).
+ *
+ * For mmap-allocated stacks, only detects if an actual fault occurred.
+ *
+ * Parameters:
+ *   stack - Stack to check
+ *
+ * Returns:
+ *   true if underflow detected, false otherwise
+ *
+ * Notes:
+ *   - Only meaningful for malloc stacks with guard zones
+ *   - mmap guard pages cause SIGSEGV, not a return code
+ */
+extern bool fcontext_stack_underflow(fcontext_stack_t *stack);
+
+/**
+ * Check if stack was overflowed (wrote above the guard zone).
+ *
+ * For malloc-allocated stacks, checks if the guard zone above the stack
+ * was corrupted (pattern != 0xCD).
+ *
+ * For mmap-allocated stacks, only detects if an actual fault occurred.
+ *
+ * Parameters:
+ *   stack - Stack to check
+ *
+ * Returns:
+ *   true if overflow detected, false otherwise
+ *
+ * Notes:
+ *   - Only meaningful for malloc stacks with guard zones
+ *   - mmap guard pages cause SIGSEGV, not a return code
+ */
+extern bool fcontext_stack_overflow(fcontext_stack_t *stack);
+
+/**
+ * Destroy a stack allocated with fcontext_malloc_stack() or fcontext_vmem_stack().
+ *
+ * Frees or unmaps the allocated stack memory and the metadata structure.
+ *
+ * Parameters:
+ *   stack - Stack to free (can be NULL)
+ *
+ * Notes:
+ *   - Safe to call on NULL
+ *   - Should not be called while contexts using the stack are running
+ *   - For mmap'd stacks, unmaps the guard pages and stack region
+ *   - For malloc stacks, frees the allocated memory
+ */
+extern void fcontext_stack_destroy(fcontext_stack_t *stack);
+
+/**
+ * Convenience wrapper around fcontext_switch with ASAN support.
+ *
+ * Use this when switching to contexts created with fcontext_malloc_stack()
+ * or fcontext_vmem_stack().
  *
  * Parameters:
  *   ctx - Context to switch to
@@ -304,13 +394,16 @@ extern size_t fcontext_get_stack_usage(const fcontext_stack_t *ctx);
  *
  * Returns:
  *   Transfer structure with previous context and data
+ *
+ * Typical usage:
+ *   fcontext_transfer_t t = fcontext_swap(ctx->context, NULL);
  */
 static inline fcontext_transfer_t fcontext_swap(fcontext_t ctx, void *vp) {
 #ifdef __SANITIZE_ADDRESS__
     void *fake_stack_save = NULL;
     __sanitizer_start_switch_fiber(&fake_stack_save, NULL, 0);
 #endif
-    fcontext_transfer_t t = jump_fcontext(ctx, vp);
+    fcontext_transfer_t t = fcontext_switch(ctx, vp);
 #ifdef __SANITIZE_ADDRESS__
     __sanitizer_finish_switch_fiber(fake_stack_save, NULL, NULL);
 #endif
@@ -321,4 +414,3 @@ static inline fcontext_transfer_t fcontext_swap(fcontext_t ctx, void *vp) {
 }
 #endif
 
-#endif /* FCONTEXT_H_ */

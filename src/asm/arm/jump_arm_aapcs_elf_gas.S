@@ -40,12 +40,12 @@
 
 .file "jump_arm_aapcs_elf_gas.S"
 .text
-.globl jump_fcontext
-.hidden jump_fcontext
+.globl fcontext_switch
+.hidden fcontext_switch
 .align 2
-.type jump_fcontext,%function
+.type fcontext_switch,%function
 .syntax unified
-jump_fcontext:
+fcontext_switch:
     @ save LR as PC
     push {lr}
     @ save hidden,V1-V8,LR
@@ -83,7 +83,7 @@ jump_fcontext:
 
     @ restore PC
     pop {pc}
-.size jump_fcontext,.-jump_fcontext
+.size fcontext_switch,.-fcontext_switch
 
 @ Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits

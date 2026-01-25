@@ -32,12 +32,14 @@
     #include <unistd.h>
 #endif
 
-/* Global to store stack range for verification */
+/*
+ * Global to store stack range for verification
+ */
 static void *g_stack_base = NULL;
 static size_t g_stack_size = 0;
 
 /* Recursive function to consume stack until overflow */
-fcontext_transfer_t overflow_fiber(fcontext_transfer_t t) {
+void overflow_fiber(fcontext_transfer_t t) {
     /* Allocate 1KB on stack */
     /* Force alignment to avoid potential SIGILL from SIMD instructions on unaligned stack */
 #if defined(_MSC_VER)
@@ -58,7 +60,6 @@ fcontext_transfer_t overflow_fiber(fcontext_transfer_t t) {
 
     /* Prevent tail call optimization */
     (void)buffer[0];
-    return t;
 }
 
 #ifndef _WIN32
@@ -85,14 +86,18 @@ void signal_handler(int sig, siginfo_t *info, void *ucontext) {
 #endif
 
 void do_test(void) {
-    /* Create a small stack (1 page if possible) to crash quickly */
+    /* Create a small stack to crash quickly */
     size_t stack_size = 64 * 1024; /* 64KB to ensure we have enough room to start */
 
-    fcontext_stack_t *ctx = fcontext_create(stack_size, overflow_fiber);
+    fcontext_stack_t *ctx = fcontext_vmem_stack(stack_size);
     if(!ctx) {
-        fprintf(stderr, "Failed to create context\n");
+        fprintf(stderr, "Failed to allocate stack\n");
         exit(1);
     }
+
+    /* Initialize context */
+    ctx->context = fcontext_init(ctx->stack_top, ctx->stack_size, overflow_fiber);
+    printf("[child] Initialized context\n");
 
 #ifndef _WIN32
     /* Setup alternate stack for signal handler */
@@ -118,7 +123,8 @@ void do_test(void) {
     sigaction(SIGILL, &sa, NULL);
 #endif
 
-    g_stack_base = ctx->stack_base;
+    /* Calculate stack base from stack_top and stack_size */
+    g_stack_base = (char *)ctx->stack_top - ctx->stack_size;
     g_stack_size = ctx->stack_size;
     printf("[child] Fiber stack: %p - %p (size: %zu)\n", g_stack_base, (char *)g_stack_base + g_stack_size, g_stack_size);
 
@@ -129,7 +135,7 @@ void do_test(void) {
 
     /* We should never get here if guard pages work */
     fprintf(stderr, "FAILURE: Fiber returned without crashing! Guard pages failed.\n");
-    fcontext_destroy(ctx);
+    fcontext_stack_destroy(ctx);
     exit(1);
 }
 

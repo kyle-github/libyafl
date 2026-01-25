@@ -25,11 +25,11 @@
  ****************************************************************************************/
 
 .text
-.private_extern _make_fcontext
-.globl _make_fcontext
+.private_extern _fcontext_init
+.globl _fcontext_init
 .align 2
-_make_fcontext:
-    /* first arg of make_fcontext() == top of context-stack */
+_fcontext_init:
+    /* first arg of fcontext_init() == top of context-stack */
     movl  0x4(%esp), %eax
 
     /* reserve space for first argument of context-function
@@ -42,7 +42,7 @@ _make_fcontext:
     /* reserve space for context-data on context-stack, and align the stack */
     leal  -0x34(%eax), %eax
 
-    /* third arg of make_fcontext() == address of context-function */
+    /* third arg of fcontext_init() == address of context-function */
     /* stored in EBX */
     movl  0xc(%esp), %ecx
     movl  %ecx, 0x10(%eax)
@@ -59,7 +59,7 @@ _make_fcontext:
     /* compute abs address of label trampoline */
     addl  $trampoline-1b, %ecx
     /* save address of trampoline as return address */
-    /* will be entered after calling jump_fcontext() first time */
+    /* will be entered after calling fcontext_switch() first time */
     movl  %ecx, 0x18(%eax)
 
     /* compute abs address of label finish */
