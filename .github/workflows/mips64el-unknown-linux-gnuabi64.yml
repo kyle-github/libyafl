@@ -2,21 +2,21 @@ name: mips64el-unknown-linux-gnuabi64
 on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        runs-on: ubuntu-24.04
-        steps:
-            - uses: actions/checkout@v4
-            - name: Build Docker image
-              run: docker build -t fcontext-builder -f docker/Dockerfile .
-            - name: Build and Test
-              run: |
-                  docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
-                    bash -c "mkdir -p build && cd build && \
-                    cmake -DTARGET=mips64el-unknown-linux-gnuabi64 \
-                          -DCMAKE_C_COMPILER=mips64el-linux-gnuabi64-gcc \
-                          -DCMAKE_C_FLAGS='-static' \
-                          -DCMAKE_SYSTEM_NAME=Linux \
-                          -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mips64el \
-                          .. && \
-                    make && \
-                    CTEST_OUTPUT_ON_FAILURE=1 ctest"
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t fcontext-builder -f docker/Dockerfile.mips .
+      - name: Build and Test
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
+            bash -c "mkdir -p build && cd build && \
+            cmake -DTARGET=mips64el-unknown-linux-gnuabi64 \
+                  -DCMAKE_C_COMPILER=mips64el-linux-gnuabi64-gcc \
+                  -DCMAKE_C_FLAGS='-static' \
+                  -DCMAKE_SYSTEM_NAME=Linux \
+                  -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mips64el \
+                  .. && \
+            make && \
+            CTEST_OUTPUT_ON_FAILURE=1 ctest"
