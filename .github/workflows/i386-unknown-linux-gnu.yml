@@ -16,8 +16,6 @@ jobs:
           cmake -DTARGET=i386-unknown-linux-gnu \
                   -DCMAKE_C_COMPILER=gcc \
                   -DCMAKE_C_FLAGS='-m32 -static' \
-                  -DCMAKE_SYSTEM_NAME=Linux \
-                  -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-i386 \
                   ..
           make
           CTEST_OUTPUT_ON_FAILURE=1 ctest
