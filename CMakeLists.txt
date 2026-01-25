@@ -160,8 +160,8 @@ endif()
 # We need to ensure the stack grows downward (high to low addresses).
 # This is required by the assembly implementation.
 
-if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    message(STATUS "Skipping stack direction check for iOS (assuming downward)")
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "Android")
+    message(STATUS "Skipping stack direction check for ${CMAKE_SYSTEM_NAME} (assuming downward)")
 elseif(NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
     message(STATUS "Checking stack direction...")
     try_run(STACK_DIR_EXITCODE STACK_DIR_COMPILED
