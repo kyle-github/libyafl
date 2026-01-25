@@ -62,17 +62,15 @@ This library replaces `ucontext`.
 | aarch64 | pc | windows | msvc | Native (Windows ARM64) |
 | x86_64 | pc | windows | gnu | Native (Windows MinGW) |
 | aarch64 | pc | windows | gnu | Native (Windows MinGW) |
-| i386 | unknown | linux | gnu | Cross (Debian + QEMU) |
+| i386 | unknown | linux | gnu | Native (Ubuntu) |
 | arm | unknown | linux | gnueabihf | Cross (Debian + QEMU) |
-| aarch64 | unknown | linux | gnu | Cross (Debian + QEMU) |
 | riscv64 | unknown | linux | gnu | Cross (Debian + QEMU) |
 | mipsel | unknown | linux | gnu | Cross (Debian + QEMU) |
 | mips64el | unknown | linux | gnuabi64 | Cross (Debian + QEMU) |
 | powerpc64le | unknown | linux | gnu | Cross (Debian + QEMU) |
-| s390x | ibm | linux | gnu | Cross (Debian + QEMU) |
+| s390x | ibm | linux | gnu | Native (Ubuntu) |
 | sparc64 | unknown | linux | gnu | Cross (Debian + QEMU) |
 | powerpc | unknown | linux | gnu | Cross (Debian + QEMU) |
-| xtensa | espressif | esp32 | elf | Cross (Debian + QEMU) |
 
 Page sizes automatically detected:
 - **Linux/Windows**: 4KB (typical)
@@ -97,8 +95,8 @@ All combinations below are automatically tested on each push via GitHub Actions:
 
 ### Two-Layer Design
 
-1. **Low-Level API** (`make_fcontext`, `jump_fcontext`, `ontop_fcontext`)
-   - Written in architecture/OS-specific assembly. `ontop_fcontext` has been removed.
+1. **Low-Level API** (`make_fcontext`, `jump_fcontext`)
+   - Written in architecture/OS-specific assembly. Note: `ontop_fcontext` is not available.
 
 2. **High-Level Convenience API** (`fcontext_create`, `fcontext_destroy`)
    - Handles memory allocation and guard pages automatically.
