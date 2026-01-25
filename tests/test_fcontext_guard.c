@@ -158,7 +158,8 @@ int main(int argc, char *argv[]) {
 
     /* 0xC0000005: STATUS_ACCESS_VIOLATION */
     /* 0xC00000FD: STATUS_STACK_OVERFLOW */
-    if(exit_code == 0xC0000005 || exit_code == 0xC00000FD) {
+    /* 0x80000001: STATUS_GUARD_PAGE_VIOLATION */
+    if(exit_code == 0xC0000005 || exit_code == 0xC00000FD || exit_code == 0x80000001) {
         printf("✓ PASS: Child process crashed with expected exception 0x%X\n", exit_code);
         return 0;
     }

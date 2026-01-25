@@ -98,7 +98,7 @@ All combinations below are automatically tested on each push via GitHub Actions:
 ### Two-Layer Design
 
 1. **Low-Level API** (`make_fcontext`, `jump_fcontext`, `ontop_fcontext`)
-   - Written in architecture/OS-specific assembly.
+   - Written in architecture/OS-specific assembly. `ontop_fcontext` has been removed.
 
 2. **High-Level Convenience API** (`fcontext_create`, `fcontext_destroy`)
    - Handles memory allocation and guard pages automatically.
@@ -116,10 +116,6 @@ fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn);
 
 /* Switch to a context */
 fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp);
-
-/* Call function on top of a context */
-fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp,
-                                    fcontext_ontop_fn_t fn);
 ```
 
 ### Types

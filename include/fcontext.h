@@ -91,12 +91,12 @@ typedef struct {
 typedef fcontext_transfer_t (*fcontext_fn_t)(fcontext_transfer_t);
 
 /**
- * Function run "on top" of an existing context.
- * Used with ontop_fcontext to modify behavior of a context.
+ * Low-level entry point function type.
+ * Must return void to match the assembly implementation's ABI expectations.
  */
-typedef fcontext_transfer_t (*fcontext_ontop_fn_t)(fcontext_transfer_t);
+typedef void (*fcontext_entry_t)(fcontext_transfer_t);
 
-/* ========================================================================
+/**
  * Low-Level API - Direct Assembly Interface
  * ======================================================================== */
 
@@ -116,7 +116,7 @@ typedef fcontext_transfer_t (*fcontext_ontop_fn_t)(fcontext_transfer_t);
  *   char stack[24*1024];
  *   fcontext_t ctx = make_fcontext(&stack[24*1024], 24*1024, my_func);
  */
-extern fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn);
+extern fcontext_t make_fcontext(void *sp, size_t size, fcontext_entry_t fn);
 
 /**
  * Switch to a different context.
@@ -132,22 +132,6 @@ extern fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn);
  * When called again on a saved context, execution resumes from where we left off.
  */
 extern fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp);
-
-/**
- * Switch to a context and run a function on top of it.
- *
- * Parameters:
- *   to - Context to switch to
- *   vp - User data pointer passed to ontop function
- *   fn - Function to call "on top" of the context
- *
- * Returns:
- *   Transfer structure returned by fn
- *
- * Advanced feature: fn will be called with the context transfer and can
- * modify the return value before control passes back.
- */
-extern fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp, fcontext_ontop_fn_t fn);
 
 /* ========================================================================
  * Page Size and Stack Alignment Utilities

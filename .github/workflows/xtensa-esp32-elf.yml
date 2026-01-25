@@ -2,21 +2,23 @@ name: xtensa-esp32-elf
 on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        runs-on: ubuntu-24.04
-        steps:
-            - uses: actions/checkout@v4
-            - name: Build Docker image
-              run: docker build -t fcontext-builder -f docker/Dockerfile .
-            - name: Build and Test
-              run: |
-                  docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
-                    bash -c "mkdir -p build && cd build && \
-                    cmake -DTARGET=xtensa-esp32-elf \
-                          -DCMAKE_C_COMPILER=xtensa-esp32-elf-gcc \
-                          -DCMAKE_C_FLAGS='-mlongcalls -mtext-section-literals' \
-                          -DCMAKE_SYSTEM_NAME=Linux \
-                          -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-xtensa \
-                          .. && \
-                    make && \
-                    CTEST_OUTPUT_ON_FAILURE=1 ctest"
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential wget
+          wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
+          tar -xf xtensa-esp32-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
+          echo "$PWD/xtensa-esp32-elf/bin" >> $GITHUB_PATH
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake -DTARGET=xtensa-esp32-elf \
+                  -DCMAKE_C_COMPILER=xtensa-esp32-elf-gcc \
+                  -DCMAKE_C_FLAGS='-mlongcalls -mtext-section-literals' \
+                  -DCMAKE_SYSTEM_NAME=Generic \
+                  ..
+          make

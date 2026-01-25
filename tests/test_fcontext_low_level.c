@@ -16,7 +16,7 @@
 
 static int fiber_ran = 0;
 
-fcontext_transfer_t low_level_fiber(fcontext_transfer_t t) {
+void low_level_fiber(fcontext_transfer_t t) {
     printf("  [fiber] entered low-level fiber\n");
 
     /* Verify data passed */
@@ -26,7 +26,7 @@ fcontext_transfer_t low_level_fiber(fcontext_transfer_t t) {
     fiber_ran = 1;
 
     printf("  [fiber] jumping back\n");
-    return jump_fcontext(t.prev_context, NULL);
+    jump_fcontext(t.prev_context, NULL);
 }
 
 int main(void) {

@@ -45,7 +45,7 @@ static size_t get_page_size(void) {
 }
 
 /* Trampoline function that wraps the user's entry point */
-static fcontext_transfer_t context_trampoline(fcontext_transfer_t t) {
+static void context_trampoline(fcontext_transfer_t t) {
     /* 1. Retrieve the user function passed from fcontext_init_trampoline */
     fcontext_fn_t fn = (fcontext_fn_t)t.data;
 
@@ -61,7 +61,7 @@ static fcontext_transfer_t context_trampoline(fcontext_transfer_t t) {
     t = fn(t);
 
     /* 4. Automatic cleanup: Jump back to the last known context */
-    return jump_fcontext(t.prev_context, t.data);
+    jump_fcontext(t.prev_context, t.data);
 }
 
 /* Helper to initialize the trampoline. Call this inside fcontext_create* functions. */
@@ -122,7 +122,7 @@ fcontext_stack_t *fcontext_create_malloc(size_t stack_size, size_t guard_size, f
     sp = fcontext_align_stack_pointer(sp);
 
     /* Create context pointing to trampoline, then init it */
-    ctx->context = make_fcontext(sp, stack_size, (fcontext_fn_t)context_trampoline);
+    ctx->context = make_fcontext(sp, stack_size, context_trampoline);
     ctx->context = fcontext_init_trampoline(ctx->context, entry_fn);
     ctx->alloc_type = FCONTEXT_ALLOC_MALLOC;
     ctx->alloc_base = raw_alloc; /* Store original malloc pointer for free() */
@@ -212,7 +212,7 @@ fcontext_stack_t *fcontext_create_mmap(size_t stack_size, size_t guard_size, fco
 
     void *sp = (char *)stack_base + stack_size;
     /* Create context pointing to trampoline, then init it */
-    ctx->context = make_fcontext(sp, stack_size, (fcontext_fn_t)context_trampoline);
+    ctx->context = make_fcontext(sp, stack_size, context_trampoline);
     ctx->context = fcontext_init_trampoline(ctx->context, entry_fn);
     ctx->alloc_type = FCONTEXT_ALLOC_MMAP;
     ctx->alloc_base = region;

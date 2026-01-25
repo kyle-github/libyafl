@@ -26,11 +26,6 @@ Each architecture has three types of functions:
    - Called frequently (on every context switch)
    - Maps to: `fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp)`
 
-3. **ontop_*_*.S** - Switch and call function
-   - Advanced feature: runs function "on top" of target context
-   - Less commonly used
-   - Maps to: `fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp, fcontext_ontop_fn_t fn)`
-
 ## ABI and OS-Specific Suffixes
 
 Filenames follow the pattern: `[function]_[arch]_[abi]_[os]_[asm].S`
@@ -130,7 +125,6 @@ To add a new architecture (e.g., RISC-V):
 2. Copy assembly files from Boost.Context:
    - `make_riscv64_sysv_elf_gas.S`
    - `jump_riscv64_sysv_elf_gas.S`
-   - `ontop_riscv64_sysv_elf_gas.S`
 3. Update `Makefile` to detect the new architecture
 4. Update `CMakeLists.txt` similarly
 5. Test on actual hardware or in emulation
