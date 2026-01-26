@@ -65,6 +65,11 @@ fcontext_init:
     # reserve space for context-data on context-stack
     daddiu $v0, $v0, -160
 
+    # Save context pointer in S1 slot within the context.
+    # S1 is callee-saved, so the fiber will preserve it across calls.
+    # When finish is reached after the fiber returns, S1 will contain the context pointer.
+    sd  $v0, 72($v0)
+
     # third arg of fcontext_init() == address of context-function
     sd  $a2, 152($v0)
     # save global pointer in context-data
@@ -80,11 +85,10 @@ fcontext_init:
     jr  $ra # return pointer to context-data
 
 finish:
-    # reload our gp register (needed for la)
-    # When fiber function returns, $sp points to the beginning of context
-    # (ABI requires functions to preserve $sp across calls)
-    # GP is saved at offset 136 in the context structure
-    ld $gp, 136($sp)
+    # S1 contains the context pointer (saved during fcontext_init and preserved by fiber)
+    # S1 is callee-saved, so it survives the entire fiber execution
+    # Load GP from offset 136 of the saved context pointer
+    ld $gp, 136($s1)
 
     # call _exit(0)
     #  the previous function should have left the 16 bytes incoming argument
