@@ -72,8 +72,6 @@ fcontext_init:
 
     # third arg of fcontext_init() == address of context-function
     sd  $a2, 152($v0)
-    # save global pointer in context-data
-    sd  $gp, 136($v0)
 
     # pseudo instruction compute abs address of label finish based on GP
     dla  $t9, finish
@@ -85,10 +83,8 @@ fcontext_init:
     jr  $ra # return pointer to context-data
 
 finish:
-    # S1 contains the context pointer (saved during fcontext_init and preserved by fiber)
-    # S1 is callee-saved, so it survives the entire fiber execution
-    # Load GP from offset 136 of the saved context pointer
-    ld $gp, 136($s1)
+    # $gp is shared across the entire program, so it's already correct.
+    # No need to restore it from the context since jump_mips64 doesn't restore it anyway.
 
     # call _exit(0)
     #  the previous function should have left the 16 bytes incoming argument
