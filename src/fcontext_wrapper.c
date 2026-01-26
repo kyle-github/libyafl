@@ -69,30 +69,34 @@ fcontext_stack_t *fcontext_malloc_stack(size_t stack_size) {
         stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
     }
 
-    /* Align stack size to FCONTEXT_STACK_ALIGNMENT boundary */
-    stack_size = (stack_size + FCONTEXT_STACK_ALIGNMENT - 1) & ~(FCONTEXT_STACK_ALIGNMENT - 1);
-
-    /* Allocate: [metadata][stack] */
-    fcontext_stack_t *meta = (fcontext_stack_t *)malloc(sizeof(fcontext_stack_t) + stack_size);
-    if(!meta) {
+    /* Allocate requested size plus 256 bytes for metadata and alignment overhead */
+    size_t allocated_size = stack_size + 256;
+    void *block = malloc(allocated_size);
+    if(!block) {
         return NULL;
     }
 
-    /* Stack grows downward, so stack_top is at the end of the allocation */
-    void *stack_memory = (char *)meta + sizeof(fcontext_stack_t);
-    void *stack_top = (char *)stack_memory + stack_size;
+    /* Calculate preliminary stack_top by leaving space for metadata at the end */
+    void *block_end = (char *)block + allocated_size;
+    void *stack_top = (char *)block_end - sizeof(fcontext_stack_t);
 
-    /* Align stack_top to FCONTEXT_STACK_ALIGNMENT boundary (round down) */
+    /* Align stack_top down to 16-byte boundary */
     stack_top = fcontext_align_stack_pointer(stack_top);
+
+    /* The metadata structure is stored at stack_top (in the reserved area above usable stack) */
+    fcontext_stack_t *meta = (fcontext_stack_t *)stack_top;
+
+    /* Actual usable stack size is from block start to stack_top */
+    size_t actual_stack_size = (char *)stack_top - (char *)block;
 
     /* Initialize metadata */
     meta->magic = FCONTEXT_STACK_MAGIC;
     meta->type = FCONTEXT_ALLOC_MALLOC;
-    meta->total_size = sizeof(fcontext_stack_t) + stack_size;
-    meta->stack_size = stack_size;
+    meta->total_size = allocated_size;
+    meta->stack_size = actual_stack_size;
     meta->stack_top = stack_top;
     meta->watermark_enabled = false;
-    meta->region = (void *)meta;  /* For MALLOC, region points to metadata itself */
+    meta->region = block;  /* Store pointer to original allocation for cleanup */
 
     return meta;
 }
@@ -177,28 +181,24 @@ fcontext_stack_t *fcontext_vmem_stack(size_t stack_size) {
     stack_base = (char *)region + guard_size;
 #endif
 
-    /* Allocate metadata separately (not on stack, so it can't be corrupted) */
-    fcontext_stack_t *meta = (fcontext_stack_t *)malloc(sizeof(fcontext_stack_t));
-    if(!meta) {
-#ifdef _WIN32
-        VirtualFree(region, 0, MEM_RELEASE);
-#else
-        munmap(region, total_size);
-#endif
-        return NULL;
-    }
+    /* Calculate preliminary stack_top: end of stack region minus metadata space */
+    void *stack_region_end = (char *)stack_base + aligned_stack_size;
+    void *stack_top = (char *)stack_region_end - sizeof(fcontext_stack_t);
 
-    /* Stack grows downward, so stack_top is at the end of the stack region */
-    void *stack_top = (char *)stack_base + aligned_stack_size;
-
-    /* Align stack_top to FCONTEXT_STACK_ALIGNMENT boundary (round down) */
+    /* Align stack_top down to 16-byte boundary */
     stack_top = fcontext_align_stack_pointer(stack_top);
+
+    /* Actual usable stack size is from stack_base to aligned stack_top */
+    size_t actual_stack_size = (char *)stack_top - (char *)stack_base;
+
+    /* The metadata is stored at stack_top, within the allocated region */
+    fcontext_stack_t *meta = (fcontext_stack_t *)stack_top;
 
     /* Initialize metadata */
     meta->magic = FCONTEXT_STACK_MAGIC;
     meta->type = FCONTEXT_ALLOC_VMEM;
     meta->total_size = total_size;
-    meta->stack_size = aligned_stack_size;
+    meta->stack_size = actual_stack_size;
     meta->stack_top = stack_top;
     meta->watermark_enabled = false;
     meta->region = region;  /* Store mmap'd/VirtualAlloc'd region for cleanup */
@@ -223,17 +223,17 @@ void fcontext_stack_destroy(fcontext_stack_t *stack) {
     }
 
     if(stack->type == FCONTEXT_ALLOC_MALLOC) {
-        /* For malloc stacks, the metadata is at the start of the allocation.
-         * The region field points back to the metadata, so we just free that. */
+        /* For malloc stacks, the metadata is within the allocation.
+         * The region field points to the original malloc'd block. */
         free(stack->region);
     } else if(stack->type == FCONTEXT_ALLOC_VMEM) {
-        /* For VMEM stacks, unmap/free the mmap'd region and free metadata */
+        /* For VMEM stacks, the metadata is stored within the mmap'd/VirtualAlloc'd region.
+         * Only unmap/free the region itself - don't separately free the metadata. */
 #ifdef _WIN32
         VirtualFree(stack->region, 0, MEM_RELEASE);
 #else
         munmap(stack->region, stack->total_size);
 #endif
-        free(stack);
     }
 }
 
