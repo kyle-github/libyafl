@@ -81,8 +81,10 @@ fcontext_init:
 
 finish:
     # reload our gp register (needed for la)
-    daddiu $t0, $sp, -160
-    ld $gp, 136($t0)
+    # When fiber function returns, $sp points to the beginning of context
+    # (ABI requires functions to preserve $sp across calls)
+    # GP is saved at offset 136 in the context structure
+    ld $gp, 136($sp)
 
     # call _exit(0)
     #  the previous function should have left the 16 bytes incoming argument
