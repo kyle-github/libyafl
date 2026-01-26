@@ -73,6 +73,11 @@ fcontext_init:
     # third arg of fcontext_init() == address of context-function
     sd  $a2, 152($v0)
 
+    # NOTE: $gp (global pointer) is NOT saved here.
+    # MODIFICATION FROM BOOST.CONTEXT: $gp is shared across the entire program
+    # and does not need to be saved/restored per context.
+    # See README.md for details on API changes requiring this modification.
+
     # pseudo instruction compute abs address of label finish based on GP
     dla  $t9, finish
 
@@ -83,8 +88,10 @@ fcontext_init:
     jr  $ra # return pointer to context-data
 
 finish:
-    # $gp is shared across the entire program, so it's already correct.
-    # No need to restore it from the context since jump_mips64 doesn't restore it anyway.
+    # MODIFICATION FROM BOOST.CONTEXT: Use program's shared $gp directly.
+    # In the original Boost.Context, $gp was saved/restored per context.
+    # In fcontext, $gp is shared across the entire program and already correct.
+    # We use the dla pseudo-instruction which automatically handles $gp.
 
     # call _exit(0)
     #  the previous function should have left the 16 bytes incoming argument

@@ -52,3 +52,7 @@ Stack operations ensure 16-byte alignment compliance required by the MIPS64 ABI.
 
 - `make_mips64_n64_elf_gas.S` - Context initialization
 - `jump_mips64_n64_elf_gas.S` - Context switching/jumping
+
+## Updating from Boost.Context
+
+When updating MIPS64 assembly files from Boost.Context, be sure to reapply the modifications documented in this file and in `../../MODIFICATIONS.md`. The key change is removal of per-context $gp save/restore since $gp is shared across the entire program.
