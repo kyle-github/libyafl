@@ -128,8 +128,9 @@ fcontext_stack_t *fcontext_vmem_stack(size_t stack_size) {
         stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
     }
 
-    /* Round stack size up to page boundary */
-    size_t aligned_stack_size = ((stack_size + page_size - 1) / page_size) * page_size;
+    /* Add 256 bytes for metadata and alignment overhead, then round up to page boundary */
+    size_t stack_with_overhead = stack_size + 256;
+    size_t aligned_stack_size = ((stack_with_overhead + page_size - 1) / page_size) * page_size;
 
     /* One guard page on each side */
     size_t guard_size = page_size;
@@ -139,21 +140,16 @@ fcontext_stack_t *fcontext_vmem_stack(size_t stack_size) {
     void *stack_base = NULL;
 
 #ifdef _WIN32
-    /* Windows: VirtualAlloc for reserve+commit, VirtualProtect for guard pages */
-    region = VirtualAlloc(NULL, total_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    /* Windows: Reserve entire region as inaccessible, then commit stack as readable/writable */
+    /* Reserve address space for the entire region (guard + stack + guard) as PAGE_NOACCESS */
+    region = VirtualAlloc(NULL, total_size, MEM_RESERVE, PAGE_NOACCESS);
     if(!region) {
         return NULL;
     }
 
-    /* Protect bottom guard page */
-    DWORD old;
-    if(!VirtualProtect(region, guard_size, PAGE_NOACCESS, &old)) {
-        VirtualFree(region, 0, MEM_RELEASE);
-        return NULL;
-    }
-
-    /* Protect top guard page */
-    if(!VirtualProtect((char *)region + guard_size + aligned_stack_size, guard_size, PAGE_NOACCESS, &old)) {
+    /* Commit and set readable/writable only the stack portion (between the guard pages) */
+    void *stack_commit_start = (char *)region + guard_size;
+    if(!VirtualAlloc(stack_commit_start, aligned_stack_size, MEM_COMMIT, PAGE_READWRITE)) {
         VirtualFree(region, 0, MEM_RELEASE);
         return NULL;
     }
