@@ -1,8 +1,8 @@
 /**
  * test_fcontext_simple.c
- * Simple fcontext API test
+ * Simple fiber API test
  *
- * Verifies basic context creation and entry.
+ * Verifies basic fiber creation and entry.
  *
  * Copyright Kyle Hayes (2026)
  * Distributed under the Boost Software License, Version 1.0.
@@ -17,32 +17,37 @@
 
 static bool called = false;
 
-void simple_fiber(fcontext_transfer_t t) {
+void *simple_fiber(void *initial_data) {
+    (void)initial_data;
     called = true;
-    printf("  [fiber] entry function called\n");
-    (void)t;
+    fprintf(stderr, "[fiber] entry function called\n");
+    fflush(stderr);
+    return (void *)0x42;
 }
 
 int main(void) {
-    printf("=== fcontext Simple Test ===\n");
+    fprintf(stderr, "=== fcontext Simple Fiber Test ===\n");
+    fflush(stderr);
 
-    fcontext_stack_t *state = fcontext_vmem_stack(24 * 1024);
-    assert(state != NULL);
-    printf("[main] allocated stack with guarded pages\n");
-
-    state->context = fcontext_init(state->stack_top, state->stack_size, simple_fiber);
-    printf("[main] initialized context\n");
+    fcontext_fiber_t *fiber = fcontext_fiber_create_vmem(24 * 1024, simple_fiber);
+    assert(fiber != NULL);
+    fprintf(stderr, "[main] created fiber\n");
+    fflush(stderr);
 
     called = false;
-    printf("[main] entering context...\n");
-    fcontext_transfer_t t = fcontext_switch(state->context, NULL);
+    fprintf(stderr, "[main] entering fiber...\n");
+    fflush(stderr);
+    void *result = fcontext_fiber_switch(fiber, NULL);
 
     assert(called);
-    assert(t.data == (void *)0x42);
-    printf("[main] context called fiber correctly\n");
+    assert(result == (void *)0x42);
+    fprintf(stderr, "[main] fiber returned correctly\n");
+    fflush(stderr);
 
-    fcontext_stack_destroy(state);
-    printf("\n✓ PASS: Simple context entry works\n");
-    fflush(stdout);
+    fcontext_fiber_destroy(fiber);
+    fcontext_fiber_destroy_thread_fiber();
+
+    fprintf(stderr, "\n✓ PASS: Simple fiber entry works\n");
+    fflush(stderr);
     return 0;
 }

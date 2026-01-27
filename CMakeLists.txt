@@ -190,6 +190,7 @@ set(TESTS
     test_fcontext_basic
     test_fcontext_simple
     test_fcontext_transfer
+    test_fcontext_symmetric
     test_fcontext_alignment
     test_fcontext_guard
     test_fcontext_watermark_mmap

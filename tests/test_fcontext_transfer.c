@@ -1,8 +1,8 @@
 /**
  * test_fcontext_transfer.c
- * Test data transfer through context switching
+ * Test data transfer through fiber switching
  *
- * Verifies that user data pointers are correctly passed through context switches.
+ * Verifies that user data pointers are correctly passed through fiber switches.
  *
  * Copyright Kyle Hayes (2026)
  * Distributed under the Boost Software License, Version 1.0.
@@ -20,45 +20,48 @@
 #define TEST_DATA_2 ((void *)(uintptr_t)0xCAFEBABE)
 #define TEST_DATA_3 ((void *)(uintptr_t)0x12345678)
 
-void transfer_fiber(fcontext_transfer_t t) {
-    printf("  [fiber] received data: %p\n", t.data);
-    fflush(stdout);
-    assert(t.data == TEST_DATA_1);
+void *transfer_fiber(void *initial_data) {
+    fprintf(stderr, "[fiber] received initial data: %p\n", initial_data);
+    fflush(stderr);
+    assert(initial_data == TEST_DATA_1);
 
-    printf("  [fiber] sending data back: %p\n", TEST_DATA_2);
-    fflush(stdout);
-    t = fcontext_switch(t.prev_context, TEST_DATA_2);
+    fprintf(stderr, "[fiber] yielding back: %p\n", TEST_DATA_2);
+    fflush(stderr);
+    void *data = fcontext_fiber_yield(TEST_DATA_2);
 
-    printf("  [fiber] received data again: %p\n", t.data);
-    fflush(stdout);
-    assert(t.data == TEST_DATA_3);
+    fprintf(stderr, "[fiber] received again: %p\n", data);
+    fflush(stderr);
+    assert(data == TEST_DATA_3);
+
+    return (void *)0x9999;
 }
 
 int main(void) {
-    printf("=== fcontext Data Transfer Test ===\n");
+    fprintf(stderr, "=== fcontext Data Transfer Test ===\n");
+    fflush(stderr);
 
-    fcontext_stack_t *state = fcontext_vmem_stack(24 * 1024);
-    assert(state != NULL);
+    fcontext_fiber_t *fiber = fcontext_fiber_create_vmem(24 * 1024, transfer_fiber);
+    assert(fiber != NULL);
 
-    state->context = fcontext_init(state->stack_top, state->stack_size, transfer_fiber);
-    printf("[main] initialized context\n");
+    fprintf(stderr, "[main] sending initial data: %p\n", TEST_DATA_1);
+    fflush(stderr);
+    void *result = fcontext_fiber_switch(fiber, TEST_DATA_1);
 
-    /* First transfer: send TEST_DATA_1 */
-    printf("[main] sending initial data: %p\n", TEST_DATA_1);
-    fcontext_transfer_t t = fcontext_switch(state->context, TEST_DATA_1);
+    assert(result == TEST_DATA_2);
+    fprintf(stderr, "[main] received data: %p\n", result);
+    fflush(stderr);
 
-    assert(t.data == TEST_DATA_2);
-    printf("[main] received data: %p\n", t.data);
+    fprintf(stderr, "[main] sending second data: %p\n", TEST_DATA_3);
+    fflush(stderr);
+    result = fcontext_fiber_switch(fiber, TEST_DATA_3);
 
-    /* Resume and send TEST_DATA_3 */
-    printf("[main] sending second data: %p\n", TEST_DATA_3);
-    t = fcontext_switch(t.prev_context, TEST_DATA_3);
+    fprintf(stderr, "[main] fiber finished: %p\n", result);
+    fflush(stderr);
 
-    assert(t.prev_context != NULL);
-    printf("[main] fiber finished\n");
+    fcontext_fiber_destroy(fiber);
+    fcontext_fiber_destroy_thread_fiber();
 
-    fcontext_stack_destroy(state);
-    printf("\n✓ PASS: Data transfer works correctly\n");
-    fflush(stdout);
+    fprintf(stderr, "\n✓ PASS: Data transfer works correctly\n");
+    fflush(stderr);
     return 0;
 }
