@@ -57,12 +57,18 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
 #pragma warning(push)
 #pragma warning(disable:4717)  /* Disable "function recursive on all paths" warning */
 #endif
-#ifdef __GNUC__
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
+/* Only use diagnostic pragma if GCC version supports -Winfinite-recursion */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winfinite-recursion"
 #endif
 static void overflow_stack(int depth) {
+    /* Use smaller buffer on MSVC to leave room for exception handler */
+#ifdef _MSC_VER
+    volatile char buffer[128];
+#else
     volatile char buffer[1024];
+#endif
 
     /* Touch the buffer to prevent optimization */
     memset((void *)buffer, 0xAA, sizeof(buffer));
@@ -73,7 +79,7 @@ static void overflow_stack(int depth) {
     /* Recurse until we hit the guard page */
     overflow_stack(depth + 1);
 }
-#ifdef __GNUC__
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
 #pragma GCC diagnostic pop
 #endif
 #ifdef _MSC_VER
@@ -86,18 +92,20 @@ static void *guard_test_fiber(void *data) {
     fprintf(stderr, "[fiber] starting guard page test\n");
     fflush(stderr);
 
-#ifdef _WIN32
+#ifdef _MSC_VER
+    /* MSVC with SEH (Structured Exception Handling) */
     __try {
         in_overflow_test = true;
         overflow_stack(0);
-    } __except(GetExceptionCode() == EXCEPTION_STACK_OVERFLOW ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-        fprintf(stderr, "[fiber] caught EXCEPTION_STACK_OVERFLOW\n");
+    } __except(GetExceptionCode() == EXCEPTION_GUARD_PAGE || GetExceptionCode() == EXCEPTION_STACK_OVERFLOW ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
+        fprintf(stderr, "[fiber] caught guard page or stack overflow exception (0x%lx)\n", GetExceptionCode());
         fflush(stderr);
         fault_caught = true;
         in_overflow_test = false;
         return (void *)0x1;
     }
 #else
+    /* POSIX/GCC: signal will be caught by handler */
     in_overflow_test = true;
     overflow_stack(0);
 #endif
