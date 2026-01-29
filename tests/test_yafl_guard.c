@@ -53,8 +53,10 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
 #endif
 
 /* Recursive function to overflow the stack */
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winfinite-recursion"
+#endif
 static void overflow_stack(int depth) {
     volatile char buffer[1024];
 
@@ -67,7 +69,9 @@ static void overflow_stack(int depth) {
     /* Recurse until we hit the guard page */
     overflow_stack(depth + 1);
 }
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 static void *guard_test_fiber(void *data) {
     (void)data;

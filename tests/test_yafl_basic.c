@@ -181,10 +181,12 @@ static void test_status_query(void) {
  * ======================================================================== */
 
 static void *watermarked_fiber_func(void *arg) {
-    /* Allocate some stack space */
+    /* Allocate some stack space to trigger watermark usage */
     volatile char stack_buffer[1024];
-    stack_buffer[0] = 0;
-    stack_buffer[1023] = 0;
+    /* Use the buffer so it's not optimized away */
+    for (int i = 0; i < 1024; i++) {
+        stack_buffer[i] = (char)i;
+    }
     return arg;
 }
 
