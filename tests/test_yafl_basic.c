@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/yafl.h"
 
@@ -183,10 +184,8 @@ static void test_status_query(void) {
 static void *watermarked_fiber_func(void *arg) {
     /* Allocate some stack space to trigger watermark usage */
     volatile char stack_buffer[1024];
-    /* Use the buffer so it's not optimized away */
-    for (int i = 0; i < 1024; i++) {
-        stack_buffer[i] = (char)i;
-    }
+    /* Use memset to ensure compiler can't optimize the buffer away */
+    memset((char *)stack_buffer, 0xAA, sizeof(stack_buffer));
     return arg;
 }
 

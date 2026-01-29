@@ -53,6 +53,10 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
 #endif
 
 /* Recursive function to overflow the stack */
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4717)  /* Disable "function recursive on all paths" warning */
+#endif
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winfinite-recursion"
@@ -71,6 +75,9 @@ static void overflow_stack(int depth) {
 }
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
+#ifdef _MSC_VER
+#pragma warning(pop)
 #endif
 
 static void *guard_test_fiber(void *data) {
