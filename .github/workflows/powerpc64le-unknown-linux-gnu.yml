@@ -7,10 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -t fcontext-builder -f docker/Dockerfile.ppc .
+        run: docker build -t yafl-builder -f docker/Dockerfile.ppc .
       - name: Build and Test
         run: |
-          docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
             bash -c "mkdir -p build && cd build && \
             cmake -DTARGET=powerpc64le-unknown-linux-gnu \
                   -DCMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \

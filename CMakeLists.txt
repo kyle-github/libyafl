@@ -1,4 +1,4 @@
-# CMake build configuration for fcontext
+# CMake build configuration for yafl
 # Derived from Boost.Context - https://github.com/boostorg/context
 # Copyright Oliver Kowalke (original), Kyle Hayes (2026, CMake changes)
 # Distributed under the Boost Software License 1.0
@@ -20,7 +20,7 @@ endif()
 
 # CMake project version must be numeric (major.minor.patch.tweak)
 string(REPLACE "-" "." PROJECT_VERSION_CMAKE "${PROJECT_VERSION_FULL}")
-project(fcontext VERSION ${PROJECT_VERSION_CMAKE} LANGUAGES C)
+project(yafl VERSION ${PROJECT_VERSION_CMAKE} LANGUAGES C)
 
 # ============================================================================
 # Enforce Out-of-Source Builds
@@ -91,7 +91,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT MSVC)
 
     # Automatically enable watermark checking in debug builds
     message(STATUS "Enabling stack watermark for Debug build")
-    add_compile_definitions(FCONTEXT_ENABLE_STACK_WATERMARK=1)
+    add_compile_definitions(yafl_ENABLE_STACK_WATERMARK=1)
 endif()
 
 # ============================================================================
@@ -173,7 +173,7 @@ elseif(NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
         if(STACK_DIR_EXITCODE EQUAL 0)
             message(STATUS "Stack grows downward (supported)")
         else()
-            message(FATAL_ERROR "Stack grows upward! This architecture is not supported by fcontext.")
+            message(FATAL_ERROR "Stack grows upward! This architecture is not supported by yafl.")
         endif()
     else()
          message(WARNING "Failed to compile stack direction check. Assuming downward stack.")
@@ -194,15 +194,15 @@ set(TESTS
 )
 
 # Create static library
-add_library(fcontext STATIC src/yafl.c ${ASM_FILES})
-target_include_directories(fcontext PUBLIC include)
-set_target_properties(fcontext PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+add_library(yafl STATIC src/yafl.c ${ASM_FILES})
+target_include_directories(yafl PUBLIC include)
+set_target_properties(yafl PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 foreach(test ${TESTS})
     add_executable(${test} tests/${test}.c)
-    target_link_libraries(${test} PRIVATE fcontext)
-    # Link dl library for test_fcontext_guard on Linux/Unix for dladdr
-    if("${test}" STREQUAL "test_fcontext_guard" AND UNIX)
+    target_link_libraries(${test} PRIVATE yafl)
+    # Link dl library for test_yafl_guard on Linux/Unix for dladdr
+    if("${test}" STREQUAL "test_yafl_guard" AND UNIX)
         target_link_libraries(${test} PRIVATE ${CMAKE_DL_LIBS})
     endif()
 endforeach()
@@ -221,8 +221,8 @@ foreach(test ${TESTS})
     add_test(NAME ${test} COMMAND ${test})
 endforeach()
 
-# test_fcontext_guard is expected to crash (segfault) due to stack overflow
-# set_tests_properties(test_fcontext_guard PROPERTIES WILL_FAIL TRUE)
+# test_yafl_guard is expected to crash (segfault) due to stack overflow
+# set_tests_properties(test_yafl_guard PROPERTIES WILL_FAIL TRUE)
 
 # ============================================================================
 # Summary
