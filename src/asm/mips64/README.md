@@ -14,7 +14,7 @@ This required a key fix in `make_mips64_n64_elf_gas.S`:
 
 **Original Problem:** Early versions tried to reconstruct the context pointer from $sp using fixed offset calculations (`$sp - 160`). This was unreliable because:
 
-1. `fcontext_switch` adjusts $sp by 160 bytes after restoring the context
+1. `jump_fcontext` adjusts $sp by 160 bytes after restoring the context
 2. The fiber function then allocates its own stack space, moving $sp even further
 3. By the time `finish` is reached, $sp is no longer near the context data
 4. This caused segmentation faults when fiber functions did substantial work
@@ -31,7 +31,7 @@ sd  $v0, 72($v0)
 In `finish` routine:
 ```asm
 finish:
-    # S1 contains the context pointer (saved during fcontext_init and preserved by fiber)
+    # S1 contains the context pointer (saved during make_fcontext and preserved by fiber)
     # S1 is callee-saved, so it survives the entire fiber execution
     ld $gp, 136($s1)
     ...
@@ -40,7 +40,7 @@ finish:
 **Why This Works:**
 - The MIPS64 ABI requires S1 to be callee-saved
 - We store the context pointer in the S1 register slot at offset 72 during initialization
-- When `fcontext_switch` restores the context, it loads S1 from this slot
+- When `jump_fcontext` restores the context, it loads S1 from this slot
 - The fiber function must preserve S1 (ABI requirement), so it's still available in `finish`
 - By using S1 directly, we avoid relying on $sp which has been moved during fiber execution
 

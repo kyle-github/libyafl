@@ -10,10 +10,10 @@
 .file	"jump_x86_64_ms_pe_gas.S"
 .text
 .p2align 4,,15
-.globl	fcontext_switch
-.def	fcontext_switch;	.scl	2;	.type	32;	.endef
-.seh_proc	fcontext_switch
-fcontext_switch:
+.globl	jump_fcontext
+.def	jump_fcontext;	.scl	2;	.type	32;	.endef
+.seh_proc	jump_fcontext
+jump_fcontext:
 .seh_endprologue
 
     leaq  -0x118(%rsp), %rsp /* prepare stack */
@@ -127,4 +127,4 @@ fcontext_switch:
 .seh_endproc
 
 .section .drectve
-.ascii " -export:\"fcontext_switch\""
+.ascii " -export:\"jump_fcontext\""

@@ -187,19 +187,15 @@ endif()
 # ============================================================================
 
 set(TESTS
-    test_fcontext_basic
-    test_fcontext_simple
-    test_fcontext_transfer
-    test_fcontext_symmetric
-    test_fcontext_alignment
-    test_fcontext_guard
-    test_fcontext_watermark_mmap
-    test_fcontext_watermark_malloc
-    test_fcontext_low_level
+    test_yafl_api
+    test_yafl_symmetric
+    test_yafl_guard
+    test_yafl_watermark_mmap
+    test_yafl_many
 )
 
 # Create static library
-add_library(fcontext STATIC src/fcontext_wrapper.c ${ASM_FILES})
+add_library(fcontext STATIC src/yafl.c ${ASM_FILES})
 target_include_directories(fcontext PUBLIC include)
 set_target_properties(fcontext PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 

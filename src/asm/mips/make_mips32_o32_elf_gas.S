@@ -40,12 +40,12 @@
 
 .file "make_mips32_o32_elf_gas.S"
 .text
-.globl fcontext_init
-.hidden fcontext_init
+.globl make_fcontext
+.hidden make_fcontext
 .align 2
-.type fcontext_init,@function
-.ent fcontext_init
-fcontext_init:
+.type make_fcontext,@function
+.ent make_fcontext
+make_fcontext:
 #ifdef __PIC__
 .set    noreorder
 .cpload $t9
@@ -64,7 +64,7 @@ fcontext_init:
     #  - 4 bytes for alignment
     addiu $v0, $v0, -128
 
-    # third arg of fcontext_init() == address of context-function
+    # third arg of make_fcontext() == address of context-function
     sw  $a2, 92($v0)
     # save global pointer in context-data
     sw  $gp, 112($v0)
@@ -91,8 +91,8 @@ finish:
     la $t9, _exit
     move $a0, $zero
     jr $t9
-.end fcontext_init
-.size fcontext_init, .-fcontext_init
+.end make_fcontext
+.size make_fcontext, .-make_fcontext
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits

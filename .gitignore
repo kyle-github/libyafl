@@ -1,4 +1,4 @@
-# .gitignore for fcontext project
+# .gitignore for yafl project
 # Derived from Boost.Context - https://github.com/boostorg/context
 # Copyright Oliver Kowalke (original), Kyle Hayes (2026, .gitignore addition)
 # Distributed under the Boost Software License 1.0
@@ -20,9 +20,9 @@
 *.pdb
 
 # Test executables
-/test_fcontext_basic
-/test_fcontext_simple
-/test_fcontext_transfer
+/test_yafl_basic
+/test_yafl_simple
+/test_yafl_transfer
 
 # IDE and editor files
 .vscode/

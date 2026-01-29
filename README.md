@@ -1,26 +1,26 @@
-# fcontext - Portable Context Switching Library
+# yafl - Portable Context Switching Library
 
-![x86_64-pc-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)
-![aarch64-pc-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)
-![x86_64-apple-darwin](https://github.com/libplctag/fcontext/actions/workflows/x86_64-apple-darwin.yml/badge.svg)
-![aarch64-apple-darwin](https://github.com/libplctag/fcontext/actions/workflows/aarch64-apple-darwin.yml/badge.svg)
-![x86_64-pc-windows-msvc](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)
-![aarch64-pc-windows-msvc](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)
-![x86_64-pc-windows-gnu](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)
-![aarch64-pc-windows-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)
-![x86_64-unknown-linux-android](https://github.com/libplctag/fcontext/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)
-![aarch64-apple-ios](https://github.com/libplctag/fcontext/actions/workflows/aarch64-apple-ios.yml/badge.svg)
-![arm-unknown-linux-gnueabihf](https://github.com/libplctag/fcontext/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)
-![aarch64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-unknown-linux-gnu.yml/badge.svg)
-![riscv64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)
-![mipsel-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)
-![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/fcontext/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)
-![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)
-![s390x-ibm-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
-![sparc64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
-![powerpc-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
-![i386-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
-[![codecov](https://codecov.io/gh/libplctag/fcontext/graph/badge.svg)](https://codecov.io/gh/libplctag/fcontext)
+![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)
+![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)
+![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml/badge.svg)
+![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml/badge.svg)
+![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)
+![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)
+![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)
+![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)
+![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)
+![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml/badge.svg)
+![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)
+![aarch64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-unknown-linux-gnu.yml/badge.svg)
+![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)
+![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)
+![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)
+![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)
+![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
+![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
+![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
+![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
+[![codecov](https://codecov.io/gh/libplctag/yafl/graph/badge.svg)](https://codecov.io/gh/libplctag/yafl)
 
 A portable, low-level C11 fiber/coroutine context switching library derived from Boost.Context, designed to replace the deprecated and unsupported `ucontext` API.
 
@@ -94,10 +94,10 @@ All combinations below are automatically tested on each push via GitHub Actions:
 
 ### Two-Layer Design
 
-1. **Low-Level API** (`fcontext_init`, `fcontext_switch`)
-   - Written in architecture/OS-specific assembly. Note: `ontop_fcontext` is not available.
+1. **Low-Level API** (`make_yafl`, `jump_yafl`)
+   - Written in architecture/OS-specific assembly. Note: `ontop_yafl` is not available.
 
-2. **High-Level Convenience API** (`fcontext_create`, `fcontext_destroy`)
+2. **High-Level Convenience API** (`yafl_create`, `yafl_destroy`)
    - Handles memory allocation and guard pages automatically.
    - Recommended for most use cases.
 
@@ -105,33 +105,33 @@ All combinations below are automatically tested on each push via GitHub Actions:
 
 ### Core Functions
 
-From `fcontext.h`.
+From `yafl.h`.
 
 ```c
 /* Create a context at a given stack location */
-fcontext_t fcontext_init(void *sp, size_t size, fcontext_fn_t fn);
+yafl_t make_yafl(void *sp, size_t size, yafl_fn_t fn);
 
 /* Switch to a context */
-fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp);
+yafl_transfer_t jump_yafl(yafl_t const to, void *vp);
 ```
 
 ### Types
 
 ```c
 /* Opaque context handle */
-typedef struct fcontext_opaque_t *fcontext_t;
+typedef struct yafl_opaque_t *yafl_t;
 
 /* Data transferred on context switch */
 typedef struct {
-    fcontext_t prev_context;  /* Where we came from */
+    yafl_t prev_context;  /* Where we came from */
     void *data;               /* User-provided data */
-} fcontext_transfer_t;
+} yafl_transfer_t;
 
 /* Entry point function signature */
-typedef void (*fcontext_fn_t)(fcontext_transfer_t);
+typedef void (*yafl_fn_t)(yafl_transfer_t);
 
-/* Function for ontop_fcontext */
-typedef fcontext_transfer_t (*fcontext_ontop_fn_t)(fcontext_transfer_t);
+/* Function for ontop_yafl */
+typedef yafl_transfer_t (*yafl_ontop_fn_t)(yafl_transfer_t);
 ```
 
 ### Low-Level Example
@@ -139,12 +139,12 @@ typedef fcontext_transfer_t (*fcontext_ontop_fn_t)(fcontext_transfer_t);
 ```c
 #include <stdio.h>
 #include <stdlib.h>
-#include "fcontext.h"
+#include "yafl.h"
 
-void fiber_entry(fcontext_transfer_t t) {
+void fiber_entry(yafl_transfer_t t) {
     printf("Fiber executing\n");
     /* Switch back to caller */
-    fcontext_switch(t.prev_context, NULL);
+    jump_yafl(t.prev_context, NULL);
 }
 
 int main(void) {
@@ -153,14 +153,14 @@ int main(void) {
     void *stack = malloc(stack_size);
 
     /* Create context at top of stack */
-    fcontext_t ctx = fcontext_init(
+    yafl_t ctx = make_yafl(
         (char *)stack + stack_size,  /* Stack pointer (top of stack) */
         stack_size,                   /* Stack size */
         fiber_entry                   /* Entry function */
     );
 
     /* Enter context */
-    fcontext_transfer_t t = fcontext_switch(ctx, NULL);
+    yafl_transfer_t t = jump_yafl(ctx, NULL);
 
     /* When execution returns here, fiber has completed */
     printf("Back in main\n");
@@ -174,23 +174,23 @@ int main(void) {
 
 ### Functions
 
-Again, from `fcontext.h`.
+Again, from `yafl.h`.
 
 ```c
 /* Get system page size (4KB, 16KB, etc.) */
-size_t fcontext_get_page_size(void);
+size_t yafl_get_page_size(void);
 
 /* Round size up to nearest page boundary */
-size_t fcontext_align_to_page(size_t size);
+size_t yafl_align_to_page(size_t size);
 
 /* Create context with automatically allocated guarded stack */
-fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn);
+yafl_stack_t *yafl_create(size_t stack_size, yafl_fn_t entry_fn);
 
 /* Destroy context and free stack */
-void fcontext_destroy(fcontext_stack_t *ctx);
+void yafl_destroy(yafl_stack_t *ctx);
 
 /* Switch to context */
-#define fcontext_swap(ctx, data) fcontext_switch((ctx)->context, (data))
+#define yafl_swap(ctx, data) jump_yafl((ctx)->context, (data))
 ```
 
 ### Stack Layout
@@ -227,18 +227,18 @@ When enabled (default), the entire stack is filled with pattern `0xA5` at creati
 
 ```c
 /* Create context with watermark checking */
-fcontext_stack_t *ctx = fcontext_create(16 * 1024, my_fiber);
+yafl_stack_t *ctx = yafl_create(16 * 1024, my_fiber);
 
 /* Run the fiber */
-fcontext_switch(ctx->context, NULL);
+jump_yafl(ctx->context, NULL);
 
 /* Check stack usage */
-size_t used = fcontext_get_stack_usage(ctx);
+size_t used = yafl_get_stack_usage(ctx);
 printf("Stack used: %zu bytes\n", used);
 
 /* Destroy - automatically reports usage */
-fcontext_destroy(ctx);
-// Output: fcontext: stack usage: 2048 / 16384 bytes (12%)
+yafl_destroy(ctx);
+// Output: yafl: stack usage: 2048 / 16384 bytes (12%)
 ```
 
 **Features:**
@@ -255,30 +255,30 @@ For details, see [docs/WATERMARK.md](docs/WATERMARK.md).
 
 ```c
 #include <stdio.h>
-#include "fcontext.h"
+#include "yafl.h"
 
-void fiber_func(fcontext_transfer_t t) {
+void fiber_func(yafl_transfer_t t) {
     printf("Fiber running\n");
     int *counter = (int *)t.data;
     (*counter)++;
-    fcontext_switch(t.prev_context, NULL);
+    jump_yafl(t.prev_context, NULL);
 }
 
 int main(void) {
-    printf("Page size: %zu bytes\n", fcontext_get_page_size());
+    printf("Page size: %zu bytes\n", yafl_get_page_size());
 
     int counter = 0;
 
     /* Create context with automatic stack allocation and guard pages */
-    fcontext_stack_t *ctx = fcontext_create(24 * 1024, fiber_func);
+    yafl_stack_t *ctx = yafl_create(24 * 1024, fiber_func);
 
     /* Enter context, passing counter via data */
-    fcontext_transfer_t t = fcontext_switch(ctx->context, &counter);
+    yafl_transfer_t t = jump_yafl(ctx->context, &counter);
 
     printf("Counter after fiber: %d\n", counter);  /* Should be 1 */
 
     /* Cleanup */
-    fcontext_destroy(ctx);
+    yafl_destroy(ctx);
 
     return 0;
 }
@@ -293,25 +293,25 @@ This library implements **asymmetric coroutines** - fibers always yield to their
 
 ev_fiber_t scheduler = ev_fiber_current();
 
-void fiber_a(fcontext_transfer_t t) {
+void fiber_a(yafl_transfer_t t) {
     printf("A1\n");
-    fcontext_switch(scheduler, NULL);  /* Yield to scheduler */
+    jump_yafl(scheduler, NULL);  /* Yield to scheduler */
     printf("A2\n");
-    fcontext_switch(scheduler, NULL);  /* Yield to scheduler again */
+    jump_yafl(scheduler, NULL);  /* Yield to scheduler again */
 }
 
 int main() {
     scheduler = ev_fiber_current();
 
-    fcontext_stack_t *a = fcontext_create(4096, fiber_a);
+    yafl_stack_t *a = yafl_create(4096, fiber_a);
 
     /* First entry */
-    fcontext_transfer_t t = fcontext_switch(a->context, NULL);  /* A1 printed */
+    yafl_transfer_t t = jump_yafl(a->context, NULL);  /* A1 printed */
 
     /* Resume */
-    t = fcontext_switch(t.prev_context, NULL);  /* A2 printed */
+    t = jump_yafl(t.prev_context, NULL);  /* A2 printed */
 
-    fcontext_destroy(a);
+    yafl_destroy(a);
 }
 ```
 
@@ -325,7 +325,7 @@ Stack size is automatically rounded up to the nearest page boundary:
 ```c
 /* Requesting 24KB on macOS ARM64 (16KB pages) */
 size_t requested = 24 * 1024;  /* 24576 bytes */
-size_t actual = fcontext_align_to_page(requested);  /* 32768 bytes (2 pages) */
+size_t actual = yafl_align_to_page(requested);  /* 32768 bytes (2 pages) */
 ```
 
 ## Building
@@ -366,16 +366,16 @@ make test
 
 Individual tests:
 ```bash
-./test_fcontext_basic       # Low-level context switching
-./test_fcontext_simple      # Simple entry point
-./test_fcontext_transfer    # Data passing between contexts
+./test_yafl_basic       # Low-level context switching
+./test_yafl_simple      # Simple entry point
+./test_yafl_transfer    # Data passing between contexts
 ```
 
 ## Implementation Details
 
 ### Guard Page Mechanism
 
-When you call `fcontext_create()`:
+When you call `yafl_create()`:
 
 1. **Determine system page size** via `sysconf(_SC_PAGE_SIZE)`
 2. **Round up stack size** to nearest page boundary (resulting in N pages)
@@ -401,11 +401,11 @@ This is much more efficient than pre-allocating large stacks for many fibers.
 
 1. **Stack grows downward** - Not suitable for systems with upward-growing stacks (uncommon)
 
-2. **Entry function doesn't return** - Fiber function should call `fcontext_switch()` to exit:
+2. **Entry function doesn't return** - Fiber function should call `jump_yafl()` to exit:
    ```c
-   void fiber_func(fcontext_transfer_t t) {
+   void fiber_func(yafl_transfer_t t) {
        // ... do work ...
-       fcontext_switch(t.prev_context, NULL);  /* Must explicitly yield */
+       jump_yafl(t.prev_context, NULL);  /* Must explicitly yield */
        /* If we reach here after being resumed, handle that */
    }
    ```
@@ -446,14 +446,14 @@ This is much more efficient than pre-allocating large stacks for many fibers.
 
 ## License
 
-Derived from Boost.Context and DaoWen/fcontext, distributed under the Boost Software License 1.0.
+Derived from Boost.Context and DaoWen/yafl, distributed under the Boost Software License 1.0.
 
 See `LICENSE` file for full terms.
 
 ## References
 
 - **Boost.Context**: https://github.com/boostorg/context
-- **DaoWen/fcontext**: https://github.com/DaoWen/fcontext
+- **DaoWen/yafl**: https://github.com/DaoWen/yafl
 - **POSIX sysconf**: https://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html
 
 ## Performance Notes

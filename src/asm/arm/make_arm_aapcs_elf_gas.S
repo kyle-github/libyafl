@@ -40,19 +40,19 @@
 
 .file "make_arm_aapcs_elf_gas.S"
 .text
-.globl fcontext_init
-.hidden fcontext_init
+.globl make_fcontext
+.hidden make_fcontext
 .align 2
-.type fcontext_init,%function
+.type make_fcontext,%function
 .syntax unified
-fcontext_init:
+make_fcontext:
     @ shift address in A1 to lower 16 byte boundary
     bic  a1, a1, #15
 
     @ reserve space for context-data on context-stack
     sub  a1, a1, #124
 
-    @ third arg of fcontext_init() == address of context-function
+    @ third arg of make_fcontext() == address of context-function
     str  a3, [a1, #104]
 
     @ compute address of returned transfer_t
@@ -76,7 +76,7 @@ finish:
     mov  a1, #0
     @ exit application
     bl  _exit@PLT
-.size fcontext_init,.-fcontext_init
+.size make_fcontext,.-make_fcontext
 
 @ Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits

@@ -58,10 +58,10 @@
 ;*******************************************************
 
     AREA |.text|, CODE, READONLY, ALIGN=4, CODEALIGN
-    EXPORT fcontext_init
+    EXPORT make_fcontext
     IMPORT _exit
 
-fcontext_init proc
+make_fcontext proc
     ; save stack top address to x3
     mov x3, x0
 
@@ -79,7 +79,7 @@ fcontext_init proc
     ; save 0 as 'fiber data'
     str  xzr, [x0, #0xb8]
 
-    ; third arg of fcontext_init() == address of context-function
+    ; third arg of make_fcontext() == address of context-function
     ; store address as x19 for trampoline
     str  x2, [x0, #0x40]
     ; store trampoline address as pc

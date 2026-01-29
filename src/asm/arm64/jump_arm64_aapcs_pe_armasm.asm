@@ -58,9 +58,9 @@
 ;*******************************************************
 
     AREA |.text|, CODE, READONLY, ALIGN=4, CODEALIGN
-    EXPORT fcontext_switch
+    EXPORT jump_fcontext
 
-fcontext_switch proc
+jump_fcontext proc
     ; prepare stack for GP + FPU
     sub  sp, sp, #0xd0
 

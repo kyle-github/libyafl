@@ -52,18 +52,18 @@
  *******************************************************/
 
 .text
-.private_extern _fcontext_init
-.globl _fcontext_init
+.private_extern _make_fcontext
+.globl _make_fcontext
 .balign 16
 
-_fcontext_init:
+_make_fcontext:
     ; shift address in x0 (allocated stack) to lower 16 byte boundary
     and x0, x0, ~0xF
 
     ; reserve space for context-data on context-stack
     sub  x0, x0, #0xb0
 
-    ; third arg of fcontext_init() == address of context-function
+    ; third arg of make_fcontext() == address of context-function
     ; store address as a PC to jump in
     str  x2, [x0, #0xa0]
 

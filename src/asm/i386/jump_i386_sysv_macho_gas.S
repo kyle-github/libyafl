@@ -25,10 +25,10 @@
  ****************************************************************************************/
 
 .text
-.private_extern _fcontext_switch
-.globl _fcontext_switch
+.private_extern _jump_fcontext
+.globl _jump_fcontext
 .align 2
-_fcontext_switch:
+_jump_fcontext:
     leal  -0x18(%esp), %esp  /* prepare stack */
 
 #if !defined(BOOST_USE_TSX)
@@ -44,10 +44,10 @@ _fcontext_switch:
     /* store ESP (pointing to context-data) in ECX */
     movl  %esp, %ecx
 
-    /* first arg of fcontext_switch() == fcontext to jump to */
+    /* first arg of jump_fcontext() == fcontext to jump to */
     movl  0x1c(%esp), %eax
 
-    /* second arg of fcontext_switch() == data to be transferred */
+    /* second arg of jump_fcontext() == data to be transferred */
     movl  0x20(%esp), %edx
 
     /* restore ESP (pointing to context-data) from EAX */

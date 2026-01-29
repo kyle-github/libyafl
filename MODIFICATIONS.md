@@ -11,7 +11,7 @@ This document tracks all modifications made to code derived from Boost.Context t
 - Low-level functions: `make_fcontext` and `jump_fcontext`
 
 **Modified (fcontext):**
-- Renamed to: `fcontext_init` and `fcontext_switch`
+- Renamed to: `make_fcontext` and `jump_fcontext`
 - Symbol name changes in all assembly files (make_*.S and jump_*.S)
 
 **Files affected:**
@@ -109,7 +109,7 @@ This document tracks all modifications made to code derived from Boost.Context t
 
 When pulling updates from Boost.Context, follow this checklist:
 
-1. **Function naming**: Ensure assembly functions are named `fcontext_init` and `fcontext_switch` (not `make_fcontext`/`jump_fcontext`)
+1. **Function naming**: Ensure assembly functions are named `make_fcontext` and `jump_fcontext` (not `make_fcontext`/`jump_fcontext`)
 2. **Remove ontop functions**: Do not include any `ontop_*.S` files or references
 3. **Check MIPS64 $gp handling**: Remove $gp save/restore if present
 4. **Verify stack direction check**: Ensure Android is included in CMakeLists.txt skip list
@@ -120,7 +120,7 @@ When pulling updates from Boost.Context, follow this checklist:
 
 ## Common Pitfalls When Updating
 
-- **Forgetting to rename functions**: `make_fcontext` → `fcontext_init`, `jump_fcontext` → `fcontext_switch`
+- **Forgetting to rename functions**: `make_fcontext` → `make_fcontext`, `jump_fcontext` → `jump_fcontext`
 - **Keeping ontop files**: Ensure all `ontop_*.S` are excluded and references removed from CMake
 - **Re-introducing $gp save/restore on MIPS64**: Watch for this in updated MIPS64 files
 - **Changing stack alignment logic**: Ensure 256-byte overhead and metadata positioning is preserved

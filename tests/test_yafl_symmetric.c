@@ -1,5 +1,5 @@
 /**
- * test_fcontext_symmetric.c
+ * test_yafl_symmetric.c
  * Symmetric coroutine switching test
  *
  * Verifies that two fibers can switch back and forth to each other
@@ -12,7 +12,7 @@
  *  http://www.boost.org/LICENSE_1_0.txt)
  */
 
-#include "fcontext.h"
+#include "yafl.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -24,26 +24,24 @@ static size_t event_count = 0;
 static uint32_t events[MAX_EVENTS];
 
 /* Event identifiers */
-#define EVENT_MAIN_START      1
-#define EVENT_MAIN_TO_A       2
-#define EVENT_A_ENTER         3
-#define EVENT_A_TO_B          4
-#define EVENT_B_ENTER         5
-#define EVENT_B_TO_A          6
-#define EVENT_A_RESUME        7
-#define EVENT_A_TO_B_AGAIN    8
-#define EVENT_B_RESUME        9
-#define EVENT_B_TO_A_AGAIN    10
-#define EVENT_A_DONE          11
-#define EVENT_MAIN_END        12
+#define EVENT_MAIN_START 1
+#define EVENT_MAIN_TO_A 2
+#define EVENT_A_ENTER 3
+#define EVENT_A_TO_B 4
+#define EVENT_B_ENTER 5
+#define EVENT_B_TO_A 6
+#define EVENT_A_RESUME 7
+#define EVENT_A_TO_B_AGAIN 8
+#define EVENT_B_RESUME 9
+#define EVENT_B_TO_A_AGAIN 10
+#define EVENT_A_DONE 11
+#define EVENT_MAIN_END 12
 
 /* Fiber handle for symmetric switching */
-static fcontext_fiber_t *fiber_b = NULL;
+static yafl_fiber_t *fiber_b = NULL;
 
 static void record_event(uint32_t event) {
-    if(event_count < MAX_EVENTS) {
-        events[event_count++] = event;
-    }
+    if(event_count < MAX_EVENTS) { events[event_count++] = event; }
     fprintf(stderr, "  [event] #%zu: %u\n", event_count, event);
     fflush(stderr);
 }
@@ -60,7 +58,7 @@ void *fiber_b_entry(void *initial_data) {
     fprintf(stderr, "[fiber_b] yielding back to A\n");
     fflush(stderr);
     record_event(EVENT_B_TO_A);
-    void *resumed_data = fcontext_fiber_yield((void *)(uintptr_t)0xB0B0B0B0);
+    void *resumed_data = yafl_fiber_yield((void *)(uintptr_t)0xB0B0B0B0);
 
     fprintf(stderr, "[fiber_b] resumed from A with data: %p\n", resumed_data);
     fflush(stderr);
@@ -71,7 +69,7 @@ void *fiber_b_entry(void *initial_data) {
     fprintf(stderr, "[fiber_b] yielding back to A again\n");
     fflush(stderr);
     record_event(EVENT_B_TO_A_AGAIN);
-    fcontext_fiber_yield((void *)(uintptr_t)0xB1B1B1B1);
+    yafl_fiber_yield((void *)(uintptr_t)0xB1B1B1B1);
 
     fprintf(stderr, "[fiber_b] finishing\n");
     fflush(stderr);
@@ -94,7 +92,7 @@ void *fiber_a_entry(void *initial_data) {
     fprintf(stderr, "[fiber_a] calling fiber B\n");
     fflush(stderr);
     record_event(EVENT_A_TO_B);
-    void *result = fcontext_fiber_switch(fiber_b, (void *)(uintptr_t)0xDEADBEEF);
+    void *result = yafl_fiber_switch(fiber_b, (void *)(uintptr_t)0xDEADBEEF);
 
     fprintf(stderr, "[fiber_a] B returned with: %p\n", result);
     fflush(stderr);
@@ -105,7 +103,7 @@ void *fiber_a_entry(void *initial_data) {
     fprintf(stderr, "[fiber_a] calling fiber B again\n");
     fflush(stderr);
     record_event(EVENT_A_TO_B_AGAIN);
-    result = fcontext_fiber_switch(fiber_b, (void *)(uintptr_t)0xA1A1A1A1);
+    result = yafl_fiber_switch(fiber_b, (void *)(uintptr_t)0xA1A1A1A1);
 
     fprintf(stderr, "[fiber_a] B returned again with: %p\n", result);
     fflush(stderr);
@@ -118,25 +116,25 @@ void *fiber_a_entry(void *initial_data) {
 }
 
 int main(void) {
-    fprintf(stderr, "=== fcontext Symmetric Fiber Test ===\n");
+    fprintf(stderr, "=== yafl Symmetric Fiber Test ===\n");
     fflush(stderr);
     record_event(EVENT_MAIN_START);
 
     /* Create fibers */
     fprintf(stderr, "[main] creating fiber A\n");
     fflush(stderr);
-    fcontext_fiber_t *fiber_a = fcontext_fiber_create_vmem(24 * 1024, fiber_a_entry);
+    yafl_fiber_t *fiber_a = yafl_fiber_create_vmem(24 * 1024, fiber_a_entry);
     assert(fiber_a != NULL);
 
     fprintf(stderr, "[main] creating fiber B\n");
     fflush(stderr);
-    fiber_b = fcontext_fiber_create_vmem(24 * 1024, fiber_b_entry);
+    fiber_b = yafl_fiber_create_vmem(24 * 1024, fiber_b_entry);
     assert(fiber_b != NULL);
 
     fprintf(stderr, "[main] entering fiber A\n");
     fflush(stderr);
     record_event(EVENT_MAIN_TO_A);
-    void *result = fcontext_fiber_switch(fiber_a, (void *)(uintptr_t)0xCAFEBABE);
+    void *result = yafl_fiber_switch(fiber_a, (void *)(uintptr_t)0xCAFEBABE);
 
     fprintf(stderr, "[main] fiber A finished with result: %p\n", result);
     fflush(stderr);
@@ -144,9 +142,9 @@ int main(void) {
 
     fprintf(stderr, "[main] cleaning up\n");
     fflush(stderr);
-    fcontext_fiber_destroy(fiber_a);
-    fcontext_fiber_destroy(fiber_b);
-    fcontext_fiber_destroy_thread_fiber();
+    yafl_fiber_destroy(fiber_a);
+    yafl_fiber_destroy(fiber_b);
+    yafl_fiber_destroy_thread_fiber();
     record_event(EVENT_MAIN_END);
 
     /* Verify interleaving */
@@ -207,7 +205,7 @@ int main(void) {
     fprintf(stderr, "[main] assertion passed: B switched to A again\n");
     fflush(stderr);
 
-    fprintf(stderr, "\n✓ PASS: Symmetric fiber switching works correctly\n");
+    fprintf(stderr, "\nPASS: Symmetric fiber switching works correctly\n");
     fflush(stderr);
     return 0;
 }

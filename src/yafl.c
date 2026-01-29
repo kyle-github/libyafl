@@ -1,5 +1,5 @@
 /**
- * fcontext_wrapper.c
+ * yafl_wrapper.c
  * Safe fiber API implementation
  *
  * Implements high-level fiber operations using low-level context switching.
@@ -12,7 +12,6 @@
  *  http://www.boost.org/LICENSE_1_0.txt)
  */
 
-#include "fcontext.h"
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -24,28 +23,30 @@
 #else
     #include <sys/mman.h>
     #include <unistd.h>
-    #include <pthread.h>
 #endif
+
+#include "yafl.h"
+
 
 /* ========================================================================
  * Low-Level API (Internal Only)
  * ======================================================================== */
 
 /* Raw context handle - opaque pointer to saved machine state */
-typedef struct fcontext_opaque_t *fcontext_t;
+typedef struct yafl_opaque_t *yafl_t;
 
 /* Raw transfer between contexts */
 typedef struct {
-    fcontext_t prev_context;
+    yafl_t prev_context;
     void *data;
-} fcontext_transfer_t;
+} yafl_transfer_t;
 
 /* Raw entry function type for low-level API */
-typedef void (*fcontext_entry_t)(fcontext_transfer_t);
+typedef void (*yafl_entry_t)(yafl_transfer_t);
 
 /* Low-level assembly-implemented functions */
-extern fcontext_t fcontext_init(void *sp, size_t size, fcontext_entry_t fn);
-extern fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp);
+extern yafl_t make_fcontext(void *sp, size_t size, yafl_entry_t fn);
+extern yafl_transfer_t jump_fcontext(yafl_t const to, void *vp);
 
 /* ========================================================================
  * Constants and Types
@@ -59,15 +60,14 @@ extern fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp);
 typedef enum {
     FCONTEXT_ALLOC_MALLOC,
     FCONTEXT_ALLOC_VMEM,
-    FCONTEXT_ALLOC_THREAD    /* Thread fiber, no stack to free */
-} fcontext_alloc_type_t;
+    FCONTEXT_ALLOC_THREAD /* Thread fiber, no stack to free */
+} yafl_alloc_type_t;
 
 /* Internal fiber structure */
-struct fcontext_fiber {
+struct yafl_fiber {
     uint32_t magic;
-    fcontext_alloc_type_t alloc_type;
-    fcontext_fiber_state_t state;
-    uint64_t owner_thread;
+    yafl_alloc_type_t alloc_type;
+    yafl_fiber_state_t state;
 
     /* Stack management */
     void *stack_region;
@@ -77,22 +77,22 @@ struct fcontext_fiber {
     bool watermark_filled;
 
     /* Context tracking */
-    fcontext_t context;              /* Current context handle (my paused state) */
-    struct fcontext_fiber *caller;   /* Caller fiber */
+    yafl_t context;            /* Current context handle (my paused state) */
+    struct yafl_fiber *caller; /* Caller fiber */
 
     /* User entry and result */
-    fcontext_fiber_fn_t user_entry;
+    yafl_fiber_fn_t user_entry;
     void *cached_result;
-    void *initial_data;  /* Data from first switch */
-    bool first_run;      /* Track if this is the first run */
+    void *initial_data; /* Data from first switch */
+    bool first_run;     /* Track if this is the first run */
 };
 
 /* Typedef for internal use */
-typedef struct fcontext_fiber fcontext_fiber_t;
+typedef struct yafl_fiber yafl_fiber_t;
 
 /* Thread-local storage */
-static _Thread_local fcontext_fiber_t *tls_current_fiber = NULL;
-static _Thread_local fcontext_fiber_t *tls_thread_fiber = NULL;
+static _Thread_local yafl_fiber_t *tls_current_fiber = NULL;
+static _Thread_local yafl_fiber_t *tls_thread_fiber = NULL;
 
 /* ========================================================================
  * Utility Functions
@@ -115,26 +115,19 @@ static void *align_stack_pointer(void *ptr) {
     return (void *)(addr & ~(FCONTEXT_STACK_ALIGNMENT - 1));
 }
 
-static uint64_t get_current_thread_id(void) {
-#ifdef _WIN32
-    return (uint64_t)GetCurrentThreadId();
-#else
-    return (uint64_t)pthread_self();
-#endif
-}
-
 /* ========================================================================
  * Trampoline: Adapts Low-Level API to High-Level Fiber API
  * ======================================================================== */
 
 /*
- * This is called as the entry function by fcontext_init().
+ * This is called as the entry function by make_fcontext().
  * It wraps the user's entry function, manages state, and handles the result.
  */
-static void fiber_entry_trampoline(fcontext_transfer_t t) {
-    fcontext_fiber_t *fiber = (fcontext_fiber_t *)t.data;
+static void fiber_entry_trampoline(yafl_transfer_t t) {
+    yafl_fiber_t *fiber = (yafl_fiber_t *)t.data;
 
-    fprintf(stderr, "[fiber] entry trampoline: fiber=%p, initial_data=%p, prev_context=%p\n", (void *)fiber, fiber->initial_data, (void *)t.prev_context);
+    fprintf(stderr, "[fiber] entry trampoline: fiber=%p, initial_data=%p, prev_context=%p\n", (void *)fiber, fiber->initial_data,
+            (void *)t.prev_context);
     fflush(stderr);
 
     /* Initialize caller's context so yields can use it */
@@ -165,7 +158,7 @@ static void fiber_entry_trampoline(fcontext_transfer_t t) {
     fflush(stderr);
 
     /* Switch back to caller using caller's context */
-    fcontext_switch(fiber->caller->context, result);
+    jump_fcontext(fiber->caller->context, result);
 
     fprintf(stderr, "[fiber] ERROR: should not return from final switch\n");
     fflush(stderr);
@@ -175,24 +168,15 @@ static void fiber_entry_trampoline(fcontext_transfer_t t) {
  * Fiber Creation (Internal Helper)
  * ======================================================================== */
 
-static fcontext_fiber_t *fiber_alloc(
-    fcontext_alloc_type_t alloc_type,
-    size_t stack_size,
-    fcontext_fiber_fn_t entry
-) {
-    if(entry == NULL) {
-        return NULL;
-    }
+static yafl_fiber_t *fiber_alloc(yafl_alloc_type_t alloc_type, size_t stack_size, yafl_fiber_fn_t entry) {
+    if(entry == NULL) { return NULL; }
 
-    fcontext_fiber_t *fiber = malloc(sizeof(fcontext_fiber_t));
-    if(!fiber) {
-        return NULL;
-    }
+    yafl_fiber_t *fiber = malloc(sizeof(yafl_fiber_t));
+    if(!fiber) { return NULL; }
 
     fiber->magic = FCONTEXT_FIBER_MAGIC;
     fiber->alloc_type = alloc_type;
     fiber->state = FCONTEXT_FIBER_CREATED;
-    fiber->owner_thread = get_current_thread_id();
     fiber->context = NULL;
     fiber->caller = NULL;
     fiber->user_entry = entry;
@@ -215,9 +199,7 @@ static fcontext_fiber_t *fiber_alloc(
 
     /* Allocate stack */
     if(alloc_type == FCONTEXT_ALLOC_MALLOC) {
-        if(stack_size == 0) {
-            stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
-        }
+        if(stack_size == 0) { stack_size = FCONTEXT_DEFAULT_STACK_SIZE; }
 
         size_t allocated_size = stack_size + 256;
         void *block = malloc(allocated_size);
@@ -227,7 +209,7 @@ static fcontext_fiber_t *fiber_alloc(
         }
 
         void *block_end = (char *)block + allocated_size;
-        void *stack_top = (char *)block_end - 256;  /* Reserve space for metadata */
+        void *stack_top = (char *)block_end - 256; /* Reserve space for metadata */
         stack_top = align_stack_pointer(stack_top);
 
         size_t actual_stack_size = (char *)stack_top - (char *)block;
@@ -239,9 +221,7 @@ static fcontext_fiber_t *fiber_alloc(
 
     } else if(alloc_type == FCONTEXT_ALLOC_VMEM) {
         size_t page_size = get_page_size();
-        if(stack_size == 0) {
-            stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
-        }
+        if(stack_size == 0) { stack_size = FCONTEXT_DEFAULT_STACK_SIZE; }
 
         size_t stack_with_overhead = stack_size + 256;
         size_t aligned_stack_size = ((stack_with_overhead + page_size - 1) / page_size) * page_size;
@@ -295,7 +275,7 @@ static fcontext_fiber_t *fiber_alloc(
     fflush(stderr);
 
     /* Initialize the low-level context with trampoline as entry */
-    fiber->context = fcontext_init(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
+    fiber->context = make_fcontext(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
     if(!fiber->context) {
         free(fiber->stack_region);
         free(fiber);
@@ -312,25 +292,19 @@ static fcontext_fiber_t *fiber_alloc(
  * Public Fiber API
  * ======================================================================== */
 
-extern fcontext_fiber_t *fcontext_fiber_create_vmem(
-    size_t stack_size,
-    fcontext_fiber_fn_t entry
-) {
+extern yafl_fiber_t *yafl_fiber_create_vmem(size_t stack_size, yafl_fiber_fn_t entry) {
     fprintf(stderr, "[create_vmem] creating fiber with vmem stack\n");
     fflush(stderr);
     return fiber_alloc(FCONTEXT_ALLOC_VMEM, stack_size, entry);
 }
 
-extern fcontext_fiber_t *fcontext_fiber_create_malloc(
-    size_t stack_size,
-    fcontext_fiber_fn_t entry
-) {
+extern yafl_fiber_t *yafl_fiber_create_malloc(size_t stack_size, yafl_fiber_fn_t entry) {
     fprintf(stderr, "[create_malloc] creating fiber with malloc stack\n");
     fflush(stderr);
     return fiber_alloc(FCONTEXT_ALLOC_MALLOC, stack_size, entry);
 }
 
-extern fcontext_fiber_t *fcontext_fiber_convert_thread(void) {
+extern yafl_fiber_t *yafl_fiber_convert_thread(void) {
     fprintf(stderr, "[convert_thread] converting current thread\n");
     fflush(stderr);
 
@@ -340,15 +314,12 @@ extern fcontext_fiber_t *fcontext_fiber_convert_thread(void) {
         return tls_thread_fiber;
     }
 
-    fcontext_fiber_t *fiber = malloc(sizeof(fcontext_fiber_t));
-    if(!fiber) {
-        return NULL;
-    }
+    yafl_fiber_t *fiber = malloc(sizeof(yafl_fiber_t));
+    if(!fiber) { return NULL; }
 
     fiber->magic = FCONTEXT_FIBER_MAGIC;
     fiber->alloc_type = FCONTEXT_ALLOC_THREAD;
     fiber->state = FCONTEXT_FIBER_RUNNING;
-    fiber->owner_thread = get_current_thread_id();
     fiber->context = NULL;
     fiber->caller = NULL;
     fiber->user_entry = NULL;
@@ -370,11 +341,9 @@ extern fcontext_fiber_t *fcontext_fiber_convert_thread(void) {
     return fiber;
 }
 
-extern bool fcontext_fiber_is_thread_converted(void) {
-    return tls_thread_fiber != NULL;
-}
+extern bool yafl_fiber_is_thread_converted(void) { return tls_thread_fiber != NULL; }
 
-extern void fcontext_fiber_destroy_thread_fiber(void) {
+extern void yafl_fiber_destroy_thread_fiber(void) {
     fprintf(stderr, "[destroy_thread_fiber] destroying thread fiber\n");
     fflush(stderr);
 
@@ -385,18 +354,12 @@ extern void fcontext_fiber_destroy_thread_fiber(void) {
     }
 }
 
-extern void *fcontext_fiber_switch(fcontext_fiber_t *fiber, void *data) {
+extern void *yafl_fiber_switch(yafl_fiber_t *fiber, void *data) {
     fprintf(stderr, "[switch] switching to fiber: %p, data=%p\n", (void *)fiber, data);
     fflush(stderr);
 
     if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
         fprintf(stderr, "[switch] error: fiber is NULL or invalid\n");
-        fflush(stderr);
-        return NULL;
-    }
-
-    if(fiber->owner_thread != get_current_thread_id()) {
-        fprintf(stderr, "[switch] error: fiber owned by different thread\n");
         fflush(stderr);
         return NULL;
     }
@@ -416,11 +379,11 @@ extern void *fcontext_fiber_switch(fcontext_fiber_t *fiber, void *data) {
     }
 
     /* Convert current thread to fiber if needed */
-    fcontext_fiber_t *caller = tls_current_fiber;
+    yafl_fiber_t *caller = tls_current_fiber;
     if(caller == NULL) {
         fprintf(stderr, "[switch] auto-converting thread to fiber\n");
         fflush(stderr);
-        caller = fcontext_fiber_convert_thread();
+        caller = yafl_fiber_convert_thread();
         if(caller == NULL) {
             fprintf(stderr, "[switch] error: could not convert thread\n");
             fflush(stderr);
@@ -444,10 +407,13 @@ extern void *fcontext_fiber_switch(fcontext_fiber_t *fiber, void *data) {
     }
     void *switch_data = (fiber->state == FCONTEXT_FIBER_CREATED) ? (void *)fiber : data;
 
-    fcontext_transfer_t t = fcontext_switch(fiber->context, switch_data);
+    yafl_transfer_t t = jump_fcontext(fiber->context, switch_data);
 
     fprintf(stderr, "[switch] returned to caller: prev_context=%p, data=%p\n", (void *)t.prev_context, t.data);
     fflush(stderr);
+
+    /* Restore current fiber to caller */
+    tls_current_fiber = caller;
 
     /* Update fiber's context for next switch */
     fiber->context = t.prev_context;
@@ -463,11 +429,11 @@ extern void *fcontext_fiber_switch(fcontext_fiber_t *fiber, void *data) {
     return t.data;
 }
 
-extern void *fcontext_fiber_yield(void *data) {
+extern void *yafl_fiber_yield(void *data) {
     fprintf(stderr, "[yield] yielding with data=%p\n", data);
     fflush(stderr);
 
-    fcontext_fiber_t *current = tls_current_fiber;
+    yafl_fiber_t *current = tls_current_fiber;
     if(current == NULL) {
         fprintf(stderr, "[yield] error: not in a fiber context\n");
         fflush(stderr);
@@ -477,13 +443,17 @@ extern void *fcontext_fiber_yield(void *data) {
     /* Change state to SUSPENDED before yielding */
     current->state = FCONTEXT_FIBER_SUSPENDED;
 
-    fprintf(stderr, "[yield] switching to caller: %p, caller->context=%p\n", (void *)current->caller, (void *)current->caller->context);
+    fprintf(stderr, "[yield] switching to caller: %p, caller->context=%p\n", (void *)current->caller,
+            (void *)current->caller->context);
     fflush(stderr);
 
-    fcontext_transfer_t t = fcontext_switch(current->caller->context, data);
+    yafl_transfer_t t = jump_fcontext(current->caller->context, data);
 
     fprintf(stderr, "[yield] resumed with data=%p, prev_context=%p\n", t.data, (void *)t.prev_context);
     fflush(stderr);
+
+    /* Restore current fiber after resume */
+    tls_current_fiber = current;
 
     /* Back to RUNNING after resume */
     current->state = FCONTEXT_FIBER_RUNNING;
@@ -496,62 +466,24 @@ extern void *fcontext_fiber_yield(void *data) {
     return t.data;
 }
 
-extern fcontext_fiber_state_t fcontext_fiber_get_state(fcontext_fiber_t *fiber) {
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return FCONTEXT_FIBER_CREATED;
-    }
+extern yafl_fiber_state_t yafl_fiber_get_state(yafl_fiber_t *fiber) {
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return FCONTEXT_FIBER_CREATED; }
     return fiber->state;
 }
 
-extern fcontext_fiber_t *fcontext_fiber_current(void) {
-    return tls_current_fiber;
-}
+extern yafl_fiber_t *yafl_fiber_current(void) { return tls_current_fiber; }
 
-extern fcontext_fiber_t *fcontext_fiber_get_caller(void) {
-    fcontext_fiber_t *current = tls_current_fiber;
-    if(current == NULL || current->alloc_type == FCONTEXT_ALLOC_THREAD) {
-        return NULL;
-    }
+extern yafl_fiber_t *yafl_fiber_get_caller(void) {
+    yafl_fiber_t *current = tls_current_fiber;
+    if(current == NULL || current->alloc_type == FCONTEXT_ALLOC_THREAD) { return NULL; }
     return current->caller;
 }
 
-extern uint64_t fcontext_fiber_get_owner_thread(fcontext_fiber_t *fiber) {
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return 0;
-    }
-    return fiber->owner_thread;
-}
-
-extern bool fcontext_fiber_transfer_thread(fcontext_fiber_t *fiber) {
-    fprintf(stderr, "[transfer_thread] transferring fiber to current thread\n");
-    fflush(stderr);
-
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return false;
-    }
-
-    if(fiber->state == FCONTEXT_FIBER_RUNNING || fiber->state == FCONTEXT_FIBER_FINISHED) {
-        fprintf(stderr, "[transfer_thread] error: invalid fiber state\n");
-        fflush(stderr);
-        return false;
-    }
-
-    fiber->owner_thread = get_current_thread_id();
-    fiber->caller = NULL;
-
-    fprintf(stderr, "[transfer_thread] fiber transferred\n");
-    fflush(stderr);
-
-    return true;
-}
-
-extern bool fcontext_fiber_fill_watermark(fcontext_fiber_t *fiber) {
+extern bool yafl_fiber_fill_watermark(yafl_fiber_t *fiber) {
     fprintf(stderr, "[fill_watermark] filling watermark for fiber: %p\n", (void *)fiber);
     fflush(stderr);
 
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return false;
-    }
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return false; }
 
     if(fiber->state != FCONTEXT_FIBER_CREATED) {
         fprintf(stderr, "[fill_watermark] error: fiber not in CREATED state\n");
@@ -559,13 +491,9 @@ extern bool fcontext_fiber_fill_watermark(fcontext_fiber_t *fiber) {
         return false;
     }
 
-    if(fiber->alloc_type == FCONTEXT_ALLOC_THREAD) {
-        return false;
-    }
+    if(fiber->alloc_type == FCONTEXT_ALLOC_THREAD) { return false; }
 
-    if(fiber->watermark_filled) {
-        return false;
-    }
+    if(fiber->watermark_filled) { return false; }
 
     /* Fill the watermark */
     memset((char *)fiber->stack_top - fiber->stack_size, FCONTEXT_STACK_WATERMARK, fiber->stack_size);
@@ -575,7 +503,7 @@ extern bool fcontext_fiber_fill_watermark(fcontext_fiber_t *fiber) {
     fflush(stderr);
 
     /* Reinitialize the context since we overwrote it with the watermark */
-    fiber->context = fcontext_init(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
+    fiber->context = make_fcontext(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
     if(!fiber->context) {
         fprintf(stderr, "[fill_watermark] error: failed to reinitialize context\n");
         fflush(stderr);
@@ -588,66 +516,32 @@ extern bool fcontext_fiber_fill_watermark(fcontext_fiber_t *fiber) {
     return true;
 }
 
-extern size_t fcontext_fiber_get_stack_usage(fcontext_fiber_t *fiber) {
+extern size_t yafl_fiber_get_stack_usage(yafl_fiber_t *fiber) {
     fprintf(stderr, "[get_stack_usage] getting stack usage for fiber: %p\n", (void *)fiber);
     fflush(stderr);
 
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return SIZE_MAX;
-    }
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return SIZE_MAX; }
 
-    if(!fiber->watermark_filled) {
-        return SIZE_MAX;
-    }
+    if(!fiber->watermark_filled) { return SIZE_MAX; }
 
     unsigned char *stack_base = (unsigned char *)fiber->stack_top - fiber->stack_size;
     size_t unused = 0;
 
-    while(unused < fiber->stack_size && stack_base[unused] == FCONTEXT_STACK_WATERMARK) {
-        unused++;
-    }
+    while(unused < fiber->stack_size && stack_base[unused] == FCONTEXT_STACK_WATERMARK) { unused++; }
 
     return fiber->stack_size - unused;
 }
 
-extern size_t fcontext_fiber_get_stack_size(fcontext_fiber_t *fiber) {
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return 0;
-    }
+extern size_t yafl_fiber_get_stack_size(yafl_fiber_t *fiber) {
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return 0; }
     return fiber->stack_size;
 }
 
-extern bool fcontext_fiber_stack_overflow(fcontext_fiber_t *fiber) {
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return false;
-    }
-
-    if(fiber->alloc_type != FCONTEXT_ALLOC_MALLOC) {
-        return false;
-    }
-
-    return false;
-}
-
-extern bool fcontext_fiber_stack_underflow(fcontext_fiber_t *fiber) {
-    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return false;
-    }
-
-    if(fiber->alloc_type != FCONTEXT_ALLOC_MALLOC) {
-        return false;
-    }
-
-    return false;
-}
-
-extern void *fcontext_fiber_destroy(fcontext_fiber_t *fiber) {
+extern void *yafl_fiber_destroy(yafl_fiber_t *fiber) {
     fprintf(stderr, "[destroy] destroying fiber: %p\n", (void *)fiber);
     fflush(stderr);
 
-    if(fiber == NULL) {
-        return NULL;
-    }
+    if(fiber == NULL) { return NULL; }
 
     if(fiber->magic != FCONTEXT_FIBER_MAGIC) {
         fprintf(stderr, "[destroy] error: invalid fiber magic\n");
@@ -673,7 +567,7 @@ extern void *fcontext_fiber_destroy(fcontext_fiber_t *fiber) {
 #endif
     }
 
-    fiber->magic = 0;  /* Invalidate */
+    fiber->magic = 0; /* Invalidate */
     free(fiber);
 
     fprintf(stderr, "[destroy] fiber destroyed, result=%p\n", result);
@@ -682,6 +576,4 @@ extern void *fcontext_fiber_destroy(fcontext_fiber_t *fiber) {
     return result;
 }
 
-extern size_t fcontext_get_page_size(void) {
-    return get_page_size();
-}
+extern size_t yafl_get_page_size(void) { return get_page_size(); }

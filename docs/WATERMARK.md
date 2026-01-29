@@ -12,7 +12,7 @@ When enabled, the entire stack is filled with a watermark pattern (`0xA5`) at cr
 
 **Configuration:**
 ```c
-/* In fcontext.h - enabled by default */
+/* In yafl.h - enabled by default */
 #ifndef FCONTEXT_ENABLE_STACK_WATERMARK
 #define FCONTEXT_ENABLE_STACK_WATERMARK 1
 #endif
@@ -112,9 +112,9 @@ struct fcontext_stack_t {
 To disable watermark checking (saves one `memset()` and reporting overhead):
 
 ```c
-/* Define before including fcontext.h */
+/* Define before including yafl.h */
 #define FCONTEXT_ENABLE_STACK_WATERMARK 0
-#include "fcontext.h"
+#include "yafl.h"
 ```
 
 When disabled:
@@ -126,7 +126,7 @@ When disabled:
 
 ```c
 #include <stdio.h>
-#include "fcontext.h"
+#include "yafl.h"
 
 void my_fiber(fcontext_transfer_t t) {
     char buffer[2048];  // Consume some stack

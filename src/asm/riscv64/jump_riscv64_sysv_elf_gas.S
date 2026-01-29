@@ -60,10 +60,10 @@
 .file "jump_riscv64_sysv_elf_gas.S"
 .text
 .align  1
-.global fcontext_switch
-.hidden fcontext_switch
-.type   fcontext_switch, %function
-fcontext_switch:
+.global jump_fcontext
+.hidden jump_fcontext
+.type   jump_fcontext, %function
+jump_fcontext:
     # prepare stack for GP + FPU
     addi  sp, sp, -0xd0
 
@@ -146,6 +146,6 @@ fcontext_switch:
     addi  sp, sp, 0xd0
 
     jr a2
-.size   fcontext_switch,.-fcontext_switch
+.size   jump_fcontext,.-jump_fcontext
 # Mark that we don't need executable stack.
 .section .note.GNU-stack,"",%progbits

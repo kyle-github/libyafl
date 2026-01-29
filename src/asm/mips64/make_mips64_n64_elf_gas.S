@@ -47,12 +47,12 @@
 
 .file "make_mips64_n64_elf_gas.S"
 .text
-.globl fcontext_init
-.hidden fcontext_init
+.globl make_fcontext
+.hidden make_fcontext
 .align 3
-.type fcontext_init,@function
-.ent fcontext_init
-fcontext_init:
+.type make_fcontext,@function
+.ent make_fcontext
+make_fcontext:
 #ifdef __PIC__
 .set    noreorder
 .cpload $t9
@@ -70,7 +70,7 @@ fcontext_init:
     # When finish is reached after the fiber returns, S1 will contain the context pointer.
     sd  $v0, 72($v0)
 
-    # third arg of fcontext_init() == address of context-function
+    # third arg of make_fcontext() == address of context-function
     sd  $a2, 152($v0)
 
     # NOTE: $gp (global pointer) is NOT saved here.
@@ -99,8 +99,8 @@ finish:
     dla $t9, _exit
     move $a0, $zero
     jr $t9
-.end fcontext_init
-.size fcontext_init, .-fcontext_init
+.end make_fcontext
+.size make_fcontext, .-make_fcontext
 
 /* Mark that we don't need executable stack.  */
 .section .note.GNU-stack,"",%progbits

@@ -19,12 +19,12 @@ Each architecture has three types of functions:
 1. **make_*_*.S** - Create/initialize a context
    - Sets up stack frame and instruction pointer
    - Called once per new context
-   - Maps to: `fcontext_t fcontext_init(void *sp, size_t size, fcontext_fn_t fn)`
+   - Maps to: `yafl_t make_yafl(void *sp, size_t size, yafl_fn_t fn)`
 
 2. **jump_*_*.S** - Switch to a context
    - Saves current state, restores new context
    - Called frequently (on every context switch)
-   - Maps to: `fcontext_transfer_t fcontext_switch(fcontext_t const to, void *vp)`
+   - Maps to: `yafl_transfer_t jump_yafl(yafl_t const to, void *vp)`
 
 ## ABI and OS-Specific Suffixes
 
@@ -102,7 +102,7 @@ Context switch by:
 
 ### Calling Convention Details
 
-The entry function for a new context receives `fcontext_transfer_t` in:
+The entry function for a new context receives `yafl_transfer_t` in:
 - **x86_64**: `rdi` register (System V ABI first argument)
 - **arm64**: `x0` register (AAPCS first argument)
 - **i386**: Stack parameter (32-bit calling convention)
@@ -111,9 +111,9 @@ The entry function for a new context receives `fcontext_transfer_t` in:
 ## Testing and Validation
 
 All assembly files are tested by:
-1. `test_fcontext_basic` - Basic context creation and switching
-2. `test_fcontext_simple` - Simple entry point execution
-3. `test_fcontext_transfer` - Data passing through context switches
+1. `test_yafl_basic` - Basic context creation and switching
+2. `test_yafl_simple` - Simple entry point execution
+3. `test_yafl_transfer` - Data passing through context switches
 
 Tests are compiled with the selected architecture's assembly files and run on the target platform.
 

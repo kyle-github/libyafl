@@ -40,7 +40,7 @@ realpath_dir() {
 
 HOST_LOG_DIR="$(realpath_dir "${HOST_LOG_DIR}")"
 
-SOURCE_MOUNT="/mnt/fcontext-src"
+SOURCE_MOUNT="/mnt/yafl-src"
 
 if [[ "${HOST_LOG_DIR}" != "${REPO_ROOT}"* ]]; then
     echo "HOST_LOG_DIR (${HOST_LOG_DIR}) must reside under the repository root (${REPO_ROOT})." >&2
