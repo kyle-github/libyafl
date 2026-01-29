@@ -47,3 +47,5 @@ Testing/
 # Python bytecode (if any)
 __pycache__/
 *.pyc
+
+.claude
