@@ -187,10 +187,9 @@ endif()
 # ============================================================================
 
 set(TESTS
-    test_yafl_api
-    test_yafl_symmetric
+    test_yafl_basic
+    test_yafl_suspend_resume
     test_yafl_guard
-    test_yafl_watermark_mmap
     test_yafl_many
 )
 

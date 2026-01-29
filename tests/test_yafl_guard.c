@@ -1,6 +1,5 @@
-/**
- * test_yafl_guard.c
- * Guard page test
+/*
+ * test_yafl_guard.c - Guard page overflow detection test
  *
  * Verifies that guard pages detect stack overflow.
  * Uses alternate signal stack on POSIX and SEH on Windows.
@@ -15,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "yafl.h"
+#include "../include/yafl.h"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -26,6 +25,7 @@
 
 static volatile bool fault_caught = false;
 static volatile bool in_overflow_test = false;
+static yafl_fiber_t *g_fiber = NULL;
 
 #ifndef _WIN32
 /* POSIX signal handler */
@@ -37,17 +37,13 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
     fprintf(stderr, "[handler] caught signal %d\n", sig);
     fflush(stderr);
 
-    if(in_overflow_test) {
+    if (in_overflow_test && g_fiber != NULL) {
         fault_caught = true;
         fprintf(stderr, "[handler] stack overflow detected as expected\n");
         fflush(stderr);
 
-        /* Exit the fiber - we can't continue after stack overflow */
-        yafl_fiber_t *current = yafl_fiber_current();
-        if(current) {
-            /* Jump back to caller, signaling the fault */
-            yafl_fiber_yield((void *)0xDEADDEAD);
-        }
+        /* Exit the fiber - suspend with error code */
+        yafl_fiber_suspend((void *)0xDEADDEAD);
     } else {
         fprintf(stderr, "[handler] unexpected signal outside test\n");
         fflush(stderr);
@@ -73,7 +69,7 @@ static void overflow_stack(int depth) {
 }
 #pragma GCC diagnostic pop
 
-void *guard_test_fiber(void *data) {
+static void *guard_test_fiber(void *data) {
     (void)data;
 
     fprintf(stderr, "[fiber] starting guard page test\n");
@@ -116,14 +112,15 @@ int main(void) {
     ss.ss_size = alt_stack_size;
     ss.ss_flags = 0;
 
-    if(sigaltstack(&ss, NULL) == -1) {
+    if (sigaltstack(&ss, NULL) == -1) {
         fprintf(stderr, "[main] ERROR: sigaltstack failed\n");
         fflush(stderr);
         free(alt_stack);
         return 1;
     }
 
-    fprintf(stderr, "[main] alternate signal stack installed: %p (size %zu)\n", alt_stack, alt_stack_size);
+    fprintf(stderr, "[main] alternate signal stack installed: %p (size %zu)\n", alt_stack,
+            alt_stack_size);
     fflush(stderr);
 
     /* Install signal handler */
@@ -133,14 +130,14 @@ int main(void) {
     sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
     sigemptyset(&sa.sa_mask);
 
-    if(sigaction(SIGSEGV, &sa, NULL) == -1) {
+    if (sigaction(SIGSEGV, &sa, NULL) == -1) {
         fprintf(stderr, "[main] ERROR: sigaction SIGSEGV failed\n");
         fflush(stderr);
         free(alt_stack);
         return 1;
     }
 
-    if(sigaction(SIGBUS, &sa, NULL) == -1) {
+    if (sigaction(SIGBUS, &sa, NULL) == -1) {
         fprintf(stderr, "[main] ERROR: sigaction SIGBUS failed\n");
         fflush(stderr);
         free(alt_stack);
@@ -155,24 +152,25 @@ int main(void) {
     fprintf(stderr, "[main] creating fiber with guard pages\n");
     fflush(stderr);
 
-    yafl_fiber_t *fiber = yafl_fiber_create_vmem(24 * 1024, guard_test_fiber);
+    yafl_fiber_t *fiber = yafl_fiber_create(guard_test_fiber, 24 * 1024,
+                                            YAFL_STACK_FLAGS_VMEM);
     assert(fiber != NULL);
+    g_fiber = fiber;
 
     /* Run the fiber - it will overflow and trigger the guard page */
-    fprintf(stderr, "[main] switching to fiber\n");
+    fprintf(stderr, "[main] resuming fiber\n");
     fflush(stderr);
 
-    void *result = yafl_fiber_switch(fiber, NULL);
+    void *result = yafl_fiber_resume(fiber, NULL);
 
     fprintf(stderr, "[main] fiber returned: %p\n", result);
     fflush(stderr);
 
     /* Verify the fault was caught */
-    if(!fault_caught) {
+    if (!fault_caught) {
         fprintf(stderr, "[main] FAIL: guard page fault was not caught\n");
         fflush(stderr);
         yafl_fiber_destroy(fiber);
-        yafl_fiber_destroy_thread_fiber();
 #ifndef _WIN32
         free(alt_stack);
 #endif
@@ -183,7 +181,7 @@ int main(void) {
     /* On Windows, the fiber returned normally after catching the exception */
     assert(result == (void *)0x1);
 #else
-    /* On POSIX, the fiber yielded from the signal handler */
+    /* On POSIX, the fiber suspended from the signal handler */
     assert(result == (void *)0xDEADDEAD);
 #endif
 
@@ -191,7 +189,6 @@ int main(void) {
     fflush(stderr);
 
     yafl_fiber_destroy(fiber);
-    yafl_fiber_destroy_thread_fiber();
 
 #ifndef _WIN32
     /* Restore default signal handlers */

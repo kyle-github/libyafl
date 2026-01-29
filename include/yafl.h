@@ -35,164 +35,123 @@ extern "C" {
 /* Opaque fiber handle */
 typedef struct yafl_fiber yafl_fiber_t;
 
-/* Fiber execution state */
+/* Stack allocation and watermark flags */
 typedef enum {
-    FCONTEXT_FIBER_CREATED,   /* Initialized, never started */
-    FCONTEXT_FIBER_RUNNING,   /* Currently executing */
-    FCONTEXT_FIBER_SUSPENDED, /* Yielded, can be resumed */
-    FCONTEXT_FIBER_FINISHED   /* Entry returned, cannot resume */
-} yafl_fiber_state_t;
+    YAFL_STACK_FLAGS_NONE = 0,
+    YAFL_STACK_FLAGS_MALLOC = (1 << 0),    /* Use malloc for stack allocation */
+    YAFL_STACK_FLAGS_VMEM = (1 << 1),      /* Use virtual memory (with guard pages) */
+    YAFL_STACK_FLAGS_WATERMARK = (1 << 8), /* Fill stack with watermark pattern */
+} yafl_stack_flags_t;
 
-/* Fiber entry function - receives initial data, returns final result */
-typedef void *(*yafl_fiber_fn_t)(void *initial_data);
+/* Fiber execution status */
+typedef enum {
+    YAFL_FIBER_STATUS_ERR,       /* Invalid fiber or error condition */
+    YAFL_FIBER_STATUS_SUSPENDED, /* Fiber is suspended, waiting to resume */
+    YAFL_FIBER_STATUS_RUNNING,   /* Fiber is currently executing */
+    YAFL_FIBER_STATUS_COMPLETE,  /* Fiber has finished execution */
+} yafl_fiber_status_t;
+
+/* Fiber entry function - receives argument, returns final result */
+typedef void *(*yafl_fiber_fn)(void *arg);
 
 /* ========================================================================
  * Fiber Creation
  * ======================================================================== */
 
 /*
- * Create a fiber with virtual memory stack.
- * Includes guard pages for overflow/underflow detection (causes SIGSEGV/AV).
+ * Create a new fiber.
+ *
+ * The fiber is created in a SUSPENDED state. Stack allocation type and
+ * watermark settings are controlled via flags.
  *
  * Parameters:
- *   stack_size - Requested stack size (rounded up to page boundary)
- *   entry      - Function called when fiber first runs
+ *   fiber_fn   - Function to execute in the fiber
+ *   stack_size - Requested stack size (0 = use default)
+ *   flags      - Stack allocation and watermark flags
  *
  * Returns:
- *   New fiber in CREATED state, or NULL on allocation failure
+ *   New fiber in SUSPENDED state, or NULL on allocation failure or invalid flags.
+ *
+ * Flag validation:
+ *   - Exactly one of YAFL_STACK_FLAGS_MALLOC or YAFL_STACK_FLAGS_VMEM must be set
+ *   - YAFL_STACK_FLAGS_WATERMARK is optional
+ *   - YAFL_STACK_FLAGS_NONE (no flags) is invalid
  */
-extern yafl_fiber_t *yafl_fiber_create_vmem(size_t stack_size, yafl_fiber_fn_t entry);
+extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size,
+                                       yafl_stack_flags_t flags);
 
-/*
- * Create a fiber with malloc-allocated stack.
- * No guard pages (use vmem for overflow detection).
- *
- * Parameters:
- *   stack_size - Requested stack size (rounded to alignment)
- *   entry      - Function called when fiber first runs
- *
- * Returns:
- *   New fiber in CREATED state, or NULL on allocation failure
- */
-extern yafl_fiber_t *yafl_fiber_create_malloc(size_t stack_size, yafl_fiber_fn_t entry);
 
 /* ========================================================================
- * Thread-to-Fiber Conversion
+ * Fiber Control Flow
  * ======================================================================== */
 
 /*
- * Convert the current thread into a fiber.
+ * Start or resume a fiber.
  *
- * Called implicitly by yafl_fiber_switch() when needed.
- * Call explicitly for control over lifecycle or to get the handle.
+ * If the fiber is SUSPENDED, resumes execution from the last suspend point.
+ * If the fiber is in its initial SUSPENDED state, starts execution.
+ * If the fiber is COMPLETE, returns cached result without re-entering.
+ *
+ * Parameters:
+ *   fiber - Fiber to resume (must be SUSPENDED or initially created)
+ *   arg   - Argument passed to fiber (becomes return value from suspend)
  *
  * Returns:
- *   Fiber representing current thread, or NULL on error.
- *   Returns existing handle if already converted (idempotent).
- */
-extern yafl_fiber_t *yafl_fiber_convert_thread(void);
-
-/*
- * Check if current thread has been converted to a fiber.
- */
-extern bool yafl_fiber_is_thread_converted(void);
-
-/*
- * Destroy the current thread's fiber context.
+ *   Data returned from suspend or fiber's entry function.
+ *   Returns NULL if fiber is NULL, invalid, or RUNNING.
  *
- * Call when done using fibers from this thread.
- * Must not be called while fibers may yield back to this thread.
+ * Note: NULL is a valid return value. Use yafl_fiber_status() to distinguish
+ *       NULL results from errors.
  */
-extern void yafl_fiber_destroy_thread_fiber(void);
+extern void *yafl_fiber_resume(yafl_fiber_t *fiber, void *arg);
+
+/*
+ * Suspend the current fiber.
+ *
+ * Yields control back to the fiber that called resume().
+ * Must be called from within a fiber, not from the main thread/non-fiber context.
+ *
+ * Parameters:
+ *   result - Value to return from the current resume() call
+ *
+ * Returns:
+ *   Argument passed to the next resume() call.
+ *   Returns NULL if not currently in a fiber.
+ */
+extern void *yafl_fiber_suspend(void *result);
 
 /* ========================================================================
- * Fiber Switching
+ * Fiber Status and Monitoring
  * ======================================================================== */
 
 /*
- * Switch to a fiber.
- *
- * If called from a non-fiber context, implicitly converts thread to fiber.
- * The target fiber receives the data via its entry function (first switch)
- * or as the return value from yield (subsequent switches).
- *
- * Safe to call repeatedly with the same fiber pointer.
+ * Get the current status of a fiber.
  *
  * Parameters:
- *   fiber - Fiber to switch to (must be CREATED or SUSPENDED)
- *   data  - User data passed to target fiber
+ *   fiber - Fiber to query (may be NULL)
  *
  * Returns:
- *   Data passed back when target yields or finishes (entry function return value).
- *   Returns NULL if fiber is NULL or invalid state.
- *   For finished fibers, returns cached return value (no-op).
- *
- * Note: NULL is a valid data value. Check fiber state to distinguish
- *       from errors if NULL data is expected.
+ *   Current status, or YAFL_FIBER_STATUS_ERR if fiber is NULL or invalid.
  */
-extern void *yafl_fiber_switch(yafl_fiber_t *fiber, void *data);
-
-/*
- * Yield from current fiber back to caller.
- *
- * Returns to whoever most recently switched to this fiber.
- * Must be called from within a fiber, not from an unconverted thread.
- *
- * Parameters:
- *   data - User data passed back to caller
- *
- * Returns:
- *   Data passed on next switch to this fiber.
- *   Returns NULL if called from non-fiber context (programming error).
- */
-extern void *yafl_fiber_yield(void *data);
-
-/* ========================================================================
- * Fiber State and Ownership
- * ======================================================================== */
-
-/* Get fiber's current state */
-extern yafl_fiber_state_t yafl_fiber_get_state(yafl_fiber_t *fiber);
-
-/* Get currently executing fiber (NULL if not in a fiber) */
-extern yafl_fiber_t *yafl_fiber_current(void);
-
-/*
- * Get the fiber that most recently switched to the current fiber.
- *
- * Useful when a fiber needs to know its caller for routing decisions.
- * Returns NULL if called from non-fiber or if current fiber is the thread fiber.
- */
-extern yafl_fiber_t *yafl_fiber_get_caller(void);
+extern yafl_fiber_status_t yafl_fiber_status(yafl_fiber_t *fiber);
 
 /* ========================================================================
  * Stack Debugging (Watermark)
  * ======================================================================== */
 
 /*
- * Fill stack with watermark pattern for usage tracking.
+ * Get the high water mark of stack usage.
  *
- * Call after creation, before first switch.
- * For vmem fibers, causes physical memory allocation.
+ * Only valid if the fiber was created with YAFL_STACK_FLAGS_WATERMARK.
+ * Can be called when fiber is SUSPENDED or COMPLETE.
  *
- * Returns:
- *   true on success, false if NULL, wrong state, or thread fiber
- */
-extern bool yafl_fiber_fill_watermark(yafl_fiber_t *fiber);
-
-/*
- * Get maximum stack bytes used (high water mark).
- *
- * Requires prior yafl_fiber_fill_watermark() call.
- * Fiber must be SUSPENDED or FINISHED.
+ * Parameters:
+ *   fiber - Fiber to check
  *
  * Returns:
- *   Bytes used, or SIZE_MAX on error
+ *   Maximum bytes of stack used, or 0 if no watermark or error.
  */
-extern size_t yafl_fiber_get_stack_usage(yafl_fiber_t *fiber);
-
-/* Get total usable stack size (0 for thread fibers) */
-extern size_t yafl_fiber_get_stack_size(yafl_fiber_t *fiber);
+extern size_t yafl_fiber_stack_high_watermark(yafl_fiber_t *fiber);
 
 /* ========================================================================
  * Cleanup
@@ -201,14 +160,10 @@ extern size_t yafl_fiber_get_stack_size(yafl_fiber_t *fiber);
 /*
  * Destroy a fiber and free its resources.
  *
- * Do not call on thread fibers - use yafl_fiber_destroy_thread_fiber().
  * Do not call on a RUNNING fiber.
- * Safe to call on NULL.
- *
- * Returns:
- *   Cached result from fiber (or NULL if never ran)
+ * Safe to call on NULL or invalid fiber.
  */
-extern void *yafl_fiber_destroy(yafl_fiber_t *fiber);
+extern void yafl_fiber_destroy(yafl_fiber_t *fiber);
 
 /* ========================================================================
  * Utilities
