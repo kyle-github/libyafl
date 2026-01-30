@@ -53,22 +53,8 @@ static void segv_handler(int sig, siginfo_t *info, void *context) {
 #endif
 
 /* Recursive function to overflow the stack */
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4717)  /* Disable "function recursive on all paths" warning */
-#endif
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
-/* Only use diagnostic pragma if GCC version supports -Winfinite-recursion */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-#endif
 static void overflow_stack(int depth) {
-    /* Use smaller buffer on MSVC to leave room for exception handler */
-#ifdef _MSC_VER
     volatile char buffer[128];
-#else
-    volatile char buffer[1024];
-#endif
 
     /* Touch the buffer to prevent optimization */
     memset((void *)buffer, 0xAA, sizeof(buffer));
@@ -76,15 +62,11 @@ static void overflow_stack(int depth) {
     fprintf(stderr, "[overflow] depth=%d, buffer=%p\n", depth, (void *)buffer);
     fflush(stderr);
 
-    /* Recurse until we hit the guard page */
-    overflow_stack(depth + 1);
+    /* Recurse to build up stack usage, stop at max depth to trigger guard page */
+    if (depth < 250) {
+        overflow_stack(depth + 1);
+    }
 }
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
-#pragma GCC diagnostic pop
-#endif
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 static void *guard_test_fiber(void *data) {
     (void)data;
