@@ -47,6 +47,8 @@ jobs:
         with:
           name: build-s390x-ibm-linux-gnu
           path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
       - name: Run Tests
         run: |
           cd build
