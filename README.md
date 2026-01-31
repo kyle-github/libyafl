@@ -1,34 +1,57 @@
 # yafl - Portable Fiber/Coroutine Library
 
-![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)
-![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)
-![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml/badge.svg)
-![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml/badge.svg)
-![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)
-![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)
-![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)
-![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)
-![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)
-![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml/badge.svg)
-![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)
-![aarch64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-unknown-linux-gnu.yml/badge.svg)
-![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)
-![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)
-![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)
-![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)
-![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
-![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
-![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
-![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
-[![codecov](https://codecov.io/gh/libplctag/yafl/graph/badge.svg)](https://codecov.io/gh/libplctag/yafl)
+## Build Status
 
-A portable, low-level C11 fiber/coroutine library derived from Boost.Context, designed to replace the deprecated `ucontext` API.
+| Platform | Status |
+| -------- | ------ |
+| x86_64-pc-linux-gnu | [![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml) |
+| aarch64-pc-linux-gnu | [![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml) |
+| x86_64-apple-darwin | [![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml) |
+| aarch64-apple-darwin | [![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml) |
+| x86_64-pc-windows-msvc | [![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml) |
+| aarch64-pc-windows-msvc | [![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml) |
+| x86_64-pc-windows-gnu | [![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml) |
+| aarch64-pc-windows-gnu | [![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml) |
+| x86_64-unknown-linux-android | [![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml) |
+| aarch64-apple-ios | [![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml) |
+| arm-unknown-linux-gnueabihf | [![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml) |
+| riscv64-unknown-linux-gnu | [![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml) |
+| mipsel-unknown-linux-gnu | [![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml) |
+| mips64el-unknown-linux-gnuabi64 | [![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml) |
+| powerpc64le-unknown-linux-gnu | [![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml) |
+| s390x-ibm-linux-gnu | [![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml) |
+| sparc64-unknown-linux-gnu | [![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml) |
+| powerpc-unknown-linux-gnu | [![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml) |
+| i386-unknown-linux-gnu | [![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml) |
+
+[![Coverage](https://libplctag.github.io/libyafl/coverage/coverage.svg)](https://libplctag.github.io/libyafl/coverage/index.html)
+
+A portable, low-level C11 fiber/coroutine library derived from Boost.Context.
+
+## Why Another Fiber Library?
+
+I wanted to use coroutines/fibers for another project and searched on GitHub and elsewhere and did not find anything that was:
+
+- Portable across many OSes, architectures and compilers.  Aiming for RTOS environments as well.
+- Every release tested across a matrix of architectures and operating systems and compilers.
+- Only C11 and assembly.
+- CMake build system or easy creation of CMake build configuration.
+- Minimal functionality.  Just fibers.
+- Support for guard pages etc. on operating systems that support them and malloc on platforms that do not.
+- The ability to measure stack usage.  This is critical for embedded projects.
+- No dependency on POSIX ucontext.
+- No other dependencies.
+- Appears to be maintained.
+
+Boost.Context is very close but aimed at C++ and in one case seems to require C++ code.  However, the project has large set of assembly for a wide variety of processor architectures.  I decided it would make a good test of using an LLM to wrap/refactor some code.
+
+The C code and documentation was mostly generated by Claude Code.  The assembly is from the Boost.Context project and was written by humans.  I have touched/edited almost every file at some point.
 
 ## Features
 
 - **Pure C11 implementation** - No C++ dependencies
 - **Asymmetric coroutines (fibers)** - Simplified suspend/resume model
-- **Guard pages** - Memory-efficient mmap-based stack with automatic overflow detection
+- **Guard pages** - Memory-efficient mmap-based stack with automatic overflow detection (crashing your program!)
 - **Stack watermark checking** - Measure maximum stack usage
 - **16-byte stack alignment** - ABI-compliant on x86_64 and ARM64
 - **Page-aware allocation** - Handles 4KB (Linux/Windows) and 16KB (macOS ARM) pages

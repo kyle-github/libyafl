@@ -68,11 +68,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(ENABLE_COVERAGE "Enable code coverage generation" OFF)
 if(ENABLE_COVERAGE)
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        message(STATUS "Enabling code coverage")
-        add_compile_options(--coverage)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-    endif()
+    include(toolchains/coverage.cmake)
 endif()
 
 # Note: Assembly language will be enabled after architecture detection
