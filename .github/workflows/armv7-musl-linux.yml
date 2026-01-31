@@ -1,0 +1,35 @@
+name: armv7-musl-linux
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+      - name: Download musl.cc cross-compiler
+        run: |
+          mkdir -p /opt/cross
+          cd /opt/cross
+          wget -q https://musl.cc/arm-linux-musleabihf-cross.tgz
+          tar xzf arm-linux-musleabihf-cross.tgz
+          rm arm-linux-musleabihf-cross.tgz
+      - name: Build
+        run: |
+          mkdir -p build && cd build
+          cmake -DTARGET=arm-unknown-linux-gnueabihf \
+                -DCMAKE_C_COMPILER=/opt/cross/arm-linux-musleabihf-cross/bin/arm-linux-musleabihf-gcc \
+                -DCMAKE_SYSTEM_NAME=Linux \
+                -DCMAKE_SYSTEM_PROCESSOR=arm \
+                ..
+          cmake --build .
+      - name: Test
+        run: |
+          cd build
+          ctest --output-on-failure

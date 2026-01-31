@@ -18,17 +18,22 @@
 | SPARC 64 | GCC | Linux | glibc | [![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml) |
 | i386 | GCC | Linux | glibc | [![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml) |
 
-### Linux (Alpine, musl)
+### Linux (Alpine Container, native musl)
 
 | Architecture | Compiler | OS | Libc | Status |
 | ------------ | -------- | -- | ---- | ------ |
 | x86_64 | GCC | Alpine Linux | musl | [![x86_64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/x86_64-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-alpine-linux.yml) |
 | i386 | GCC | Alpine Linux | musl | [![i386-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/i386-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-alpine-linux.yml) |
 | aarch64 | GCC | Alpine Linux | musl | [![aarch64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/aarch64-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-alpine-linux.yml) |
-| ARM (32-bit) | GCC | Alpine Linux | musl | [![armv7-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/armv7-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/armv7-alpine-linux.yml) |
-| PowerPC 64 LE | GCC | Alpine Linux | musl | [![ppc64le-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/ppc64le-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/ppc64le-alpine-linux.yml) |
-| s390x | GCC | Alpine Linux | musl | [![s390x-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/s390x-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-alpine-linux.yml) |
-| RISC-V 64 | GCC | Alpine Linux | musl | [![riscv64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/riscv64-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-alpine-linux.yml) |
+
+### Linux (musl.cc Cross-Compiler, QEMU Emulation)
+
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| ARM (32-bit) | GCC | Linux | musl | [![armv7-musl-linux](https://github.com/libplctag/yafl/actions/workflows/armv7-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/armv7-musl-linux.yml) |
+| PowerPC 64 LE | GCC | Linux | musl | [![ppc64le-musl-linux](https://github.com/libplctag/yafl/actions/workflows/ppc64le-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/ppc64le-musl-linux.yml) |
+| s390x | GCC | Linux | musl | [![s390x-musl-linux](https://github.com/libplctag/yafl/actions/workflows/s390x-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-musl-linux.yml) |
+| RISC-V 64 | GCC | Linux | musl | [![riscv64-musl-linux](https://github.com/libplctag/yafl/actions/workflows/riscv64-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-musl-linux.yml) |
 
 ### macOS
 
