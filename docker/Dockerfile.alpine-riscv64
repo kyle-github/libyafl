@@ -12,10 +12,7 @@ RUN for attempt in 1 2 3; do \
       make \
       gcc \
       musl-dev \
-      riscv64-linux-gnu-gcc \
-      qemu-system-riscv64 \
-      qemu-user \
-      wget && \
+      riscv64-linux-gnu-gcc && \
     echo "Installation successful" && \
     exit 0 || \
     (if [ $attempt -lt 3 ]; then \

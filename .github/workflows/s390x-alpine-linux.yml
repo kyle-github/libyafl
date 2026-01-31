@@ -13,7 +13,7 @@ jobs:
           platforms: s390x
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-s390x .
-      - name: Build and Test
+      - name: Build in Container
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
             bash -c "mkdir -p build && cd build && \
@@ -21,7 +21,9 @@ jobs:
                   -DCMAKE_C_COMPILER=s390x-linux-gnu-gcc \
                   -DCMAKE_C_FLAGS='-static' \
                   -DCMAKE_SYSTEM_NAME=Linux \
-                  -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x \
                   .. && \
-            cmake --build . && \
-            ctest --output-on-failure"
+            cmake --build ."
+      - name: Test on Host
+        run: |
+          cd ${{ github.workspace }}/build && \
+          ctest --output-on-failure

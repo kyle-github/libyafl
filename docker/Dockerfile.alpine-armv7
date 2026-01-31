@@ -12,10 +12,7 @@ RUN for attempt in 1 2 3; do \
       make \
       gcc \
       musl-dev \
-      arm-linux-gnueabihf-gcc \
-      qemu-system-arm \
-      qemu-user \
-      wget && \
+      arm-linux-gnueabihf-gcc && \
     echo "Installation successful" && \
     exit 0 || \
     (if [ $attempt -lt 3 ]; then \

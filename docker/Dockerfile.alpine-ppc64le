@@ -12,10 +12,7 @@ RUN for attempt in 1 2 3; do \
       make \
       gcc \
       musl-dev \
-      powerpc64le-linux-gnu-gcc \
-      qemu-system-ppc64 \
-      qemu-user \
-      wget && \
+      powerpc64le-linux-gnu-gcc && \
     echo "Installation successful" && \
     exit 0 || \
     (if [ $attempt -lt 3 ]; then \

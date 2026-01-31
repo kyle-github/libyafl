@@ -12,10 +12,7 @@ RUN for attempt in 1 2 3; do \
       make \
       gcc \
       musl-dev \
-      s390x-linux-gnu-gcc \
-      qemu-system-s390x \
-      qemu-user \
-      wget && \
+      s390x-linux-gnu-gcc && \
     echo "Installation successful" && \
     exit 0 || \
     (if [ $attempt -lt 3 ]; then \

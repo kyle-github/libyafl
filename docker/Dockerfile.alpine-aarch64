@@ -11,11 +11,7 @@ RUN for attempt in 1 2 3; do \
       cmake \
       make \
       gcc \
-      musl-dev \
-      aarch64-linux-gnu-gcc \
-      qemu-system-aarch64 \
-      qemu-user \
-      wget && \
+      musl-dev && \
     echo "Installation successful" && \
     exit 0 || \
     (if [ $attempt -lt 3 ]; then \
