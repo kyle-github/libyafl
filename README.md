@@ -24,7 +24,7 @@
 | powerpc-unknown-linux-gnu | [![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml) |
 | i386-unknown-linux-gnu | [![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml) |
 
-[![Coverage](docs/coverage.svg)](docs/coverage/index.html)
+![Coverage](docs/coverage.svg)
 
 A portable, low-level C11 fiber/coroutine library derived from Boost.Context.
 

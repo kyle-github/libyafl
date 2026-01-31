@@ -49,14 +49,14 @@ jobs:
               run: |
                   touch docs/.nojekyll
 
-            - name: Commit and push coverage to prerelease
+            - name: Commit and push coverage badge to prerelease
               if: github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
               run: |
                   git config user.name "GitHub Actions"
                   git config user.email "actions@github.com"
-                  git add -A docs/
+                  git add docs/coverage.svg
                   if git diff --quiet --cached; then
-                    echo "No coverage changes to commit"
+                    echo "No coverage badge changes to commit"
                   else
-                    git commit -m "Update code coverage report [skip ci]" && git push origin prerelease
+                    git commit -m "Update code coverage badge [skip ci]" && git push origin prerelease
                   fi
