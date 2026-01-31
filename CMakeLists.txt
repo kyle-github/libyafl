@@ -6,21 +6,21 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-# Read version from file
-set(PROJECT_VERSION_FULL "0.0.0-0")
+# Read version from file (format: major.minor.patch)
+set(PROJECT_VERSION_FULL "0.1.0")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VER_FILE_CONTENT)
     if(VER_FILE_CONTENT)
         string(STRIP "${VER_FILE_CONTENT}" VER_FILE_CONTENT_STRIPPED)
         if(VER_FILE_CONTENT_STRIPPED)
-            set(PROJECT_VERSION_FULL "${VER_FILE_CONTENT_STRIPPED}")
+            # Extract only the numeric part (major.minor.patch) before any non-numeric suffix
+            string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_VERSION_FULL "${VER_FILE_CONTENT_STRIPPED}")
         endif()
     endif()
 endif()
 
-# CMake project version must be numeric (major.minor.patch.tweak)
-string(REPLACE "-" "." PROJECT_VERSION_CMAKE "${PROJECT_VERSION_FULL}")
-project(yafl VERSION ${PROJECT_VERSION_CMAKE} LANGUAGES C)
+# Use version directly with CMake project
+project(yafl VERSION ${PROJECT_VERSION_FULL} LANGUAGES C)
 
 # ============================================================================
 # Enforce Out-of-Source Builds
