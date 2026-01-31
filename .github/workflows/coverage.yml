@@ -34,6 +34,12 @@ jobs:
                   lcov --remove coverage.info '/usr/*' --output-file coverage.info
                   genhtml coverage.info --output-directory docs/coverage --title "yafl Code Coverage"
 
+            - name: Normalize coverage HTML timestamps
+              run: |
+                  # Remove or normalize timestamps from generated HTML to avoid merge conflicts
+                  find docs/coverage -name "*.html" -type f -exec sed -i 's/<td class="headerValue">[^<]*<\/td>/<td class="headerValue">Generated<\/td>/g' {} \;
+                  echo "Normalized timestamps in coverage HTML files"
+
             - name: Generate coverage badge
               run: |
                   chmod +x scripts/make_coverage_badge.sh
