@@ -3,13 +3,18 @@ name: aarch64-apple-ios
 on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        name: iOS Simulator (ARM64)
+    setup-aarch64-apple-ios:
+        name: Setup iOS (ARM64)
         runs-on: macos-15
-
         steps:
             - uses: actions/checkout@v4
 
+    build-aarch64-apple-ios:
+        name: Build iOS Simulator (ARM64)
+        runs-on: macos-15
+        needs: setup-aarch64-apple-ios
+        steps:
+            - uses: actions/checkout@v4
             - name: Configure CMake
               run: |
                   cmake -G Xcode \
@@ -17,6 +22,10 @@ jobs:
                     -DTARGET=aarch64-apple-ios \
                     -DCMAKE_OSX_ARCHITECTURES=arm64 \
                     -B build
-
             - name: Build
               run: cmake --build build --config Debug
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-aarch64-apple-ios
+                  path: build/

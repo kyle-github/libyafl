@@ -3,14 +3,18 @@ name: armv7-musl-linux
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-armv7-musl-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+
+  build-armv7-musl-linux:
+    runs-on: ubuntu-latest
+    needs: setup-armv7-musl-linux
+    steps:
+      - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download musl.cc cross-compiler
@@ -20,7 +24,7 @@ jobs:
           wget -q https://musl.cc/arm-linux-musleabihf-cross.tgz
           tar xzf arm-linux-musleabihf-cross.tgz
           rm arm-linux-musleabihf-cross.tgz
-      - name: Build
+      - name: Configure and Build
         run: |
           mkdir -p build && cd build
           cmake -DTARGET=arm-unknown-linux-gnueabihf \
@@ -29,7 +33,27 @@ jobs:
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
                 ..
           cmake --build .
-      - name: Test
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-armv7-musl-linux
+          path: build/
+
+  test-armv7-musl-linux:
+    runs-on: ubuntu-latest
+    needs: build-armv7-musl-linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-armv7-musl-linux
+          path: build/
+      - name: Run Tests
         run: |
           cd build
           ctest --output-on-failure

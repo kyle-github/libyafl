@@ -3,13 +3,21 @@ name: x86_64-alpine-linux
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-x86_64-alpine-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
-      - name: Build and Test
+
+  build-x86_64-alpine-linux:
+    runs-on: ubuntu-latest
+    needs: setup-x86_64-alpine-linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
+      - name: Build
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
             bash -c "mkdir -p build && cd build && \
@@ -17,5 +25,26 @@ jobs:
                   -DCMAKE_C_COMPILER=gcc \
                   -DCMAKE_SYSTEM_NAME=Linux \
                   .. && \
-            cmake --build . && \
-            ctest --output-on-failure"
+            cmake --build ."
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-x86_64-alpine-linux
+          path: build/
+
+  test-x86_64-alpine-linux:
+    runs-on: ubuntu-latest
+    needs: build-x86_64-alpine-linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-x86_64-alpine-linux
+          path: build/
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
+      - name: Run Tests
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            bash -c "cd build && ctest --output-on-failure"

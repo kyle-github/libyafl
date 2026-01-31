@@ -3,13 +3,11 @@ name: x86_64-unknown-linux-android
 on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        name: Android Emulator (x86_64)
+    setup-x86_64-unknown-linux-android:
+        name: Setup Android (x86_64)
         runs-on: ubuntu-latest
-
         steps:
             - uses: actions/checkout@v4
-
             - name: Create Test Runner Script
               run: |
                   echo '#!/bin/bash' > run_android.sh
@@ -19,6 +17,20 @@ jobs:
                   echo 'adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME $@"' >> run_android.sh
                   chmod +x run_android.sh
 
+    build-x86_64-unknown-linux-android:
+        name: Build Android (x86_64)
+        runs-on: ubuntu-latest
+        needs: setup-x86_64-unknown-linux-android
+        steps:
+            - uses: actions/checkout@v4
+            - name: Create Test Runner Script
+              run: |
+                  echo '#!/bin/bash' > run_android.sh
+                  echo 'EXE_NAME=$(basename "$1")' >> run_android.sh
+                  echo 'adb push "$1" "/data/local/tmp/$EXE_NAME" > /dev/null' >> run_android.sh
+                  echo 'shift' >> run_android.sh
+                  echo 'adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME $@"' >> run_android.sh
+                  chmod +x run_android.sh
             - name: Configure CMake
               run: |
                   cmake \
@@ -28,10 +40,33 @@ jobs:
                     -DANDROID_PLATFORM=android-29 \
                     -DCMAKE_CROSSCOMPILING_EMULATOR=$(pwd)/run_android.sh \
                     -B build
-
             - name: Build
               run: cmake --build build --config Debug
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-x86_64-unknown-linux-android
+                  path: build/
 
+    test-x86_64-unknown-linux-android:
+        name: Test Android Emulator (x86_64)
+        runs-on: ubuntu-latest
+        needs: build-x86_64-unknown-linux-android
+        steps:
+            - uses: actions/checkout@v4
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-x86_64-unknown-linux-android
+                  path: build/
+            - name: Create Test Runner Script
+              run: |
+                  echo '#!/bin/bash' > run_android.sh
+                  echo 'EXE_NAME=$(basename "$1")' >> run_android.sh
+                  echo 'adb push "$1" "/data/local/tmp/$EXE_NAME" > /dev/null' >> run_android.sh
+                  echo 'shift' >> run_android.sh
+                  echo 'adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME $@"' >> run_android.sh
+                  chmod +x run_android.sh
             - name: Run Tests on Emulator
               uses: reactivecircus/android-emulator-runner@v2
               with:
