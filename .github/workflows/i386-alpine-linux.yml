@@ -23,7 +23,6 @@ jobs:
             sh -c "mkdir -p build && cd build && \
             cmake -DTARGET=i386-pc-linux-musl \
                   -DCMAKE_C_COMPILER=gcc \
-                  -DCMAKE_C_FLAGS='-m32' \
                   -DCMAKE_SYSTEM_NAME=Linux \
                   .. && \
             cmake --build ."
@@ -38,11 +37,17 @@ jobs:
     needs: build-i386-alpine-linux
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: i386
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-i386-alpine-linux
           path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
       - name: Run Tests
