@@ -21,9 +21,23 @@ jobs:
         run: |
           mkdir -p /opt/cross
           cd /opt/cross
-          wget -q https://musl.cc/riscv64-linux-musl-cross.tgz
-          tar xzf riscv64-linux-musl-cross.tgz
-          rm riscv64-linux-musl-cross.tgz
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3: Downloading riscv64-linux-musl-cross.tgz..."
+            if wget -O riscv64-linux-musl-cross.tgz https://musl.cc/riscv64-linux-musl-cross.tgz; then
+              tar xzf riscv64-linux-musl-cross.tgz
+              rm riscv64-linux-musl-cross.tgz
+              echo "Download successful"
+              exit 0
+            else
+              echo "Download attempt $attempt failed"
+              if [ $attempt -lt 3 ]; then
+                echo "Waiting 15 seconds before retry..."
+                sleep 15
+              fi
+            fi
+          done
+          echo "All 3 download attempts failed"
+          exit 1
       - name: Configure and Build
         run: |
           mkdir -p build && cd build
