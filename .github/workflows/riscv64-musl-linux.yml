@@ -59,10 +59,8 @@ jobs:
     needs: build-riscv64-musl-linux
     steps:
       - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: riscv64
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
