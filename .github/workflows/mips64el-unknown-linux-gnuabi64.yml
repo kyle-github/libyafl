@@ -39,11 +39,17 @@ jobs:
     needs: build-mips64el-unknown-linux-gnuabi64
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mips64el
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-mips64el-unknown-linux-gnuabi64
           path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
       - name: Run Tests

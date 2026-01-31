@@ -39,11 +39,17 @@ jobs:
     needs: build-powerpc-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ppc
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-powerpc-unknown-linux-gnu
           path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.powerpc .
       - name: Run Tests

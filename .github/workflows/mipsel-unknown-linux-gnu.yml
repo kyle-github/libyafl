@@ -39,11 +39,17 @@ jobs:
     needs: build-mipsel-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mipsel
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-mipsel-unknown-linux-gnu
           path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
       - name: Run Tests

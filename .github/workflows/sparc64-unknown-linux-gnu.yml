@@ -39,11 +39,17 @@ jobs:
     needs: build-sparc64-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: sparc64
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-sparc64-unknown-linux-gnu
           path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
       - name: Run Tests
