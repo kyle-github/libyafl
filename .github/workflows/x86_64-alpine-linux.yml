@@ -20,7 +20,7 @@ jobs:
       - name: Build
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
-            bash -c "mkdir -p build && cd build && \
+            sh -c "mkdir -p build && cd build && \
             cmake -DTARGET=x86_64-pc-linux-musl \
                   -DCMAKE_C_COMPILER=gcc \
                   -DCMAKE_SYSTEM_NAME=Linux \
@@ -47,4 +47,4 @@ jobs:
       - name: Run Tests
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
-            bash -c "cd build && ctest --output-on-failure"
+            sh -c "cd build && ctest --output-on-failure"
