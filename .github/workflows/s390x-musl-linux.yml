@@ -29,6 +29,7 @@ jobs:
           mkdir -p build && cd build
           cmake -DTARGET=s390x-ibm-linux-gnu \
                 -DCMAKE_C_COMPILER=/opt/cross/s390x-linux-musl-cross/bin/s390x-linux-musl-gcc \
+                -DCMAKE_C_FLAGS='-static' \
                 -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=s390x \
                 ..

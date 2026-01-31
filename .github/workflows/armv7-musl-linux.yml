@@ -29,6 +29,7 @@ jobs:
           mkdir -p build && cd build
           cmake -DTARGET=arm-unknown-linux-gnueabihf \
                 -DCMAKE_C_COMPILER=/opt/cross/arm-linux-musleabihf-cross/bin/arm-linux-musleabihf-gcc \
+                -DCMAKE_C_FLAGS='-static' \
                 -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
                 ..
