@@ -24,6 +24,8 @@ on:
             - i386-unknown-linux-gnu
         types:
             - completed
+        branches:
+            - release
 
 permissions:
     contents: write
