@@ -1,27 +1,21 @@
 name: x86_64-pc-windows-msvc
 
-on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        runs-on: windows-latest
-        steps:
-            - uses: actions/checkout@v4
-            - name: Install dependencies
-              run: choco install ninja -y
-            - name: Setup MSVC
-              uses: ilammy/msvc-dev-cmd@v1
-              with:
-                  arch: x64
-            - name: Configure
-              run: |
-                  mkdir build; cd build
-                  cmake -G "Ninja" -DTARGET=x86_64-pc-windows-msvc -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
-            - name: Build
-              run: cmake --build build --config Release --parallel 4
-            - name: Test
-              run: cd build && ctest --output-on-failure
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Configure
+        run: |
+          mkdir build; cd build
+          cmake -G "Ninja" -DTARGET=x86_64-pc-windows-msvc -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+      - name: Test
+        run: cd build && ctest --output-on-failure

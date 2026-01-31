@@ -22,7 +22,7 @@ git clone --depth 1 --branch "boost-${BOOST_VERSION}" https://github.com/boostor
 # Source directory in Boost.Context
 SRC_ASM="$TEMP_DIR/context/src/asm"
 
-# Destination directory in fcontext
+# Destination directory in yafl
 DEST_ASM="src/asm"
 
 # Clear existing assembly files (but keep directories)

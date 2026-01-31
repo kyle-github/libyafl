@@ -1,26 +1,22 @@
 name: arm-unknown-linux-gnueabihf
-on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        runs-on: ubuntu-24.04
-        steps:
-            - uses: actions/checkout@v4
-            - name: Build Docker image
-              run: docker build -t fcontext-builder -f docker/Dockerfile .
-            - name: Build and Test
-              run: |
-                  docker run --rm -v ${{ github.workspace }}:/src fcontext-builder \
-                    bash -c "mkdir -p build && cd build && \
-                    cmake -DTARGET=arm-unknown-linux-gnueabihf \
-                          -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-                          -DCMAKE_C_FLAGS='-static' \
-                          -DCMAKE_SYSTEM_NAME=Linux \
-                          -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-arm \
-                          .. && \
-                    make && \
-                    CTEST_OUTPUT_ON_FAILURE=1 ctest"
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.arm32 .
+      - name: Build and Test
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            bash -c "mkdir -p build && cd build && \
+            cmake -DTARGET=arm-unknown-linux-gnueabihf \
+                  -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
+                  -DCMAKE_C_FLAGS='-static' \
+                  -DCMAKE_SYSTEM_NAME=Linux \
+                  -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-arm \
+                  .. && \
+            make && \
+            CTEST_OUTPUT_ON_FAILURE=1 ctest"

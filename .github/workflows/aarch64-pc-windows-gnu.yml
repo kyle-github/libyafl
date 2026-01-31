@@ -1,32 +1,26 @@
 name: aarch64-pc-windows-gnu
 
-on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+on: [push, pull_request]
 
 jobs:
-    build-and-test:
-        runs-on: windows-11-arm
-        steps:
-            - uses: actions/checkout@v4
-            - name: Install dependencies
-              run: choco install ninja -y
-            - name: Setup MinGW
-              uses: msys2/setup-msys2@v2
-              with:
-                  msystem: CLANGARM64
-                  update: true
-                  install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
-            - name: Configure
-              shell: msys2 {0}
-              run: |
-                  mkdir build; cd build
-                  cmake -G "Ninja" -DTARGET=aarch64-pc-windows-gnu -DCMAKE_C_COMPILER=clang -DCMAKE_ASM_COMPILER=clang ..
-            - name: Build
-              shell: msys2 {0}
-              run: cmake --build build --parallel 4
-            - name: Test
-              shell: msys2 {0}
-              run: cd build && ctest --output-on-failure
+  build-and-test:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
+      - name: Configure
+        shell: msys2 {0}
+        run: |
+          mkdir build; cd build
+          cmake -G "Ninja" -DTARGET=aarch64-pc-windows-gnu -DCMAKE_C_COMPILER=clang -DCMAKE_ASM_COMPILER=clang ..
+      - name: Build
+        shell: msys2 {0}
+        run: cmake --build build --parallel 4
+      - name: Test
+        shell: msys2 {0}
+        run: cd build && ctest --output-on-failure

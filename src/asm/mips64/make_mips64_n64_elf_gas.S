@@ -65,10 +65,18 @@ make_fcontext:
     # reserve space for context-data on context-stack
     daddiu $v0, $v0, -160
 
+    # Save context pointer in S1 slot within the context.
+    # S1 is callee-saved, so the fiber will preserve it across calls.
+    # When finish is reached after the fiber returns, S1 will contain the context pointer.
+    sd  $v0, 72($v0)
+
     # third arg of make_fcontext() == address of context-function
     sd  $a2, 152($v0)
-    # save global pointer in context-data
-    sd  $gp, 136($v0)
+
+    # NOTE: $gp (global pointer) is NOT saved here.
+    # MODIFICATION FROM BOOST.CONTEXT: $gp is shared across the entire program
+    # and does not need to be saved/restored per context.
+    # See README.md for details on API changes requiring this modification.
 
     # pseudo instruction compute abs address of label finish based on GP
     dla  $t9, finish
@@ -80,9 +88,10 @@ make_fcontext:
     jr  $ra # return pointer to context-data
 
 finish:
-    # reload our gp register (needed for la)
-    daddiu $t0, $sp, -160
-    ld $gp, 136($t0)
+    # MODIFICATION FROM BOOST.CONTEXT: Use program's shared $gp directly.
+    # In the original Boost.Context, $gp was saved/restored per context.
+    # In fcontext, $gp is shared across the entire program and already correct.
+    # We use the dla pseudo-instruction which automatically handles $gp.
 
     # call _exit(0)
     #  the previous function should have left the 16 bytes incoming argument

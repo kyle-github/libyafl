@@ -1,7 +1,11 @@
+# CMake toolchain configuration for aarch64-pc-windows-msvc
+# Copyright Kyle Hayes (2026)
+# Distributed under the Boost Software License, Version 1.0.
+# See LICENSE file for details
+
 set(ASM_FILES
     src/asm/arm64/make_arm64_aapcs_pe_armasm.asm
     src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
-    src/asm/arm64/ontop_arm64_aapcs_pe_armasm.asm
 )
 
 find_program(ARMASM64 armasm64.exe REQUIRED)

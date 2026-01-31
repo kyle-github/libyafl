@@ -1,445 +1,310 @@
-# fcontext - Portable Context Switching Library
+# yafl - Portable Fiber/Coroutine Library
 
-![x86_64-pc-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)
-![aarch64-pc-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)
-![x86_64-apple-darwin](https://github.com/libplctag/fcontext/actions/workflows/x86_64-apple-darwin.yml/badge.svg)
-![aarch64-apple-darwin](https://github.com/libplctag/fcontext/actions/workflows/aarch64-apple-darwin.yml/badge.svg)
-![x86_64-pc-windows-msvc](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)
-![aarch64-pc-windows-msvc](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)
-![x86_64-pc-windows-gnu](https://github.com/libplctag/fcontext/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)
-![aarch64-pc-windows-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)
-![x86_64-unknown-linux-android](https://github.com/libplctag/fcontext/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)
-![aarch64-apple-ios](https://github.com/libplctag/fcontext/actions/workflows/aarch64-apple-ios.yml/badge.svg)
-![arm-unknown-linux-gnueabihf](https://github.com/libplctag/fcontext/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)
-![aarch64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/aarch64-unknown-linux-gnu.yml/badge.svg)
-![riscv64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)
-![mipsel-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)
-![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/fcontext/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)
-![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)
-![s390x-ibm-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
-![sparc64-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
-![powerpc-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
-![xtensa-esp32-elf](https://github.com/libplctag/fcontext/actions/workflows/xtensa-esp32-elf.yml/badge.svg)
-![i386-unknown-linux-gnu](https://github.com/libplctag/fcontext/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
-[![codecov](https://codecov.io/gh/libplctag/fcontext/graph/badge.svg)](https://codecov.io/gh/libplctag/fcontext)
+![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)
+![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)
+![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml/badge.svg)
+![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml/badge.svg)
+![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)
+![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)
+![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)
+![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)
+![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)
+![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml/badge.svg)
+![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)
+![aarch64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-unknown-linux-gnu.yml/badge.svg)
+![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)
+![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)
+![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)
+![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)
+![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)
+![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)
+![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)
+![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)
+[![codecov](https://codecov.io/gh/libplctag/yafl/graph/badge.svg)](https://codecov.io/gh/libplctag/yafl)
 
-A portable, low-level C11 fiber/coroutine context switching library derived from Boost.Context, designed to replace the deprecated and unsupported `ucontext` API.
+A portable, low-level C11 fiber/coroutine library derived from Boost.Context, designed to replace the deprecated `ucontext` API.
 
 ## Features
 
-- **Pure C11 implementation** - No C++ dependencies, no platform-specific quirks
-- **Symmetric coroutines** - Stackful green threads/coroutines that yield control to each other
-- **Guard pages** - Memory-efficient mmap-based stack with automatic bounds detection
-- **Stack watermark checking** - Detects high water mark (maximum stack usage) with 0xA5 pattern
-- **16-byte stack alignment** - Automatic ABI-compliant alignment for x86_64 and ARM64
-- **Page-aware allocation** - Automatically handles varying page sizes (4KB Linux, 16KB macOS ARM, etc.)
-- **Portable across platforms** - x86_64 and ARM64 on Linux, macOS, iOS, Android, and Windows
-- **Portable across architectures** - x86_64, ARM64, x86, ARM support
-- **Zero external dependencies** - Only standard APIs (POSIX mmap on Linux/macOS, Windows VirtualAlloc on Windows)
+- **Pure C11 implementation** - No C++ dependencies
+- **Asymmetric coroutines (fibers)** - Simplified suspend/resume model
+- **Guard pages** - Memory-efficient mmap-based stack with automatic overflow detection
+- **Stack watermark checking** - Measure maximum stack usage
+- **16-byte stack alignment** - ABI-compliant on x86_64 and ARM64
+- **Page-aware allocation** - Handles 4KB (Linux/Windows) and 16KB (macOS ARM) pages
+- **Cross-platform** - Linux, macOS, iOS, Android, and Windows
+- **Zero external dependencies** - Only standard APIs (POSIX/Windows)
 
-## Why This Exists
+## Quick Start
 
-The POSIX `ucontext` API is:
-- **Deprecated** on most modern operating systems
-- **Broken on macOS Aarch64** (Apple Silicon) - no native support
-- **No longer maintained** - new POSIX standard removed it in 2008.
+```c
+#include "yafl.h"
 
-This library replaces `ucontext`.
+static void *my_fiber_func(void *arg) {
+    printf("Fiber running with arg: %p\n", arg);
 
-## Architecture Support
+    /* Suspend and wait for resumption */
+    void *data = yafl_fiber_suspend((void *)0x1111);
+    printf("Resumed with: %p\n", data);
 
-### Tier 1 - Fully Tested (Native & Cross-Compiled)
+    return (void *)0x2222;  /* Final result */
+}
 
-| Architecture | Vendor | OS | Environment | Build/Test Method |
-|---|---|---|---|---|
-| x86_64 | pc | linux | gnu | Native (Ubuntu) |
-| aarch64 | pc | linux | gnu | Native (Ubuntu ARM64) |
-| x86_64 | apple | darwin | macho | Native (macOS Intel) |
-| aarch64 | apple | darwin | macho | Native (macOS Silicon) |
-| aarch64 | apple | ios | macho | Simulator (macOS) |
-| x86_64 | unknown | linux | android | Emulator (Ubuntu) |
-| x86_64 | pc | windows | msvc | Native (Windows MSVC) |
-| aarch64 | pc | windows | msvc | Native (Windows ARM64) |
-| x86_64 | pc | windows | gnu | Native (Windows MinGW) |
-| aarch64 | pc | windows | gnu | Native (Windows MinGW) |
-| i386 | unknown | linux | gnu | Cross (Debian + QEMU) |
-| arm | unknown | linux | gnueabihf | Cross (Debian + QEMU) |
-| aarch64 | unknown | linux | gnu | Cross (Debian + QEMU) |
-| riscv64 | unknown | linux | gnu | Cross (Debian + QEMU) |
-| mipsel | unknown | linux | gnu | Cross (Debian + QEMU) |
-| mips64el | unknown | linux | gnuabi64 | Cross (Debian + QEMU) |
-| powerpc64le | unknown | linux | gnu | Cross (Debian + QEMU) |
-| s390x | ibm | linux | gnu | Cross (Debian + QEMU) |
-| sparc64 | unknown | linux | gnu | Cross (Debian + QEMU) |
-| powerpc | unknown | linux | gnu | Cross (Debian + QEMU) |
-| xtensa | espressif | esp32 | elf | Cross (Debian + QEMU) |
+int main(void) {
+    /* Create fiber with virtual memory stack and guard pages */
+    yafl_fiber_t *fiber = yafl_fiber_create(
+        my_fiber_func,
+        16 * 1024,
+        YAFL_STACK_FLAGS_VMEM | YAFL_STACK_FLAGS_WATERMARK
+    );
 
-Page sizes automatically detected:
-- **Linux/Windows**: 4KB (typical)
-- **macOS ARM64**: 16KB (Apple Silicon requirement)
-- **Page size detection**: Via `sysconf(_SC_PAGE_SIZE)` on POSIX, `GetSystemInfo()` on Windows
+    /* Start fiber */
+    void *result = yafl_fiber_resume(fiber, (void *)42);
+    assert(result == (void *)0x1111);  /* Got result from suspend */
 
-### Continuous Integration Testing
+    /* Resume fiber */
+    result = yafl_fiber_resume(fiber, (void *)0x5555);
+    assert(result == (void *)0x2222);  /* Got final result */
+    assert(yafl_fiber_status(fiber) == YAFL_FIBER_STATUS_COMPLETE);
 
-All combinations below are automatically tested on each push via GitHub Actions:
-
-**Native Builds:**
-| Job | Runner | OS | Architecture |
-|-----|--------|-------|--------------|
-| build-and-test | ubuntu-latest | Ubuntu | AMD64 |
-| build-and-test | ubuntu-24.04-arm | Ubuntu | ARM64 |
-| build-and-test | macos-15-intel | macOS | AMD64 |
-| build-and-test | macos-15 | macOS | ARM64 |
-| build-and-test | windows-latest | Windows | AMD64 |
-| build-and-test | windows-11-arm | Windows | ARM64 |
+    /* Cleanup */
+    yafl_fiber_destroy(fiber);
+    return 0;
+}
+```
 
 ## API Overview
 
-### Two-Layer Design
-
-1. **Low-Level API** (`make_fcontext`, `jump_fcontext`, `ontop_fcontext`)
-   - Written in architecture/OS-specific assembly.
-
-2. **High-Level Convenience API** (`fcontext_create`, `fcontext_destroy`)
-   - Handles memory allocation and guard pages automatically.
-   - Recommended for most use cases.
-
-## Low-Level API
-
 ### Core Functions
 
-From `fcontext.h`.
+```c
+/* Creation with flags for stack type and watermark */
+yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size,
+                                yafl_stack_flags_t flags);
+
+/* Resume a fiber (start or continue) */
+void *yafl_fiber_resume(yafl_fiber_t *fiber, void *arg);
+
+/* Suspend current fiber */
+void *yafl_fiber_suspend(void *result);
+
+/* Query fiber status */
+yafl_fiber_status_t yafl_fiber_status(yafl_fiber_t *fiber);
+
+/* Get maximum stack usage (if watermarked) */
+size_t yafl_fiber_stack_high_watermark(yafl_fiber_t *fiber);
+
+/* Cleanup */
+void yafl_fiber_destroy(yafl_fiber_t *fiber);
+
+/* Utilities */
+size_t yafl_get_page_size(void);
+```
+
+### Flags
+
+Choose stack allocation type and optional watermark:
 
 ```c
-/* Create a context at a given stack location */
-fcontext_t make_fcontext(void *sp, size_t size, fcontext_fn_t fn);
+/* Virtual memory (guard pages for overflow detection) */
+YAFL_STACK_FLAGS_VMEM
 
-/* Switch to a context */
-fcontext_transfer_t jump_fcontext(fcontext_t const to, void *vp);
+/* Malloc (simple allocation, no guard pages) */
+YAFL_STACK_FLAGS_MALLOC
 
-/* Call function on top of a context */
-fcontext_transfer_t ontop_fcontext(fcontext_t const to, void *vp,
-                                    fcontext_ontop_fn_t fn);
+/* Optional: track stack usage with watermark pattern */
+YAFL_STACK_FLAGS_WATERMARK
+
+/* Examples */
+YAFL_STACK_FLAGS_VMEM                              /* vmem, no watermark */
+YAFL_STACK_FLAGS_VMEM | YAFL_STACK_FLAGS_WATERMARK /* vmem + watermark */
+YAFL_STACK_FLAGS_MALLOC                            /* malloc, no watermark */
+YAFL_STACK_FLAGS_MALLOC | YAFL_STACK_FLAGS_WATERMARK
 ```
 
-### Types
+### Status Values
 
 ```c
-/* Opaque context handle */
-typedef struct fcontext_opaque_t *fcontext_t;
-
-/* Data transferred on context switch */
-typedef struct {
-    fcontext_t prev_context;  /* Where we came from */
-    void *data;               /* User-provided data */
-} fcontext_transfer_t;
-
-/* Entry point function signature */
-typedef void (*fcontext_fn_t)(fcontext_transfer_t);
-
-/* Function for ontop_fcontext */
-typedef fcontext_transfer_t (*fcontext_ontop_fn_t)(fcontext_transfer_t);
+YAFL_FIBER_STATUS_ERR        /* Invalid fiber or error */
+YAFL_FIBER_STATUS_SUSPENDED  /* Waiting to be resumed */
+YAFL_FIBER_STATUS_RUNNING    /* Currently executing */
+YAFL_FIBER_STATUS_COMPLETE   /* Finished execution */
 ```
 
-### Low-Level Example
+## Stack Options
+
+### Virtual Memory Stacks (Recommended)
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-#include "fcontext.h"
-
-void fiber_entry(fcontext_transfer_t t) {
-    printf("Fiber executing\n");
-    /* Switch back to caller */
-    jump_fcontext(t.prev_context, NULL);
-}
-
-int main(void) {
-    /* Allocate 24KB stack */
-    size_t stack_size = 24 * 1024;
-    void *stack = malloc(stack_size);
-
-    /* Create context at top of stack */
-    fcontext_t ctx = make_fcontext(
-        (char *)stack + stack_size,  /* Stack pointer (top of stack) */
-        stack_size,                   /* Stack size */
-        fiber_entry                   /* Entry function */
-    );
-
-    /* Enter context */
-    fcontext_transfer_t t = jump_fcontext(ctx, NULL);
-
-    /* When execution returns here, fiber has completed */
-    printf("Back in main\n");
-
-    free(stack);
-    return 0;
-}
+yafl_fiber_t *fiber = yafl_fiber_create(
+    my_func,
+    16 * 1024,
+    YAFL_STACK_FLAGS_VMEM
+);
 ```
 
-## High-Level Convenience API
+**Advantages:**
+- Guard pages detect overflow/underflow
+- Memory efficient (address space reserved, minimal physical memory used)
+- Automatic bounds checking (SIGSEGV/access violation on overflow)
 
-### Functions
+**Implementation:**
+- Linux/macOS: Uses `mmap()` + `mprotect()` with PROT_NONE guard pages
+- Windows: Uses `VirtualAlloc()` with PAGE_NOACCESS guard pages
 
-Again, from `fcontext.h`.
+### Malloc Stacks
 
 ```c
-/* Get system page size (4KB, 16KB, etc.) */
-size_t fcontext_get_page_size(void);
-
-/* Round size up to nearest page boundary */
-size_t fcontext_align_to_page(size_t size);
-
-/* Create context with automatically allocated guarded stack */
-fcontext_stack_t *fcontext_create(size_t stack_size, fcontext_fn_t entry_fn);
-
-/* Destroy context and free stack */
-void fcontext_destroy(fcontext_stack_t *ctx);
-
-/* Switch to context */
-#define fcontext_swap(ctx, data) jump_fcontext((ctx)->context, (data))
+yafl_fiber_t *fiber = yafl_fiber_create(
+    my_func,
+    16 * 1024,
+    YAFL_STACK_FLAGS_MALLOC
+);
 ```
 
-### Stack Layout
+**Advantages:**
+- Simple allocation without guard page overhead
+- Useful for constrained environments
 
-The high-level API allocates stack with guard pages to detect overflow:
+**Limitations:**
+- No overflow detection
+- Stack overflows cause undefined behavior
 
-```
-Address Space Layout:
-┌─────────────────────┐
-│  Guard Page         │  (protected, will fault on access)
-├─────────────────────┤
-│  Actual Stack       │  (mapped, readable/writable)
-│  (one+ pages)       │  Size: rounded to page boundary
-├─────────────────────┤
-│  Guard Page         │  (protected, will fault on access)
-└─────────────────────┘
+## Stack Watermarking
 
-Total Allocation = page_size + round_up(stack_size) + page_size (address space)
-Physical Memory  = 1 page (only one page of the stack is physically resident)
-```
-
-**Allocation method by platform:**
-- **Linux/macOS**: `mmap()` + `mprotect()` (POSIX standard)
-- **Windows**: `VirtualAlloc()` + `VirtualProtect()` (Windows API)
-
-Benefits:
-- **Automatic overflow detection** - Stack overflow causes segmentation fault (all platforms)
-- **Memory efficient** - Guard pages use address space, not physical memory
-- **Page-aware** - Works correctly with 4KB (Linux/Windows) and 16KB (macOS ARM) pages
-
-### Stack Watermark Checking
-
-When enabled (default), the entire stack is filled with pattern `0xA5` at creation. When the context is destroyed, the library scans from the bottom upward to detect the high water mark:
+Enable with `YAFL_STACK_FLAGS_WATERMARK` flag:
 
 ```c
-/* Create context with watermark checking */
-fcontext_stack_t *ctx = fcontext_create(16 * 1024, my_fiber);
+yafl_fiber_t *fiber = yafl_fiber_create(
+    my_func,
+    16 * 1024,
+    YAFL_STACK_FLAGS_VMEM | YAFL_STACK_FLAGS_WATERMARK
+);
 
-/* Run the fiber */
-jump_fcontext(ctx->context, NULL);
-
-/* Check stack usage */
-size_t used = fcontext_get_stack_usage(ctx);
+/* After fiber execution */
+size_t used = yafl_fiber_stack_high_watermark(fiber);
 printf("Stack used: %zu bytes\n", used);
-
-/* Destroy - automatically reports usage */
-fcontext_destroy(ctx);
-// Output: fcontext: stack usage: 2048 / 16384 bytes (12%)
 ```
 
-**Features:**
-- Detects maximum stack depth used during fiber lifetime
-- Warns if usage exceeds 90%
-- Zero runtime overhead (only at creation/destruction)
-- Can be disabled with `#define FCONTEXT_ENABLE_STACK_WATERMARK 0`
+**How it works:**
+1. Stack is filled with pattern `0xA5` at creation
+2. As fiber executes, pattern is overwritten
+3. On completion, scan detects how many bytes were used
+4. Result: accurate measurement of maximum stack depth
 
-**Design:** Metadata is allocated separately with `malloc()`, not on the stack. This prevents metadata corruption on stack overflow before the guard page is hit.
-
-For details, see [docs/WATERMARK.md](docs/WATERMARK.md).
-
-### High-Level Example
-
-```c
-#include <stdio.h>
-#include "fcontext.h"
-
-void fiber_func(fcontext_transfer_t t) {
-    printf("Fiber running\n");
-    int *counter = (int *)t.data;
-    (*counter)++;
-    jump_fcontext(t.prev_context, NULL);
-}
-
-int main(void) {
-    printf("Page size: %zu bytes\n", fcontext_get_page_size());
-
-    int counter = 0;
-
-    /* Create context with automatic stack allocation and guard pages */
-    fcontext_stack_t *ctx = fcontext_create(24 * 1024, fiber_func);
-
-    /* Enter context, passing counter via data */
-    fcontext_transfer_t t = jump_fcontext(ctx->context, &counter);
-
-    printf("Counter after fiber: %d\n", counter);  /* Should be 1 */
-
-    /* Cleanup */
-    fcontext_destroy(ctx);
-
-    return 0;
-}
-```
+**Overhead:**
+- Negligible runtime cost (only at creation/destruction)
+- Additional physical memory allocation (fills entire stack initially)
 
 ## Asymmetric Coroutines
 
-This library implements **asymmetric coroutines** - fibers always yield to their caller, not to each other.
+This library implements asymmetric fibers - a fiber can only suspend back to its resumer.
 
-```c
-/* Asymmetric pattern: Fibers yield only to their parent */
-
-ev_fiber_t scheduler = ev_fiber_current();
-
-void fiber_a(fcontext_transfer_t t) {
-    printf("A1\n");
-    jump_fcontext(scheduler, NULL);  /* Yield to scheduler */
-    printf("A2\n");
-    jump_fcontext(scheduler, NULL);  /* Yield to scheduler again */
-}
-
-int main() {
-    scheduler = ev_fiber_current();
-
-    fcontext_stack_t *a = fcontext_create(4096, fiber_a);
-
-    /* First entry */
-    fcontext_transfer_t t = jump_fcontext(a->context, NULL);  /* A1 printed */
-
-    /* Resume */
-    t = jump_fcontext(t.prev_context, NULL);  /* A2 printed */
-
-    fcontext_destroy(a);
-}
+```
+      Main Thread
+         |
+      resume(fiber)
+         |
+         v
+    [Fiber Running]
+         |
+      suspend()
+         |
+         v
+      Main Thread
+         |
+      resume(fiber) again
+         |
+         v
+    [Fiber Running Again]
+         |
+      return (complete)
+         |
+         v
+      Main Thread
 ```
 
-## Stack Size Recommendations
+Not supported: Fiber A switching directly to Fiber B. Fibers always return to their resumer.
 
-- **Minimum**: 4KB (one page) - for very simple functions
-- **Default**: 24KB (recommended starting point)
-- **Large workloads**: 64-128KB for deep call stacks
+## Memory Layout
 
-Stack size is automatically rounded up to the nearest page boundary:
-```c
-/* Requesting 24KB on macOS ARM64 (16KB pages) */
-size_t requested = 24 * 1024;  /* 24576 bytes */
-size_t actual = fcontext_align_to_page(requested);  /* 32768 bytes (2 pages) */
+### Virtual Memory Stack
+
 ```
+┌──────────────────────────┐
+│ Guard Page (PROT_NONE)   │
+├──────────────────────────┤
+│ Stack Space (N pages)    │  Writable
+│                          │  Grows downward
+├──────────────────────────┤
+│ Guard Page (PROT_NONE)   │
+└──────────────────────────┘
+```
+
+**Address Space:** (N+2) × page_size
+**Physical Memory:** Minimal (typically ~1 page initially)
+
+### Malloc Stack
+
+```
+┌──────────────────────────┐
+│ User-allocated block     │  No guard pages
+│ (N + 256 bytes)          │  Simple heap allocation
+└──────────────────────────┘
+```
+
+**Address Space:** N + 256 bytes
+**Physical Memory:** Entire allocation
 
 ## Building
 
-Build artifacts are placed in the `build/` directory and never clutter the source tree.
-
-### Using CMake (Recommended)
-
 ```bash
-# Clean build (recommended when switching between build systems)
-rm -rf build
-mkdir build
-cd build
+# Configure
+cmake -B build
 
-# Configure and build
-cmake ..
-cmake --build .
+# Build
+cmake --build build
 
-# Run tests
-ctest --output-on-failure
+# Test
+cd build && ctest --output-on-failure
 ```
-
-**Clean builds:** If switching from Make to Ninja (or vice versa), always remove the `build/` directory first to avoid mixing build systems.
-
-The build system automatically:
-- Detects your OS (macOS, Windows, Linux) and architecture
-- Selects correct assembly files for your platform
-- Configures page size handling (4KB on Linux/Windows, 16KB on macOS ARM)
-- Places all binaries in `build/bin/`
-- Places all libraries in `build/lib/`
 
 ## Testing
 
+Tests included:
+
+- `test_yafl_basic` - Basic API functionality and flag combinations
+- `test_yafl_suspend_resume` - Multiple suspend/resume cycles
+- `test_yafl_guard` - Guard page overflow detection
+- `test_yafl_many` - Scalability with 100 fibers
+
 Run all tests:
 ```bash
-make test
+cd build && ctest --output-on-failure
 ```
 
-Individual tests:
-```bash
-./test_fcontext_basic       # Low-level context switching
-./test_fcontext_simple      # Simple entry point
-./test_fcontext_transfer    # Data passing between contexts
-```
+## Architecture Support
 
-## Implementation Details
+Tested on:
+- x86_64 (Linux, macOS, Windows)
+- ARM64 (Linux, macOS, iOS, Windows)
+- ARM (Linux)
+- RISC-V, MIPS, PowerPC (cross-compiled)
 
-### Guard Page Mechanism
+## Limitations
 
-When you call `fcontext_create()`:
-
-1. **Determine system page size** via `sysconf(_SC_PAGE_SIZE)`
-2. **Round up stack size** to nearest page boundary (resulting in N pages)
-3. **Allocate address space** for N+2 pages total using `mmap(PROT_NONE)` (1 guard + N stack + 1 guard)
-4. **Map stack region** (N pages) as readable/writable using `mprotect(PROT_READ|PROT_WRITE)`
-5. **Leave guard pages** unmapped/protected (PROT_NONE or PAGE_GUARD)
-
-If a fiber overflows or underflows its stack:
-- Access hits protected guard page
-- Kernel raises SIGSEGV (segmentation fault on POSIX) or access violation exception (Windows)
-- Program terminates with clear error message
-
-### Memory Efficiency
-
-For a 24KB fiber on macOS ARM64 (16KB pages):
-- **Virtual memory**: 64KB (4 pages worth of address space: 1 guard + 2 stack + 1 guard)
-- **Physical memory**: 16KB (only one page of the stack is physically resident)
-- **Address space overhead**: 32KB per fiber (2 pages for guard pages)
-
-This is much more efficient than pre-allocating large stacks for many fibers.
-
-## Limitations and Notes
-
-1. **Stack grows downward** - Not suitable for systems with upward-growing stacks (uncommon)
-
-2. **Entry function doesn't return** - Fiber function should call `jump_fcontext()` to exit:
-   ```c
-   void fiber_func(fcontext_transfer_t t) {
-       // ... do work ...
-       jump_fcontext(t.prev_context, NULL);  /* Must explicitly yield */
-       /* If we reach here after being resumed, handle that */
-   }
-   ```
-
-3. **Guard pages are platform-agnostic** - Uses `mmap()`/`mprotect()` on POSIX and `VirtualAlloc()`/`VirtualProtect()` on Windows
-
-4. **Not thread-safe** - Each thread needs its own set of contexts (no shared state)
-
-5. **Debugging** - Stack overflow in a fiber shows as segmentation fault, which is intentional
+1. **Stack grows downward** - Required by implementation
+2. **Entry function must use suspend/return** - Cannot return normally from fiber entry
+3. **Not thread-safe** - Each thread needs its own fibers
+4. **Asymmetric only** - No direct fiber-to-fiber switching
 
 ## License
 
-Derived from Boost.Context and DaoWen/fcontext, distributed under the Boost Software License 1.0.
+Derived from Boost.Context, distributed under the Boost Software License 1.0.
 
-See `LICENSE` file for full terms.
+See `LICENSE` file for details.
 
 ## References
 
 - **Boost.Context**: https://github.com/boostorg/context
-- **DaoWen/fcontext**: https://github.com/DaoWen/fcontext
-- **POSIX sysconf**: https://pubs.opengroup.org/onlinepubs/9699919799/functions/sysconf.html
-
-## Performance Notes
-
-Context switching overhead on modern hardware (macOS M1, Intel x86-64):
-- **Time per switch**: < 1 microsecond
-- **Memory per fiber**: 16-24KB address space, minimal physical memory
-- **Creation overhead**: < 1 microsecond
-
-See test programs for stress-testing examples.
+- **POSIX**: https://pubs.opengroup.org/onlinepubs/9699919799/
