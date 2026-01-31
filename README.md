@@ -26,6 +26,8 @@
 
 ![Coverage](docs/coverage.svg)
 
+**Latest Release:** v0.1.0
+
 A portable, low-level C11 fiber/coroutine library derived from Boost.Context.
 
 ## Why Another Fiber Library?
