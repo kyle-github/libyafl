@@ -1,0 +1,27 @@
+name: s390x-alpine-linux
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: s390x
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-s390x .
+      - name: Build and Test
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            bash -c "mkdir -p build && cd build && \
+            cmake -DTARGET=s390x-ibm-linux-gnu \
+                  -DCMAKE_C_COMPILER=s390x-linux-gnu-gcc \
+                  -DCMAKE_C_FLAGS='-static' \
+                  -DCMAKE_SYSTEM_NAME=Linux \
+                  -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x \
+                  .. && \
+            cmake --build . && \
+            ctest --output-on-failure"

@@ -1,0 +1,22 @@
+name: i386-alpine-linux
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
+      - name: Build and Test
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            bash -c "mkdir -p build && cd build && \
+            cmake -DTARGET=i386-pc-linux-musl \
+                  -DCMAKE_C_COMPILER=gcc \
+                  -DCMAKE_C_FLAGS='-m32' \
+                  -DCMAKE_SYSTEM_NAME=Linux \
+                  .. && \
+            cmake --build . && \
+            ctest --output-on-failure"

@@ -14,7 +14,7 @@ RUN for attempt in 1 2 3; do \
       build-essential \
       qemu-user \
       qemu-user-static \
-      gcc-sparc64-linux-gnu \
+      gcc-powerpc64le-linux-gnu \
       wget \
       xz-utils && \
     rm -rf /var/lib/apt/lists/* && \

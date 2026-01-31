@@ -35,8 +35,11 @@ jobs:
             - name: Run Tests on Emulator
               uses: reactivecircus/android-emulator-runner@v2
               with:
-                  api-level: 29
+                  api-level: 34
                   arch: x86_64
+                  target: google_apis
+                  cache: true
+                  emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
                   script: |
                       # Wait for emulator to be fully ready
                       adb wait-for-device

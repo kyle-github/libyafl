@@ -1,13 +1,18 @@
-name: powerpc64le-unknown-linux-gnu
+name: ppc64le-alpine-linux
+
 on: [push, pull_request]
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ppc64le
       - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc64le .
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-ppc64le .
       - name: Build and Test
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
@@ -18,5 +23,5 @@ jobs:
                   -DCMAKE_SYSTEM_NAME=Linux \
                   -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc64le \
                   .. && \
-            make && \
-            CTEST_OUTPUT_ON_FAILURE=1 ctest"
+            cmake --build . && \
+            ctest --output-on-failure"

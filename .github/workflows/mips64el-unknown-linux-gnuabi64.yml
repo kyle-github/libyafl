@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.mips .
+        run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
       - name: Build and Test
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
