@@ -4,14 +4,14 @@ on: [push, pull_request]
 
 jobs:
   setup-aarch64-alpine-linux:
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-aarch64 .
 
   build-aarch64-alpine-linux:
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-24.04-arm
     needs: setup-aarch64-alpine-linux
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
           path: build/
 
   test-aarch64-alpine-linux:
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-24.04-arm
     needs: build-aarch64-alpine-linux
     steps:
       - uses: actions/checkout@v4
