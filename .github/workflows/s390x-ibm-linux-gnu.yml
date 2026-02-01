@@ -1,8 +1,9 @@
 name: s390x-ibm-linux-gnu
+
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-s390x-ibm-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -10,7 +11,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake build-essential gcc-s390x-linux-gnu qemu-user
-      - name: Build and Test
+
+  build-s390x-ibm-linux-gnu:
+    runs-on: ubuntu-24.04
+    needs: setup-s390x-ibm-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential gcc-s390x-linux-gnu qemu-user
+      - name: Configure and Build
         run: |
           mkdir -p build && cd build
           cmake -DTARGET=s390x-ibm-linux-gnu \
@@ -20,4 +31,27 @@ jobs:
                   -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x \
                   ..
           make
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-s390x-ibm-linux-gnu
+          path: build/
+
+  test-s390x-ibm-linux-gnu:
+    runs-on: ubuntu-24.04
+    needs: build-s390x-ibm-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-s390x-ibm-linux-gnu
+          path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
+      - name: Run Tests
+        run: |
+          cd build
           CTEST_OUTPUT_ON_FAILURE=1 ctest

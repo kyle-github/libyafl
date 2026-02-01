@@ -1,14 +1,23 @@
 name: sparc64-unknown-linux-gnu
+
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-sparc64-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
-      - name: Build and Test
+
+  build-sparc64-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    needs: setup-sparc64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
+      - name: Build
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
             bash -c "mkdir -p build && cd build && \
@@ -18,5 +27,32 @@ jobs:
                   -DCMAKE_SYSTEM_NAME=Linux \
                   -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-sparc64 \
                   .. && \
-            make && \
-            CTEST_OUTPUT_ON_FAILURE=1 ctest"
+            make"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-sparc64-unknown-linux-gnu
+          path: build/
+
+  test-sparc64-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    needs: build-sparc64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: sparc64
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-sparc64-unknown-linux-gnu
+          path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
+      - name: Run Tests
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            bash -c "cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest"

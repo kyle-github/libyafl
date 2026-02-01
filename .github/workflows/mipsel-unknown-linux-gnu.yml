@@ -1,14 +1,23 @@
 name: mipsel-unknown-linux-gnu
+
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-mipsel-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.mips .
-      - name: Build and Test
+        run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
+
+  build-mipsel-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    needs: setup-mipsel-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
+      - name: Build
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
             bash -c "mkdir -p build && cd build && \
@@ -18,5 +27,32 @@ jobs:
                   -DCMAKE_SYSTEM_NAME=Linux \
                   -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mipsel \
                   .. && \
-            make && \
-            CTEST_OUTPUT_ON_FAILURE=1 ctest"
+            make"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-mipsel-unknown-linux-gnu
+          path: build/
+
+  test-mipsel-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    needs: build-mipsel-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mipsel
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-mipsel-unknown-linux-gnu
+          path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
+      - name: Run Tests
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            bash -c "cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest"

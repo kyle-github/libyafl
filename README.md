@@ -2,29 +2,65 @@
 
 ## Build Status
 
-| Platform | Status |
-| -------- | ------ |
-| x86_64-pc-linux-gnu | [![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml) |
-| aarch64-pc-linux-gnu | [![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml) |
-| x86_64-apple-darwin | [![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml) |
-| aarch64-apple-darwin | [![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml) |
-| x86_64-pc-windows-msvc | [![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml) |
-| aarch64-pc-windows-msvc | [![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml) |
-| x86_64-pc-windows-gnu | [![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml) |
-| aarch64-pc-windows-gnu | [![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml) |
-| x86_64-unknown-linux-android | [![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml) |
-| aarch64-apple-ios | [![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml) |
-| arm-unknown-linux-gnueabihf | [![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml) |
-| riscv64-unknown-linux-gnu | [![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml) |
-| mipsel-unknown-linux-gnu | [![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml) |
-| mips64el-unknown-linux-gnuabi64 | [![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml) |
-| powerpc64le-unknown-linux-gnu | [![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml) |
-| s390x-ibm-linux-gnu | [![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml) |
-| sparc64-unknown-linux-gnu | [![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml) |
-| powerpc-unknown-linux-gnu | [![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml) |
-| i386-unknown-linux-gnu | [![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml) |
+### Linux (glibc)
 
-[![Coverage](https://libplctag.github.io/libyafl/coverage/coverage.svg)](https://libplctag.github.io/libyafl/coverage/index.html)
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| x86_64 | GCC | Linux | glibc | [![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml) |
+| aarch64 | GCC | Linux | glibc | [![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml) |
+| ARM (32-bit) | GCC | Linux | glibc | [![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml) |
+| RISC-V 64 | GCC | Linux | glibc | [![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml) |
+| MIPS (32-bit LE) | GCC | Linux | glibc | [![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml) |
+| MIPS (64-bit LE) | GCC | Linux | glibc | [![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml) |
+| PowerPC 64 LE | GCC | Linux | glibc | [![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml) |
+| PowerPC (32-bit) | GCC | Linux | glibc | [![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml) |
+| s390x | GCC | Linux | glibc | [![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml) |
+| SPARC 64 | GCC | Linux | glibc | [![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml) |
+| i386 | GCC | Linux | glibc | [![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml) |
+
+### Linux (Alpine Container, native musl)
+
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| x86_64 | GCC | Alpine Linux | musl | [![x86_64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/x86_64-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-alpine-linux.yml) |
+| i386 | GCC | Alpine Linux | musl | [![i386-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/i386-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-alpine-linux.yml) |
+| aarch64 | GCC | Alpine Linux | musl | [![aarch64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/aarch64-alpine-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-alpine-linux.yml) |
+
+### Linux (musl.cc Cross-Compiler, QEMU Emulation)
+
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| ARM (32-bit) | GCC | Linux | musl | [![armv7-musl-linux](https://github.com/libplctag/yafl/actions/workflows/armv7-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/armv7-musl-linux.yml) |
+| PowerPC 64 LE | GCC | Linux | musl | [![ppc64le-musl-linux](https://github.com/libplctag/yafl/actions/workflows/ppc64le-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/ppc64le-musl-linux.yml) |
+| s390x | GCC | Linux | musl | [![s390x-musl-linux](https://github.com/libplctag/yafl/actions/workflows/s390x-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-musl-linux.yml) |
+| RISC-V 64 | GCC | Linux | musl | [![riscv64-musl-linux](https://github.com/libplctag/yafl/actions/workflows/riscv64-musl-linux/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-musl-linux.yml) |
+
+### macOS
+
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| x86_64 | Clang | macOS | libc | [![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml) |
+| aarch64 | Clang | macOS | libc | [![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml) |
+| aarch64 | Clang | iOS | libc | [![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml) |
+
+### Windows
+
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| x86_64 | MSVC | Windows | MSVCRT | [![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml) |
+| aarch64 | MSVC | Windows | MSVCRT | [![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml) |
+| x86_64 | GCC (MinGW) | Windows | MSVCRT | [![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml) |
+| aarch64 | GCC (MinGW) | Windows | MSVCRT | [![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml) |
+
+### Android
+
+| Architecture | Compiler | OS | Libc | Status |
+| ------------ | -------- | -- | ---- | ------ |
+| x86_64 | Clang | Android | bionic | [![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml) |
+
+![Coverage](docs/coverage.svg)
+
+**Latest Release:** v0.1.0
 
 A portable, low-level C11 fiber/coroutine library derived from Boost.Context.
 

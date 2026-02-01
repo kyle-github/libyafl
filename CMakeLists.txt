@@ -6,21 +6,21 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-# Read version from file
-set(PROJECT_VERSION_FULL "0.0.0-0")
+# Read version from file (format: major.minor.patch)
+set(PROJECT_VERSION_FULL "0.1.0")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VER_FILE_CONTENT)
     if(VER_FILE_CONTENT)
         string(STRIP "${VER_FILE_CONTENT}" VER_FILE_CONTENT_STRIPPED)
         if(VER_FILE_CONTENT_STRIPPED)
-            set(PROJECT_VERSION_FULL "${VER_FILE_CONTENT_STRIPPED}")
+            # Extract only the numeric part (major.minor.patch) before any non-numeric suffix
+            string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_VERSION_FULL "${VER_FILE_CONTENT_STRIPPED}")
         endif()
     endif()
 endif()
 
-# CMake project version must be numeric (major.minor.patch.tweak)
-string(REPLACE "-" "." PROJECT_VERSION_CMAKE "${PROJECT_VERSION_FULL}")
-project(yafl VERSION ${PROJECT_VERSION_CMAKE} LANGUAGES C)
+# Use version directly with CMake project
+project(yafl VERSION ${PROJECT_VERSION_FULL} LANGUAGES C)
 
 # ============================================================================
 # Enforce Out-of-Source Builds
@@ -143,6 +143,32 @@ else()
 endif()
 
 message(STATUS "Loading configuration for triple: ${TRIPLE}")
+
+# Check if this is a musl target that requires cross-compiler binaries
+string(REGEX MATCH "musl" IS_MUSL_TARGET "${TRIPLE}")
+
+if(IS_MUSL_TARGET)
+    # For musl targets, check if cross-compiler is available in the repo
+    set(MUSL_X_TOOLS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cross-compilers/x-tools")
+    set(MUSL_TOOLCHAIN_DIR "${MUSL_X_TOOLS_DIR}/${TRIPLE}")
+
+    if(NOT EXISTS "${MUSL_TOOLCHAIN_DIR}")
+        message(FATAL_ERROR
+            "Musl cross-compiler toolchain not found: ${MUSL_TOOLCHAIN_DIR}\n"
+            "\n"
+            "To enable musl-based cross-compilation, download and install the toolchain:\n"
+            "  ./scripts/download-musl-cross.sh\n"
+            "\n"
+            "This will download pre-built toolchains from:\n"
+            "  https://github.com/cross-tools/musl-cross/releases\n"
+            "\n"
+            "If you don't need musl cross-compilation, you can build without it:\n"
+            "  cmake -DTARGET=<native-triple> ..\n"
+        )
+    endif()
+    message(STATUS "Using musl cross-compiler from: ${MUSL_TOOLCHAIN_DIR}")
+endif()
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/toolchains/${TRIPLE}.cmake")
     include(toolchains/${TRIPLE}.cmake)
 else()

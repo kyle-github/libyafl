@@ -1,0 +1,56 @@
+name: i386-alpine-linux
+
+on: [push, pull_request]
+
+jobs:
+  setup-i386-alpine-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
+
+  build-i386-alpine-linux:
+    runs-on: ubuntu-latest
+    needs: setup-i386-alpine-linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
+      - name: Build
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            sh -c "mkdir -p build && cd build && \
+            cmake -DTARGET=i386-unknown-linux-gnu \
+                  -DCMAKE_C_COMPILER=gcc \
+                  -DCMAKE_SYSTEM_NAME=Linux \
+                  .. && \
+            cmake --build ."
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-i386-alpine-linux
+          path: build/
+
+  test-i386-alpine-linux:
+    runs-on: ubuntu-latest
+    needs: build-i386-alpine-linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: i386
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-i386-alpine-linux
+          path: build/
+      - name: Restore execute permissions
+        run: chmod +x build/bin/*
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
+      - name: Run Tests
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
+            sh -c "cd build && ctest --output-on-failure"

@@ -3,8 +3,20 @@ name: aarch64-pc-windows-gnu
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-aarch64-pc-windows-gnu:
     runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
+
+  build-aarch64-pc-windows-gnu:
+    runs-on: windows-11-arm
+    needs: setup-aarch64-pc-windows-gnu
     steps:
       - uses: actions/checkout@v4
       - name: Setup MinGW
@@ -21,6 +33,28 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: cmake --build build --parallel 4
-      - name: Test
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-aarch64-pc-windows-gnu
+          path: build/
+
+  test-aarch64-pc-windows-gnu:
+    runs-on: windows-11-arm
+    needs: build-aarch64-pc-windows-gnu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-aarch64-pc-windows-gnu
+          path: build/
+      - name: Run Tests
         shell: msys2 {0}
         run: cd build && ctest --output-on-failure
