@@ -16,18 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Extract musl.cc cross-compiler
-        run: |
-          mkdir -p /opt/cross
-          cd /opt/cross
-          tar xzf ${{ github.workspace }}/cross-compilers/riscv64-linux-musl-cross.tgz
-          echo "Cross-compiler extracted successfully"
+        run: sudo apt-get update && sudo apt-get install -y cmake make wget
+      - name: Download and install musl-cross toolchain
+        run: ./scripts/download-musl-cross.sh riscv64-unknown-linux-musl
       - name: Configure and Build
         run: |
           mkdir -p build && cd build
-          cmake -DTARGET=riscv64-unknown-linux-gnu \
-                -DCMAKE_C_COMPILER=/opt/cross/riscv64-linux-musl-cross/bin/riscv64-linux-musl-gcc \
+          cmake -DTARGET=riscv64-unknown-linux-musl \
+                -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/riscv64-unknown-linux-musl/bin/riscv64-unknown-linux-musl-gcc \
                 -DCMAKE_C_FLAGS='-static' \
                 -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=riscv64 \

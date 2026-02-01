@@ -1,3 +1,15 @@
 # Git LFS configuration for large binary files
+#
+# These files are optional and only needed if you plan to run musl.cc-based
+# cross-compilation workflows locally. Most developers can skip them:
+#
+#   GIT_LFS_SKIP_SMUDGE=1 git clone <repo>
+#   # or
+#   git clone --no-lfs <repo>
+#
+# To pull these files later:
+#   git lfs pull
+#
+
 # Cross-compiler toolchains (stored with Git LFS)
 cross-compilers/*.tgz filter=lfs diff=lfs merge=lfs -text

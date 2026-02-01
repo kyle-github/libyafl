@@ -16,18 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Extract musl.cc cross-compiler
-        run: |
-          mkdir -p /opt/cross
-          cd /opt/cross
-          tar xzf ${{ github.workspace }}/cross-compilers/arm-linux-musleabihf-cross.tgz
-          echo "Cross-compiler extracted successfully"
+        run: sudo apt-get update && sudo apt-get install -y cmake make wget
+      - name: Download and install musl-cross toolchain
+        run: ./scripts/download-musl-cross.sh arm-unknown-linux-musleabihf
       - name: Configure and Build
         run: |
           mkdir -p build && cd build
-          cmake -DTARGET=arm-unknown-linux-gnueabihf \
-                -DCMAKE_C_COMPILER=/opt/cross/arm-linux-musleabihf-cross/bin/arm-linux-musleabihf-gcc \
+          cmake -DTARGET=arm-unknown-linux-musleabihf \
+                -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/arm-unknown-linux-musleabihf/bin/arm-unknown-linux-musleabihf-gcc \
                 -DCMAKE_C_FLAGS='-static' \
                 -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \

@@ -143,6 +143,32 @@ else()
 endif()
 
 message(STATUS "Loading configuration for triple: ${TRIPLE}")
+
+# Check if this is a musl target that requires cross-compiler binaries
+string(REGEX MATCH "musl" IS_MUSL_TARGET "${TRIPLE}")
+
+if(IS_MUSL_TARGET)
+    # For musl targets, check if cross-compiler is available in the repo
+    set(MUSL_X_TOOLS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cross-compilers/x-tools")
+    set(MUSL_TOOLCHAIN_DIR "${MUSL_X_TOOLS_DIR}/${TRIPLE}")
+
+    if(NOT EXISTS "${MUSL_TOOLCHAIN_DIR}")
+        message(FATAL_ERROR
+            "Musl cross-compiler toolchain not found: ${MUSL_TOOLCHAIN_DIR}\n"
+            "\n"
+            "To enable musl-based cross-compilation, download and install the toolchain:\n"
+            "  ./scripts/download-musl-cross.sh\n"
+            "\n"
+            "This will download pre-built toolchains from:\n"
+            "  https://github.com/cross-tools/musl-cross/releases\n"
+            "\n"
+            "If you don't need musl cross-compilation, you can build without it:\n"
+            "  cmake -DTARGET=<native-triple> ..\n"
+        )
+    endif()
+    message(STATUS "Using musl cross-compiler from: ${MUSL_TOOLCHAIN_DIR}")
+endif()
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/toolchains/${TRIPLE}.cmake")
     include(toolchains/${TRIPLE}.cmake)
 else()
