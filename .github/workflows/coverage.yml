@@ -39,7 +39,7 @@ jobs:
       - name: Generate coverage report
         run: |
           lcov --capture --directory build --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
+          lcov --ignore-errors unused --remove coverage.info '/usr/*' --output-file coverage.info
           genhtml coverage.info --output-directory docs/coverage --title "yafl Code Coverage"
 
       - name: Generate coverage badge
@@ -128,7 +128,15 @@ jobs:
           "@
 
           New-Item -ItemType Directory -Force -Path docs
-          Set-Content -Path "docs/coverage_windows_${{ matrix.arch }}.svg" -Value $svg
+          $badgePath = "docs/coverage_windows_${{ matrix.arch }}.svg"
+          Set-Content -Path $badgePath -Value $svg
+          if (Test-Path $badgePath) {
+            Write-Host "Badge created: $badgePath (${percentage}% coverage)"
+            Get-Content $badgePath | Select-Object -First 5
+          } else {
+            Write-Error "Failed to create badge file"
+            exit 1
+          }
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
@@ -180,7 +188,7 @@ jobs:
       - name: Generate Coverage Report
         run: |
           lcov --gcov-tool llvm-gcov --capture --directory build --output-file coverage.info
-          lcov --gcov-tool llvm-gcov --remove coverage.info '/usr/*' --output-file coverage.info
+          lcov --gcov-tool llvm-gcov --ignore-errors unused --remove coverage.info '/usr/*' --output-file coverage.info
           genhtml coverage.info --output-directory docs/coverage --title "yafl Code Coverage"
 
       - name: Generate Coverage Badge
