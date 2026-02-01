@@ -21,7 +21,7 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/src yafl-builder \
             sh -c "mkdir -p build && cd build && \
-            cmake -DTARGET=aarch64-unknown-linux-musl \
+            cmake -DTARGET=aarch64-pc-linux-gnu \
                   -DCMAKE_C_COMPILER=gcc \
                   -DCMAKE_SYSTEM_NAME=Linux \
                   .. && \
