@@ -64,7 +64,7 @@ jobs:
             runner: windows-latest
             cmake_arch: x64
           - arch: aarch64
-            runner: windows-latest
+            runner: windows-11-arm
             cmake_arch: ARM64
     runs-on: ${{ matrix.runner }}
     steps:
@@ -136,9 +136,11 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: macos-13
+            runner: macos-15-intel
+            cmake_arch: x86_64
           - arch: aarch64
-            runner: macos-14
+            runner: macos-latest
+            cmake_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -147,7 +149,7 @@ jobs:
         run: brew install lcov
 
       - name: Configure
-        run: cmake -S . -B build -DENABLE_COVERAGE=ON
+        run: cmake -S . -B build -DENABLE_COVERAGE=ON -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }}
 
       - name: Build
         run: cmake --build build
