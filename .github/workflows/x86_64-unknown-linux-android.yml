@@ -73,10 +73,11 @@ jobs:
                   api-level: 34
                   arch: x86_64
                   target: google_apis
-                  cache: true
-                  emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+                  emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 2048
+                  disable-animations: true
                   script: |
                       # Wait for emulator to be fully ready
                       adb wait-for-device
+                      adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
                       cd build
                       ctest --output-on-failure
