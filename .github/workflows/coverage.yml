@@ -188,9 +188,8 @@ jobs:
 
   commit-badges:
     needs: [coverage-linux, coverage-macos, coverage-windows]
-    if: always()
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
     steps:
       - uses: actions/checkout@v4
 
