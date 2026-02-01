@@ -82,8 +82,8 @@ jobs:
 
       - name: Generate Coverage Report
         run: |
-          $opencppcoverage = "C:\Program Files (x86)\OpenCppCoverage\OpenCppCoverage.exe"
-          & $opencppcoverage --sources "${{ github.workspace }}" --cover_children --export_type=html:build/coverage_report --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build -C Debug --output-on-failure
+          $env:PATH = "C:\Program Files (x86)\OpenCppCoverage;$env:PATH"
+          OpenCppCoverage --sources "${{ github.workspace }}" --cover_children --export_type=html:build/coverage_report --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build -C Debug --output-on-failure
         shell: pwsh
 
       - name: Generate Coverage Badge
@@ -151,7 +151,11 @@ jobs:
         run: brew install lcov
 
       - name: Configure
-        run: cmake -S . -B build -DENABLE_COVERAGE=ON -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }}
+        run: |
+          cmake -S . -B build \
+            -DENABLE_COVERAGE=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }}
 
       - name: Build
         run: cmake --build build
