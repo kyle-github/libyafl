@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make wget
+        run: sudo apt-get update && sudo apt-get install -y cmake make wget qemu-user-static binfmt-support
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh s390x-ibm-linux-musl
       - name: Configure and Build
@@ -27,6 +27,7 @@ jobs:
                 -DCMAKE_C_FLAGS='-static' \
                 -DCMAKE_SYSTEM_NAME=Linux \
                 -DCMAKE_SYSTEM_PROCESSOR=s390x \
+                -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x-static \
                 ..
           cmake --build .
       - name: Upload build artifacts
