@@ -82,8 +82,14 @@ jobs:
 
       - name: Generate Coverage Report
         run: |
-          $env:PATH = "C:\Program Files (x86)\OpenCppCoverage;$env:PATH"
-          OpenCppCoverage --sources "${{ github.workspace }}" --cover_children --export_type=html:build/coverage_report --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build -C Debug --output-on-failure
+          # Find OpenCppCoverage installation
+          $opencppcoverage = Get-ChildItem -Path "C:\Program Files*" -Recurse -Filter "OpenCppCoverage.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $opencppcoverage) {
+            Write-Error "OpenCppCoverage.exe not found"
+            exit 1
+          }
+          Write-Host "Using OpenCppCoverage from: $($opencppcoverage.FullName)"
+          & $opencppcoverage.FullName --sources "${{ github.workspace }}" --cover_children --export_type=html:build/coverage_report --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build -C Debug --output-on-failure
         shell: pwsh
 
       - name: Generate Coverage Badge
