@@ -44,6 +44,12 @@ jobs:
     needs: build-aarch64-pc-windows-gnu
     steps:
       - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
