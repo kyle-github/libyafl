@@ -1,4 +1,4 @@
-FROM i386/alpine:latest
+FROM --platform=linux/386 alpine:latest
 
 # Configure apk with retry logic for transient network failures
 RUN echo 'http_request_timeout=120' >> /etc/apk/apk.conf
