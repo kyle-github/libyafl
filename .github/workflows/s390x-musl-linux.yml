@@ -17,27 +17,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Download musl.cc cross-compiler
+      - name: Extract musl.cc cross-compiler
         run: |
           mkdir -p /opt/cross
           cd /opt/cross
-          for attempt in 1 2 3; do
-            echo "Attempt $attempt/3: Downloading s390x-linux-musl-cross.tgz..."
-            if wget -O s390x-linux-musl-cross.tgz https://musl.cc/s390x-linux-musl-cross.tgz; then
-              tar xzf s390x-linux-musl-cross.tgz
-              rm s390x-linux-musl-cross.tgz
-              echo "Download successful"
-              exit 0
-            else
-              echo "Download attempt $attempt failed"
-              if [ $attempt -lt 3 ]; then
-                echo "Waiting 15 seconds before retry..."
-                sleep 15
-              fi
-            fi
-          done
-          echo "All 3 download attempts failed"
-          exit 1
+          tar xzf ${{ github.workspace }}/cross-compilers/s390x-linux-musl-cross.tgz
+          echo "Cross-compiler extracted successfully"
       - name: Configure and Build
         run: |
           mkdir -p build && cd build
