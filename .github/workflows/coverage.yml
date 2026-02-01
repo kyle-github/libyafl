@@ -1,62 +1,207 @@
 name: coverage
 
 on:
-    push:
-        branches: [prerelease]
-    pull_request:
-        branches: [prerelease]
+  push:
+    branches: [prerelease]
+  pull_request:
+    branches: [prerelease]
 
 jobs:
-    coverage:
-        runs-on: ubuntu-latest
+  coverage-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Install dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y lcov cmake build-essential
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov cmake build-essential
 
-            - name: Configure
-              run: |
-                  cmake -S . -B build -DENABLE_COVERAGE=ON
+      - name: Configure
+        run: |
+          cmake -S . -B build -DENABLE_COVERAGE=ON
 
-            - name: Build
-              run: cmake --build build
+      - name: Build
+        run: cmake --build build
 
-            - name: Test
-              run: ctest --test-dir build --output-on-failure
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
 
-            - name: Generate coverage report
-              run: |
-                  lcov --capture --directory build --output-file coverage.info
-                  lcov --remove coverage.info '/usr/*' --output-file coverage.info
-                  genhtml coverage.info --output-directory docs/coverage --title "yafl Code Coverage"
+      - name: Generate coverage report
+        run: |
+          lcov --capture --directory build --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info
+          genhtml coverage.info --output-directory docs/coverage --title "yafl Code Coverage"
 
-            - name: Normalize coverage HTML timestamps
-              run: |
-                  # Remove or normalize timestamps from generated HTML to avoid merge conflicts
-                  find docs/coverage -name "*.html" -type f -exec sed -i 's/<td class="headerValue">[^<]*<\/td>/<td class="headerValue">Generated<\/td>/g' {} \;
-                  echo "Normalized timestamps in coverage HTML files"
+      - name: Generate coverage badge
+        run: |
+          chmod +x scripts/make_coverage_badge.sh
+          scripts/make_coverage_badge.sh docs/coverage_linux_${{ matrix.arch }}.svg coverage.info
 
-            - name: Generate coverage badge
-              run: |
-                  chmod +x scripts/make_coverage_badge.sh
-                  scripts/make_coverage_badge.sh docs/coverage.svg coverage.info
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-linux-${{ matrix.arch }}
+          path: |
+            docs/coverage
+            docs/coverage_linux_${{ matrix.arch }}.svg
 
-            - name: Create GitHub Pages configuration
-              run: |
-                  touch docs/.nojekyll
+  coverage-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: windows-latest
+            cmake_arch: x64
+          - arch: aarch64
+            runner: windows-latest
+            cmake_arch: ARM64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Commit and push coverage badge to prerelease
-              if: github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
-              run: |
-                  git config user.name "GitHub Actions"
-                  git config user.email "actions@github.com"
-                  git add docs/coverage.svg
-                  if git diff --quiet --cached; then
-                    echo "No coverage badge changes to commit"
-                  else
-                    git commit -m "Update code coverage badge [skip ci]" && git push origin prerelease
-                  fi
+      - name: Install OpenCppCoverage
+        run: |
+          choco install opencppcoverage
+          echo "C:\Program Files\OpenCppCoverage" >> $env:GITHUB_PATH
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -A ${{ matrix.cmake_arch }}
+
+      - name: Build
+        run: cmake --build build --config Debug
+
+      - name: Generate Coverage Report
+        run: OpenCppCoverage --sources "${{ github.workspace }}" --cover_children --export_type=html:build/coverage_report --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build -C Debug --output-on-failure
+
+      - name: Generate Coverage Badge
+        shell: powershell
+        run: |
+          if (-Not (Test-Path build/cobertura.xml)) { Write-Error "Cobertura XML not found"; exit 1 }
+          [xml]$xml = Get-Content build/cobertura.xml
+          $rate = $xml.coverage.'line-rate'
+          $percentage = [math]::Round([double]$rate * 100)
+
+          if ($percentage -ge 90) { $color = "brightgreen" }
+          elseif ($percentage -ge 75) { $color = "yellow" }
+          else { $color = "red" }
+
+          $svg = @"
+          <svg xmlns="http://www.w3.org/2000/svg" width="120" height="20">
+            <linearGradient id="b" x2="0" y2="100%">
+              <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+              <stop offset="1" stop-opacity=".1"/>
+            </linearGradient>
+            <mask id="a">
+              <rect width="120" height="20" rx="3" fill="#fff"/>
+            </mask>
+            <g mask="url(#a)">
+              <rect width="70" height="20" fill="#555"/>
+              <rect x="70" width="50" height="20" fill="$color"/>
+              <rect width="120" height="20" fill="url(#b)"/>
+            </g>
+            <g fill="#fff" text-anchor="middle"
+               font-family="DejaVu Sans,Verdana,Geneva,sans-serif"
+               font-size="11">
+              <text x="35" y="14">coverage</text>
+              <text x="95" y="14">${percentage}%</text>
+            </g>
+          </svg>
+          "@
+
+          New-Item -ItemType Directory -Force -Path docs
+          Set-Content -Path "docs/coverage_windows_${{ matrix.arch }}.svg" -Value $svg
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-windows-${{ matrix.arch }}
+          path: |
+            build/coverage_report
+            docs/coverage_windows_${{ matrix.arch }}.svg
+
+  coverage-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-13
+          - arch: aarch64
+            runner: macos-14
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install lcov
+
+      - name: Configure
+        run: cmake -S . -B build -DENABLE_COVERAGE=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Generate Coverage Report
+        run: |
+          lcov --capture --directory build --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info
+          genhtml coverage.info --output-directory docs/coverage --title "yafl Code Coverage"
+
+      - name: Generate Coverage Badge
+        run: |
+          chmod +x scripts/make_coverage_badge.sh
+          scripts/make_coverage_badge.sh docs/coverage_macos_${{ matrix.arch }}.svg coverage.info
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-macos-${{ matrix.arch }}
+          path: |
+            docs/coverage
+            docs/coverage_macos_${{ matrix.arch }}.svg
+
+  commit-badges:
+    needs: [coverage-linux, coverage-macos, coverage-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Move badges
+        run: |
+          mkdir -p docs
+          find artifacts -name "coverage_*.svg" -exec cp {} docs/ \;
+
+      - name: Create GitHub Pages configuration
+        run: |
+          touch docs/.nojekyll
+
+      - name: Commit and push coverage badges
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add docs/coverage_*.svg docs/.nojekyll
+          if git diff --quiet --cached; then
+            echo "No coverage badge changes to commit"
+          else
+            git commit -m "Update code coverage badges [skip ci]" && git push origin prerelease
+          fi
