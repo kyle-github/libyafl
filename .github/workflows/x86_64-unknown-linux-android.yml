@@ -78,6 +78,6 @@ jobs:
                   script: |
                       # Wait for emulator to be fully ready
                       adb wait-for-device
-                      adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+                      adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 30; done'
                       cd build
                       ctest --output-on-failure
