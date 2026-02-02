@@ -8,7 +8,14 @@ set(ASM_FILES
     src/asm/arm64/jump_arm64_aapcs_pe_armasm.asm
 )
 
-find_program(ARMASM64 armasm64.exe REQUIRED)
+find_program(ARMASM64
+    NAMES armasm64.exe armasm64
+    HINTS
+        "${CMAKE_C_COMPILER}/.."
+        "$ENV{VCToolsInstallDir}/bin/Hostarm64/arm64"
+        "$ENV{VCToolsInstallDir}/bin/Hostx64/arm64"
+    REQUIRED
+)
 
 # Create custom commands for each ARM64 assembly file
 set(ARM64_ASM_OBJECTS "")

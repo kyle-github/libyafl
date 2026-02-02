@@ -3,20 +3,8 @@ name: aarch64-pc-windows-gnu
 on: [push, pull_request]
 
 jobs:
-  setup-aarch64-pc-windows-gnu:
-    runs-on: windows-11-arm
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup MinGW
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: CLANGARM64
-          update: true
-          install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
-
   build-aarch64-pc-windows-gnu:
     runs-on: windows-11-arm
-    needs: setup-aarch64-pc-windows-gnu
     steps:
       - uses: actions/checkout@v4
       - name: Setup MinGW
@@ -24,6 +12,7 @@ jobs:
         with:
           msystem: CLANGARM64
           update: true
+          cache: true
           install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
       - name: Configure
         shell: msys2 {0}
@@ -49,6 +38,7 @@ jobs:
         with:
           msystem: CLANGARM64
           update: true
+          cache: true
           install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
       - name: Download build artifacts
         uses: actions/download-artifact@v4

@@ -239,6 +239,12 @@ enable_testing()
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED TRUE)
 
 foreach(test ${TESTS})
+    # Skip guard page test on macOS when coverage is enabled (coverage instrumentation changes signal behavior)
+    if(ENABLE_COVERAGE AND APPLE AND "${test}" STREQUAL "test_yafl_guard")
+        message(STATUS "Skipping ${test} on macOS (coverage enabled)")
+        continue()
+    endif()
+
     # Use absolute path to binary so tests run from build directory
     add_test(NAME ${test} COMMAND ${test})
 endforeach()
