@@ -3,7 +3,7 @@ name: x86_64-pc-linux-gnu
 on: [push, pull_request]
 
 jobs:
-    build-and-test:
+    setup-x86_64-pc-linux-gnu:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -11,12 +11,42 @@ jobs:
               run: |
                   sudo apt-get update
                   sudo apt-get install -y cmake build-essential
-            - name: Build and Test
+
+    build-x86_64-pc-linux-gnu:
+        runs-on: ubuntu-latest
+        needs: setup-x86_64-pc-linux-gnu
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y cmake build-essential
+            - name: Configure
               run: |
                   mkdir -p build && cd build
                   cmake -G "Unix Makefiles" -DTARGET=x86_64-pc-linux-gnu -DENABLE_COVERAGE=ON ..
-                  make -j$(nproc)
-                  ctest --output-on-failure
+            - name: Build
+              run: cd build && make -j$(nproc)
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-x86_64-pc-linux-gnu
+                  path: build/
+
+    test-x86_64-pc-linux-gnu:
+        runs-on: ubuntu-latest
+        needs: build-x86_64-pc-linux-gnu
+        steps:
+            - uses: actions/checkout@v4
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: build-x86_64-pc-linux-gnu
+                  path: build/
+            - name: Restore execute permissions
+              run: chmod +x build/bin/*
+            - name: Run Tests
+              run: cd build && ctest --output-on-failure
             - name: Upload coverage to Codecov
               uses: codecov/codecov-action@v4
               with:
