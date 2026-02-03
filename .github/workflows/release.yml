@@ -39,6 +39,8 @@ permissions:
 jobs:
     check-and-release:
         runs-on: ubuntu-latest
+        # Only run if the triggering workflow succeeded AND it ran on the release branch
+        if: ${{ github.event.workflow_run.head_branch == 'release' && github.event.workflow_run.conclusion == 'success' }}
         steps:
             - name: Log trigger information
               run: |
@@ -47,26 +49,7 @@ jobs:
                 echo "Branch: ${{ github.event.workflow_run.head_branch }}"
                 echo "Commit SHA: ${{ github.event.workflow_run.head_sha }}"
 
-            - name: Validate release branch and workflow success
-              id: validate
-              run: |
-                if [ "${{ github.event.workflow_run.head_branch }}" != "release" ]; then
-                  echo "Skipping: Not on release branch (on ${{ github.event.workflow_run.head_branch }})"
-                  echo "proceed=false" >> $GITHUB_OUTPUT
-                  exit 0
-                fi
-
-                if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
-                  echo "Skipping: Workflow did not succeed (conclusion: ${{ github.event.workflow_run.conclusion }})"
-                  echo "proceed=false" >> $GITHUB_OUTPUT
-                  exit 0
-                fi
-
-                echo "Validation passed: On release branch with successful workflow"
-                echo "proceed=true" >> $GITHUB_OUTPUT
-
             - name: Check all workflow statuses
-              if: steps.validate.outputs.proceed == 'true'
               id: check-all
               uses: actions/github-script@v7
               with:
@@ -165,14 +148,14 @@ jobs:
                       core.setOutput("ready", "true");
 
             - name: Perform Release
-              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
+              if: steps.check-all.outputs.ready == 'true'
               uses: actions/checkout@v4
               with:
                   ref: ${{ github.event.workflow_run.head_sha }}
                   fetch-depth: 0
 
             - name: Get Version
-              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
+              if: steps.check-all.outputs.ready == 'true'
               run: |
                 if [ ! -f VERSION ]; then
                   echo "ERROR: VERSION file not found"
@@ -183,7 +166,7 @@ jobs:
                 echo "VERSION=$VERSION" >> $GITHUB_ENV
 
             - name: Get Release Details
-              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
+              if: steps.check-all.outputs.ready == 'true'
               id: release_details
               uses: actions/github-script@v7
               with:
@@ -222,7 +205,7 @@ jobs:
                       core.setOutput("body", body);
 
             - name: Create Release
-              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
+              if: steps.check-all.outputs.ready == 'true'
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: v${{ env.VERSION }}
