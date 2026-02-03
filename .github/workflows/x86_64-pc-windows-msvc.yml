@@ -3,8 +3,18 @@ name: x86_64-pc-windows-msvc
 on: [push, pull_request]
 
 jobs:
-  build-and-test:
+  setup-x86_64-pc-windows-msvc:
     runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+  build-x86_64-pc-windows-msvc:
+    runs-on: windows-latest
+    needs: setup-x86_64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v4
       - name: Setup MSVC
@@ -17,5 +27,21 @@ jobs:
           cmake -G "Ninja" -DTARGET=x86_64-pc-windows-msvc -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl ..
       - name: Build
         run: cmake --build build --config Release --parallel 4
-      - name: Test
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-x86_64-pc-windows-msvc
+          path: build/
+
+  test-x86_64-pc-windows-msvc:
+    runs-on: windows-latest
+    needs: build-x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-x86_64-pc-windows-msvc
+          path: build/
+      - name: Run Tests
         run: cd build && ctest --output-on-failure

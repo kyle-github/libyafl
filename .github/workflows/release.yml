@@ -31,8 +31,6 @@ on:
             - riscv64-musl-linux
         types:
             - completed
-        branches:
-            - release
 
 permissions:
     contents: write
@@ -41,10 +39,34 @@ permissions:
 jobs:
     check-and-release:
         runs-on: ubuntu-latest
-        # Only run if the triggering workflow succeeded AND it ran on the release branch
-        if: ${{ github.event.workflow_run.head_branch == 'release' && github.event.workflow_run.conclusion == 'success' }}
         steps:
+            - name: Log trigger information
+              run: |
+                echo "Triggered by workflow: ${{ github.event.workflow_run.name }}"
+                echo "Workflow status: ${{ github.event.workflow_run.conclusion }}"
+                echo "Branch: ${{ github.event.workflow_run.head_branch }}"
+                echo "Commit SHA: ${{ github.event.workflow_run.head_sha }}"
+
+            - name: Validate release branch and workflow success
+              id: validate
+              run: |
+                if [ "${{ github.event.workflow_run.head_branch }}" != "release" ]; then
+                  echo "Skipping: Not on release branch (on ${{ github.event.workflow_run.head_branch }})"
+                  echo "proceed=false" >> $GITHUB_OUTPUT
+                  exit 0
+                fi
+
+                if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+                  echo "Skipping: Workflow did not succeed (conclusion: ${{ github.event.workflow_run.conclusion }})"
+                  echo "proceed=false" >> $GITHUB_OUTPUT
+                  exit 0
+                fi
+
+                echo "Validation passed: On release branch with successful workflow"
+                echo "proceed=true" >> $GITHUB_OUTPUT
+
             - name: Check all workflow statuses
+              if: steps.validate.outputs.proceed == 'true'
               id: check-all
               uses: actions/github-script@v7
               with:
@@ -104,42 +126,64 @@ jobs:
 
                       const failed = [];
                       const pending = [];
+                      const succeeded = [];
 
                       for (const name of target_workflows) {
                         const run = latest_runs[name];
-                        if (!run || run.status !== 'completed') {
+                        if (!run) {
+                          console.log(`  ${name}: NO RUN FOUND`);
+                          pending.push(name);
+                        } else if (run.status !== 'completed') {
+                          console.log(`  ${name}: ${run.status}`);
                           pending.push(name);
                         } else if (run.conclusion !== 'success') {
+                          console.log(`  ${name}: completed with ${run.conclusion}`);
                           failed.push(name);
+                        } else {
+                          console.log(`  ${name}: success`);
+                          succeeded.push(name);
                         }
                       }
 
+                      console.log(`\nSummary: ${succeeded.length} succeeded, ${pending.length} pending, ${failed.length} failed`);
+
                       if (pending.length > 0) {
-                        console.log(`Waiting for other workflows to complete: ${pending.join(', ')}`);
+                        console.log(`Waiting for ${pending.length} workflows to complete: ${pending.join(', ')}`);
+                        core.setOutput("ready", "false");
+                        core.notice(`Release skipped: waiting for ${pending.length} workflows to complete`);
                         return; // Exit successfully but do nothing; wait for next trigger
                       }
 
                       if (failed.length > 0) {
                         core.setFailed(`One or more workflows failed: ${failed.join(', ')}`);
+                        core.setOutput("ready", "false");
                         return;
                       }
 
                       console.log("All target workflows passed successfully!");
+                      core.notice("All required workflows passed - creating release");
                       core.setOutput("ready", "true");
 
             - name: Perform Release
-              if: steps.check-all.outputs.ready == 'true'
+              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
               uses: actions/checkout@v4
               with:
                   ref: ${{ github.event.workflow_run.head_sha }}
                   fetch-depth: 0
 
             - name: Get Version
-              if: steps.check-all.outputs.ready == 'true'
-              run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
+              run: |
+                if [ ! -f VERSION ]; then
+                  echo "ERROR: VERSION file not found"
+                  exit 1
+                fi
+                VERSION=$(cat VERSION)
+                echo "Creating release for version: $VERSION"
+                echo "VERSION=$VERSION" >> $GITHUB_ENV
 
             - name: Get Release Details
-              if: steps.check-all.outputs.ready == 'true'
+              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
               id: release_details
               uses: actions/github-script@v7
               with:
@@ -178,7 +222,7 @@ jobs:
                       core.setOutput("body", body);
 
             - name: Create Release
-              if: steps.check-all.outputs.ready == 'true'
+              if: steps.validate.outputs.proceed == 'true' && steps.check-all.outputs.ready == 'true'
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: v${{ env.VERSION }}

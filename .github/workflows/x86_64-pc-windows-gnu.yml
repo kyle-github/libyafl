@@ -3,8 +3,21 @@ name: x86_64-pc-windows-gnu
 on: [push, pull_request]
 
 jobs:
+  setup-x86_64-pc-windows-gnu:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          cache: true
+          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+
   build-x86_64-pc-windows-gnu:
     runs-on: windows-latest
+    needs: setup-x86_64-pc-windows-gnu
     steps:
       - uses: actions/checkout@v4
       - name: Setup MinGW
