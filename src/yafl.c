@@ -54,10 +54,7 @@ extern yafl_transfer_t jump_fcontext(yafl_t const to, void *vp);
 #define FCONTEXT_STACK_WATERMARK 0xA5
 #define FCONTEXT_STACK_ALIGNMENT 16
 
-typedef enum {
-    FCONTEXT_ALLOC_MALLOC,
-    FCONTEXT_ALLOC_VMEM
-} yafl_alloc_type_t;
+typedef enum { FCONTEXT_ALLOC_MALLOC, FCONTEXT_ALLOC_VMEM } yafl_alloc_type_t;
 
 /* Internal fiber structure */
 struct yafl_fiber {
@@ -73,13 +70,13 @@ struct yafl_fiber {
     bool watermark_filled;
 
     /* Context tracking */
-    yafl_t context;            /* Fiber's saved context */
-    yafl_t resumer_context;    /* Context to return to */
+    yafl_t context;         /* Fiber's saved context */
+    yafl_t resumer_context; /* Context to return to */
 
     /* User entry and result */
     yafl_fiber_fn user_entry;
     void *cached_result;
-    void *pending_arg;         /* Argument for next resume */
+    void *pending_arg; /* Argument for next resume */
 };
 
 /* Typedef for internal use */
@@ -99,16 +96,14 @@ static size_t get_page_size(void) {
     return (size_t)si.dwPageSize;
 #else
     long page_size = sysconf(_SC_PAGE_SIZE);
-    if (page_size <= 0) {
-        return 4096;
-    }
+    if(page_size <= 0) { return 4096; }
     return (size_t)page_size;
 #endif
 }
 
 static void *align_stack_pointer(void *ptr) {
     uintptr_t addr = (uintptr_t)ptr;
-    return (void *)(addr & ~(FCONTEXT_STACK_ALIGNMENT - 1));
+    return (void *)(addr & ~((uintptr_t)FCONTEXT_STACK_ALIGNMENT - 1));
 }
 
 /* ========================================================================
@@ -147,27 +142,20 @@ static void fiber_entry_trampoline(yafl_transfer_t t) {
  * Fiber Creation
  * ======================================================================== */
 
-extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size,
-                                       yafl_stack_flags_t flags) {
+extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size, yafl_stack_flags_t flags) {
     /* Validate fiber function is not NULL */
-    if (fiber_fn == NULL) {
-        return NULL;
-    }
+    if(fiber_fn == NULL) { return NULL; }
 
     /* Validate exactly one allocation type is set */
     int alloc_flags = flags & (YAFL_STACK_FLAGS_MALLOC | YAFL_STACK_FLAGS_VMEM);
-    if (alloc_flags != YAFL_STACK_FLAGS_MALLOC && alloc_flags != YAFL_STACK_FLAGS_VMEM) {
-        return NULL;
-    }
+    if(alloc_flags != YAFL_STACK_FLAGS_MALLOC && alloc_flags != YAFL_STACK_FLAGS_VMEM) { return NULL; }
 
     bool use_vmem = (flags & YAFL_STACK_FLAGS_VMEM) != 0;
     bool use_watermark = (flags & YAFL_STACK_FLAGS_WATERMARK) != 0;
 
     /* Allocate fiber structure */
     yafl_fiber_t *fiber = malloc(sizeof(yafl_fiber_t));
-    if (fiber == NULL) {
-        return NULL;
-    }
+    if(fiber == NULL) { return NULL; }
 
     /* Initialize fiber structure */
     fiber->magic = FCONTEXT_FIBER_MAGIC;
@@ -181,12 +169,10 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
     fiber->resumer_context = NULL;
 
     /* Use default stack size if not specified */
-    if (stack_size == 0) {
-        stack_size = FCONTEXT_DEFAULT_STACK_SIZE;
-    }
+    if(stack_size == 0) { stack_size = FCONTEXT_DEFAULT_STACK_SIZE; }
 
     /* Allocate stack based on allocation type */
-    if (use_vmem) {
+    if(use_vmem) {
         size_t page_size = get_page_size();
         size_t stack_with_overhead = stack_size + 256;
         size_t aligned_stack_size = ((stack_with_overhead + page_size - 1) / page_size) * page_size;
@@ -196,28 +182,28 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
         void *region = NULL;
 #ifdef _WIN32
         region = VirtualAlloc(NULL, total_size, MEM_RESERVE, PAGE_NOACCESS);
-        if (region == NULL) {
+        if(region == NULL) {
             free(fiber);
             return NULL;
         }
         void *stack_base = (char *)region + guard_size;
-        if (!VirtualAlloc(stack_base, aligned_stack_size, MEM_COMMIT, PAGE_READWRITE)) {
+        if(!VirtualAlloc(stack_base, aligned_stack_size, MEM_COMMIT, PAGE_READWRITE)) {
             VirtualFree(region, 0, MEM_RELEASE);
             free(fiber);
             return NULL;
         }
 #else
         region = mmap(NULL, total_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (region == MAP_FAILED) {
+        if(region == MAP_FAILED) {
             free(fiber);
             return NULL;
         }
-        if (mprotect(region, guard_size, PROT_NONE) == -1) {
+        if(mprotect(region, guard_size, PROT_NONE) == -1) {
             munmap(region, total_size);
             free(fiber);
             return NULL;
         }
-        if (mprotect((char *)region + guard_size + aligned_stack_size, guard_size, PROT_NONE) == -1) {
+        if(mprotect((char *)region + guard_size + aligned_stack_size, guard_size, PROT_NONE) == -1) {
             munmap(region, total_size);
             free(fiber);
             return NULL;
@@ -228,7 +214,7 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
         void *stack_region_end = (char *)stack_base + aligned_stack_size;
         void *stack_top = (char *)stack_region_end - 256;
         stack_top = align_stack_pointer(stack_top);
-        size_t actual_stack_size = (char *)stack_top - (char *)stack_base;
+        size_t actual_stack_size = (uintptr_t)(intptr_t)((char *)stack_top - (char *)stack_base);
 
         fiber->stack_region = region;
         fiber->stack_total_size = total_size;
@@ -238,7 +224,7 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
         /* malloc allocation */
         size_t allocated_size = stack_size + 256;
         void *block = malloc(allocated_size);
-        if (block == NULL) {
+        if(block == NULL) {
             free(fiber);
             return NULL;
         }
@@ -247,7 +233,7 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
         void *stack_top = (char *)block_end - 256;
         stack_top = align_stack_pointer(stack_top);
 
-        size_t actual_stack_size = (char *)stack_top - (char *)block;
+        size_t actual_stack_size = (uintptr_t)(intptr_t)((char *)stack_top - (char *)block);
 
         fiber->stack_region = block;
         fiber->stack_total_size = allocated_size;
@@ -257,8 +243,8 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
 
     /* Initialize the low-level context with trampoline as entry */
     fiber->context = make_fcontext(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
-    if (fiber->context == NULL) {
-        if (use_vmem) {
+    if(fiber->context == NULL) {
+        if(use_vmem) {
 #ifdef _WIN32
             VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
 #else
@@ -272,12 +258,12 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
     }
 
     /* Apply watermark if requested */
-    if (use_watermark) {
+    if(use_watermark) {
         memset((char *)fiber->stack_top - fiber->stack_size, FCONTEXT_STACK_WATERMARK, fiber->stack_size);
         /* Reinitialize context after watermark (overwrites filled area) */
         fiber->context = make_fcontext(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
-        if (fiber->context == NULL) {
-            if (use_vmem) {
+        if(fiber->context == NULL) {
+            if(use_vmem) {
 #ifdef _WIN32
                 VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
 #else
@@ -300,19 +286,13 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
 
 extern void *yafl_fiber_resume(yafl_fiber_t *fiber, void *arg) {
     /* Validation */
-    if (fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return NULL;
-    }
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return NULL; }
 
     /* If complete, return cached result (idempotent) */
-    if (fiber->status == YAFL_FIBER_STATUS_COMPLETE) {
-        return fiber->cached_result;
-    }
+    if(fiber->status == YAFL_FIBER_STATUS_COMPLETE) { return fiber->cached_result; }
 
     /* Cannot resume running fiber */
-    if (fiber->status == YAFL_FIBER_STATUS_RUNNING) {
-        return NULL;
-    }
+    if(fiber->status == YAFL_FIBER_STATUS_RUNNING) { return NULL; }
 
     /* Store argument for delivery */
     fiber->pending_arg = arg;
@@ -338,9 +318,7 @@ extern void *yafl_fiber_suspend(void *result) {
     yafl_fiber_t *current = tls_current_fiber;
 
     /* Must be in a fiber */
-    if (current == NULL) {
-        return NULL;
-    }
+    if(current == NULL) { return NULL; }
 
     /* Update status */
     current->status = YAFL_FIBER_STATUS_SUSPENDED;
@@ -362,24 +340,18 @@ extern void *yafl_fiber_suspend(void *result) {
  * ======================================================================== */
 
 extern yafl_fiber_status_t yafl_fiber_status(yafl_fiber_t *fiber) {
-    if (fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return YAFL_FIBER_STATUS_ERR;
-    }
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return YAFL_FIBER_STATUS_ERR; }
     return fiber->status;
 }
 
 extern size_t yafl_fiber_stack_high_watermark(yafl_fiber_t *fiber) {
-    if (fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC || !fiber->watermark_filled) {
-        return 0;
-    }
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC || !fiber->watermark_filled) { return 0; }
 
     /* Scan from stack base for watermark bytes */
     unsigned char *stack_base = (unsigned char *)fiber->stack_top - fiber->stack_size;
     size_t unused = 0;
 
-    while (unused < fiber->stack_size && stack_base[unused] == FCONTEXT_STACK_WATERMARK) {
-        unused++;
-    }
+    while(unused < fiber->stack_size && stack_base[unused] == FCONTEXT_STACK_WATERMARK) { unused++; }
 
     return fiber->stack_size - unused;
 }
@@ -389,19 +361,15 @@ extern size_t yafl_fiber_stack_high_watermark(yafl_fiber_t *fiber) {
  * ======================================================================== */
 
 extern void yafl_fiber_destroy(yafl_fiber_t *fiber) {
-    if (fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) {
-        return;
-    }
+    if(fiber == NULL || fiber->magic != FCONTEXT_FIBER_MAGIC) { return; }
 
     /* Cannot destroy running fiber */
-    if (fiber->status == YAFL_FIBER_STATUS_RUNNING) {
-        return;
-    }
+    if(fiber->status == YAFL_FIBER_STATUS_RUNNING) { return; }
 
     /* Free stack based on allocation type */
-    if (fiber->alloc_type == FCONTEXT_ALLOC_MALLOC) {
+    if(fiber->alloc_type == FCONTEXT_ALLOC_MALLOC) {
         free(fiber->stack_region);
-    } else if (fiber->alloc_type == FCONTEXT_ALLOC_VMEM) {
+    } else if(fiber->alloc_type == FCONTEXT_ALLOC_VMEM) {
 #ifdef _WIN32
         VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
 #else
@@ -418,6 +386,4 @@ extern void yafl_fiber_destroy(yafl_fiber_t *fiber) {
  * Utilities
  * ======================================================================== */
 
-extern size_t yafl_get_page_size(void) {
-    return get_page_size();
-}
+extern size_t yafl_get_page_size(void) { return get_page_size(); }
