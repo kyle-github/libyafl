@@ -33,18 +33,13 @@
 /* Raw context handle - opaque pointer to saved machine state */
 typedef struct yafl_opaque_t *yafl_t;
 
-/* Raw transfer between contexts */
-typedef struct {
-    yafl_t prev_context;
-    void *data;
-} yafl_transfer_t;
-
 /* Raw entry function type for low-level API */
-typedef void (*yafl_entry_t)(yafl_transfer_t);
+typedef void (*yafl_entry_t)(void *);
 
 /* Low-level assembly-implemented functions */
-extern yafl_t make_fcontext(void *sp, size_t size, yafl_entry_t fn);
-extern yafl_transfer_t jump_fcontext(yafl_t const to, void *vp);
+/* Creates the initial saved context for a fiber stack. */
+extern yafl_t yafl_make_context(void *sp, size_t size, yafl_entry_t fn);
+extern void *yafl_switch(yafl_t *save, yafl_t target, void *data);
 
 /* ========================================================================
  * Constants and Types
@@ -76,7 +71,6 @@ struct yafl_fiber {
     /* User entry and result */
     yafl_fiber_fn user_entry;
     void *cached_result;
-    void *pending_arg; /* Argument for next resume */
 };
 
 /* Typedef for internal use */
@@ -84,6 +78,37 @@ typedef struct yafl_fiber yafl_fiber_t;
 
 /* Thread-local storage */
 static _Thread_local yafl_fiber_t *tls_current_fiber = NULL;
+
+static void fiber_entry_trampoline(void *arg);
+
+static void free_fiber_stack(yafl_fiber_t *fiber) {
+    if(fiber == NULL || fiber->stack_region == NULL) { return; }
+
+    if(fiber->alloc_type == FCONTEXT_ALLOC_MALLOC) {
+        free(fiber->stack_region);
+    } else if(fiber->alloc_type == FCONTEXT_ALLOC_VMEM) {
+#ifdef _WIN32
+        VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
+#else
+        munmap(fiber->stack_region, fiber->stack_total_size);
+#endif
+    }
+
+    fiber->stack_region = NULL;
+    fiber->stack_total_size = 0;
+    fiber->stack_top = NULL;
+    fiber->stack_size = 0;
+}
+
+static bool initialize_fiber_context(yafl_fiber_t *fiber) {
+    fiber->context = yafl_make_context(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
+    return fiber->context != NULL;
+}
+
+static bool reinitialize_fiber_context_with_watermark(yafl_fiber_t *fiber) {
+    memset((char *)fiber->stack_top - fiber->stack_size, FCONTEXT_STACK_WATERMARK, fiber->stack_size);
+    return initialize_fiber_context(fiber);
+}
 
 /* ========================================================================
  * Utility Functions
@@ -111,21 +136,19 @@ static void *align_stack_pointer(void *ptr) {
  * ======================================================================== */
 
 /*
- * This is called as the entry function by make_fcontext().
+ * This is called as the entry function by yafl_make_context().
  * It wraps the user's entry function, manages state, and handles the result.
  */
-static void fiber_entry_trampoline(yafl_transfer_t t) {
-    yafl_fiber_t *fiber = (yafl_fiber_t *)t.data;
-
-    /* Save resumer's context (who called resume on us) */
-    fiber->resumer_context = t.prev_context;
+static void fiber_entry_trampoline(void *arg) {
+    yafl_fiber_t *fiber = tls_current_fiber;
+    if(fiber == NULL) { abort(); }
 
     /* Update status and TLS */
     fiber->status = YAFL_FIBER_STATUS_RUNNING;
     tls_current_fiber = fiber;
 
     /* Call user entry with argument from first resume */
-    void *result = fiber->user_entry(fiber->pending_arg);
+    void *result = fiber->user_entry(arg);
 
     /* Mark complete and cache result */
     fiber->status = YAFL_FIBER_STATUS_COMPLETE;
@@ -133,9 +156,10 @@ static void fiber_entry_trampoline(yafl_transfer_t t) {
     tls_current_fiber = NULL;
 
     /* Return to resumer with final result */
-    jump_fcontext(fiber->resumer_context, result);
+    yafl_switch(&fiber->context, fiber->resumer_context, result);
 
     /* Should never reach here */
+    abort();
 }
 
 /* ========================================================================
@@ -163,10 +187,13 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
     fiber->status = YAFL_FIBER_STATUS_SUSPENDED;
     fiber->user_entry = fiber_fn;
     fiber->cached_result = NULL;
-    fiber->pending_arg = NULL;
     fiber->watermark_filled = use_watermark;
     fiber->context = NULL;
     fiber->resumer_context = NULL;
+    fiber->stack_region = NULL;
+    fiber->stack_total_size = 0;
+    fiber->stack_top = NULL;
+    fiber->stack_size = 0;
 
     /* Use default stack size if not specified */
     if(stack_size == 0) { stack_size = FCONTEXT_DEFAULT_STACK_SIZE; }
@@ -182,32 +209,18 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
         void *region = NULL;
 #ifdef _WIN32
         region = VirtualAlloc(NULL, total_size, MEM_RESERVE, PAGE_NOACCESS);
-        if(region == NULL) {
-            free(fiber);
-            return NULL;
-        }
+        if(region == NULL) { goto create_fail; }
+        fiber->stack_region = region;
+        fiber->stack_total_size = total_size;
         void *stack_base = (char *)region + guard_size;
-        if(!VirtualAlloc(stack_base, aligned_stack_size, MEM_COMMIT, PAGE_READWRITE)) {
-            VirtualFree(region, 0, MEM_RELEASE);
-            free(fiber);
-            return NULL;
-        }
+        if(!VirtualAlloc(stack_base, aligned_stack_size, MEM_COMMIT, PAGE_READWRITE)) { goto create_fail; }
 #else
         region = mmap(NULL, total_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if(region == MAP_FAILED) {
-            free(fiber);
-            return NULL;
-        }
-        if(mprotect(region, guard_size, PROT_NONE) == -1) {
-            munmap(region, total_size);
-            free(fiber);
-            return NULL;
-        }
-        if(mprotect((char *)region + guard_size + aligned_stack_size, guard_size, PROT_NONE) == -1) {
-            munmap(region, total_size);
-            free(fiber);
-            return NULL;
-        }
+        if(region == MAP_FAILED) { goto create_fail; }
+        fiber->stack_region = region;
+        fiber->stack_total_size = total_size;
+        if(mprotect(region, guard_size, PROT_NONE) == -1) { goto create_fail; }
+        if(mprotect((char *)region + guard_size + aligned_stack_size, guard_size, PROT_NONE) == -1) { goto create_fail; }
         void *stack_base = (char *)region + guard_size;
 #endif
 
@@ -216,18 +229,15 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
         stack_top = align_stack_pointer(stack_top);
         size_t actual_stack_size = (uintptr_t)(intptr_t)((char *)stack_top - (char *)stack_base);
 
-        fiber->stack_region = region;
-        fiber->stack_total_size = total_size;
         fiber->stack_top = stack_top;
         fiber->stack_size = actual_stack_size;
     } else {
         /* malloc allocation */
         size_t allocated_size = stack_size + 256;
         void *block = malloc(allocated_size);
-        if(block == NULL) {
-            free(fiber);
-            return NULL;
-        }
+        if(block == NULL) { goto create_fail; }
+        fiber->stack_region = block;
+        fiber->stack_total_size = allocated_size;
 
         void *block_end = (char *)block + allocated_size;
         void *stack_top = (char *)block_end - 256;
@@ -235,49 +245,24 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
 
         size_t actual_stack_size = (uintptr_t)(intptr_t)((char *)stack_top - (char *)block);
 
-        fiber->stack_region = block;
-        fiber->stack_total_size = allocated_size;
         fiber->stack_top = stack_top;
         fiber->stack_size = actual_stack_size;
     }
 
     /* Initialize the low-level context with trampoline as entry */
-    fiber->context = make_fcontext(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
-    if(fiber->context == NULL) {
-        if(use_vmem) {
-#ifdef _WIN32
-            VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
-#else
-            munmap(fiber->stack_region, fiber->stack_total_size);
-#endif
-        } else {
-            free(fiber->stack_region);
-        }
-        free(fiber);
-        return NULL;
-    }
+    if(!initialize_fiber_context(fiber)) { goto create_fail; }
 
     /* Apply watermark if requested */
     if(use_watermark) {
-        memset((char *)fiber->stack_top - fiber->stack_size, FCONTEXT_STACK_WATERMARK, fiber->stack_size);
-        /* Reinitialize context after watermark (overwrites filled area) */
-        fiber->context = make_fcontext(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
-        if(fiber->context == NULL) {
-            if(use_vmem) {
-#ifdef _WIN32
-                VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
-#else
-                munmap(fiber->stack_region, fiber->stack_total_size);
-#endif
-            } else {
-                free(fiber->stack_region);
-            }
-            free(fiber);
-            return NULL;
-        }
+        if(!reinitialize_fiber_context_with_watermark(fiber)) { goto create_fail; }
     }
 
     return fiber;
+
+create_fail:
+    free_fiber_stack(fiber);
+    free(fiber);
+    return NULL;
 }
 
 /* ========================================================================
@@ -294,24 +279,17 @@ extern void *yafl_fiber_resume(yafl_fiber_t *fiber, void *arg) {
     /* Cannot resume running fiber */
     if(fiber->status == YAFL_FIBER_STATUS_RUNNING) { return NULL; }
 
-    /* Store argument for delivery */
-    fiber->pending_arg = arg;
-
     /* Update status and TLS */
     fiber->status = YAFL_FIBER_STATUS_RUNNING;
     tls_current_fiber = fiber;
 
-    /* Pass fiber pointer to trampoline on first resume */
-    void *transfer_data = (void *)fiber;
-
     /* Perform context switch */
-    yafl_transfer_t t = jump_fcontext(fiber->context, transfer_data);
+    void *result = yafl_switch(&fiber->resumer_context, fiber->context, arg);
 
-    /* Back in resumer - update fiber's context for next resume */
-    fiber->context = t.prev_context;
+    /* Back in resumer */
     tls_current_fiber = NULL;
 
-    return t.data;
+    return result;
 }
 
 extern void *yafl_fiber_suspend(void *result) {
@@ -324,15 +302,14 @@ extern void *yafl_fiber_suspend(void *result) {
     current->status = YAFL_FIBER_STATUS_SUSPENDED;
 
     /* Switch back to resumer */
-    yafl_transfer_t t = jump_fcontext(current->resumer_context, result);
+    void *arg = yafl_switch(&current->context, current->resumer_context, result);
 
     /* When resumed - restore state */
     current->status = YAFL_FIBER_STATUS_RUNNING;
-    current->resumer_context = t.prev_context;
     tls_current_fiber = current;
 
     /* Return argument passed to resume */
-    return current->pending_arg;
+    return arg;
 }
 
 /* ========================================================================
@@ -366,16 +343,7 @@ extern void yafl_fiber_destroy(yafl_fiber_t *fiber) {
     /* Cannot destroy running fiber */
     if(fiber->status == YAFL_FIBER_STATUS_RUNNING) { return; }
 
-    /* Free stack based on allocation type */
-    if(fiber->alloc_type == FCONTEXT_ALLOC_MALLOC) {
-        free(fiber->stack_region);
-    } else if(fiber->alloc_type == FCONTEXT_ALLOC_VMEM) {
-#ifdef _WIN32
-        VirtualFree(fiber->stack_region, 0, MEM_RELEASE);
-#else
-        munmap(fiber->stack_region, fiber->stack_total_size);
-#endif
-    }
+    free_fiber_stack(fiber);
 
     /* Invalidate and free */
     fiber->magic = 0;
