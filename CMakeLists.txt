@@ -213,6 +213,7 @@ set(TESTS
     test_yafl_suspend_resume
     test_yafl_guard
     test_yafl_many
+    test_yafl_watermark
 )
 
 # Create static library
@@ -233,7 +234,7 @@ endforeach()
 # Testing
 # ============================================================================
 
-enable_testing()
+include(CTest)
 
 # Ensure all test-related output goes to the build directory only
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED TRUE)
