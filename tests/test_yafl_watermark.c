@@ -13,22 +13,31 @@
 
 #include "../include/yafl.h"
 
+#define TEST_STACK_TOUCH_COMPLETE 0x34
+#define TEST_STACK_TOUCH_SUSPEND_BEFORE 0xC9
+#define TEST_STACK_TOUCH_SUSPEND_AFTER 0x9C
+
 static const char *alloc_name(yafl_stack_flags_t alloc_flag) { return alloc_flag == YAFL_STACK_FLAGS_VMEM ? "mmap" : "malloc"; }
+
+/* Force observable stack writes so YAFL's own watermark logic has real usage to measure. */
+static void touch_volatile_stack_buffer(volatile unsigned char *buffer, size_t size, unsigned char value) {
+    for(size_t index = 0; index < size; index++) { buffer[index] = value; }
+}
 
 static void *complete_after_stack_use(void *arg) {
     volatile unsigned char stack_buffer[1536];
 
-    memset((void *)stack_buffer, (int)(uintptr_t)arg, sizeof(stack_buffer));
+    touch_volatile_stack_buffer(stack_buffer, sizeof(stack_buffer), TEST_STACK_TOUCH_COMPLETE);
     return arg;
 }
 
 static void *suspend_after_stack_use(void *arg) {
     volatile unsigned char stack_buffer[768];
 
-    memset((void *)stack_buffer, 0x5A, sizeof(stack_buffer));
+    touch_volatile_stack_buffer(stack_buffer, sizeof(stack_buffer), TEST_STACK_TOUCH_SUSPEND_BEFORE);
     arg = yafl_fiber_suspend(arg);
 
-    memset((void *)stack_buffer, 0xA5, sizeof(stack_buffer));
+    touch_volatile_stack_buffer(stack_buffer, sizeof(stack_buffer), TEST_STACK_TOUCH_SUSPEND_AFTER);
     return arg;
 }
 
