@@ -42,7 +42,7 @@ yafl_make_context:
     andl  $-16, %eax
 
     /* reserve space for context-data on context-stack, and align the stack */
-    leal  -0x34(%eax), %eax
+    leal  -0x30(%eax), %eax
 
     /* third arg of yafl_make_context() == address of context-function */
     /* stored in EBX */
