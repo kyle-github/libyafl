@@ -26,9 +26,6 @@
 
 #include "yafl.h"
 
-/* ========================================================================
- * Low-Level API (Internal Only)
- * ======================================================================== */
 
 /* Raw context handle - opaque pointer to saved machine state */
 typedef struct yafl_opaque_t *yafl_t;
@@ -37,14 +34,28 @@ typedef struct yafl_opaque_t *yafl_t;
 typedef void (*yafl_entry_t)(void *);
 
 /* Low-level assembly-implemented functions */
-/* Creates the initial saved context for a fiber stack. */
+
+/**
+ * @brief Create the initial saved context for a fiber stack.
+ *
+ * @param sp Top of the stack region.
+ * @param size Size of the usable stack region in bytes.
+ * @param fn Entry function that will run on the new context.
+ * @return Saved low-level context handle, or NULL on failure.
+ */
 extern yafl_t yafl_make_context(void *sp, size_t size, yafl_entry_t fn);
+
+/**
+ * @brief Switch execution from one context to another.
+ *
+ * @param save Receives the current context before switching away.
+ * @param target Context to resume.
+ * @param data User data passed across the switch.
+ * @return User data returned when control switches back.
+ */
 extern void *yafl_switch(yafl_t *save, yafl_t target, void *data);
 
-/* ========================================================================
- * Constants and Types
- * ======================================================================== */
-
+/* Constants and types */
 #define YAFL_FIBER_MAGIC 0xF1BE7001
 #define YAFL_STACK_WATERMARK 0xA5
 #define YAFL_STACK_ALIGNMENT 16
@@ -81,6 +92,11 @@ static _Thread_local yafl_fiber_t *tls_current_fiber = NULL;
 
 static void fiber_entry_trampoline(void *arg);
 
+/**
+ * @brief Release any stack memory owned by a fiber.
+ *
+ * @param fiber Fiber whose stack allocation should be freed.
+ */
 static void free_fiber_stack(yafl_fiber_t *fiber) {
     if(fiber == NULL || fiber->stack_region == NULL) { return; }
 
@@ -100,44 +116,49 @@ static void free_fiber_stack(yafl_fiber_t *fiber) {
     fiber->stack_size = 0;
 }
 
+/**
+ * @brief Create the initial low-level context for a fiber.
+ *
+ * @param fiber Fiber whose stack should be prepared for first entry.
+ * @return true if the context was created successfully, otherwise false.
+ */
 static bool initialize_fiber_context(yafl_fiber_t *fiber) {
     fiber->context = yafl_make_context(fiber->stack_top, fiber->stack_size, fiber_entry_trampoline);
     return fiber->context != NULL;
 }
 
+
+/**
+ * @brief Fill a fiber stack with the watermark byte and rebuild its context.
+ *
+ * @param fiber Fiber whose stack should be watermarked.
+ * @return true if the context was rebuilt successfully, otherwise false.
+ */
 static bool reinitialize_fiber_context_with_watermark(yafl_fiber_t *fiber) {
     memset((char *)fiber->stack_top - fiber->stack_size, YAFL_STACK_WATERMARK, fiber->stack_size);
     return initialize_fiber_context(fiber);
 }
 
-/* ========================================================================
- * Utility Functions
- * ======================================================================== */
 
-static size_t get_page_size(void) {
-#ifdef _WIN32
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    return (size_t)si.dwPageSize;
-#else
-    long page_size = sysconf(_SC_PAGE_SIZE);
-    if(page_size <= 0) { return 4096; }
-    return (size_t)page_size;
-#endif
-}
-
-static void *align_stack_pointer(void *ptr) {
+/**
+ * @brief Align a stack pointer down to the required stack alignment.
+ *
+ * @param ptr Unaligned stack pointer candidate.
+ * @return Aligned stack pointer.
+ */
+static inline void *align_stack_pointer(void *ptr) {
     uintptr_t addr = (uintptr_t)ptr;
     return (void *)(addr & ~((uintptr_t)YAFL_STACK_ALIGNMENT - 1));
 }
 
-/* ========================================================================
- * Trampoline: Adapts Low-Level API to High-Level Fiber API
- * ======================================================================== */
 
-/*
- * This is called as the entry function by yafl_make_context().
- * It wraps the user's entry function, manages state, and handles the result.
+/**
+ * @brief Enter a fiber through the low-level context trampoline.
+ *
+ * Calls the user entry function, updates fiber state, caches the final
+ * result, and switches back to the resumer.
+ *
+ * @param arg Argument supplied by the first resume into the fiber.
  */
 static void fiber_entry_trampoline(void *arg) {
     yafl_fiber_t *fiber = tls_current_fiber;
@@ -162,10 +183,15 @@ static void fiber_entry_trampoline(void *arg) {
     abort();
 }
 
-/* ========================================================================
- * Fiber Creation
- * ======================================================================== */
 
+/**
+ * @brief Create a fiber and allocate its backing stack.
+ *
+ * @param fiber_fn User entry function for the new fiber.
+ * @param stack_size Requested stack size in bytes, or 0 for the default.
+ * @param flags Stack allocation and feature flags.
+ * @return Newly created fiber, or NULL on failure.
+ */
 extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size, yafl_stack_flags_t flags) {
     /* Validate fiber function is not NULL */
     if(fiber_fn == NULL) { return NULL; }
@@ -200,7 +226,7 @@ extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size
 
     /* Allocate stack based on allocation type */
     if(use_vmem) {
-        size_t page_size = get_page_size();
+        size_t page_size = yafl_get_page_size();
         size_t stack_with_overhead = stack_size + 256;
         size_t aligned_stack_size = ((stack_with_overhead + page_size - 1) / page_size) * page_size;
         size_t guard_size = page_size;
@@ -265,10 +291,13 @@ create_fail:
     return NULL;
 }
 
-/* ========================================================================
- * Fiber Control Flow
- * ======================================================================== */
-
+/**
+ * @brief Resume a suspended fiber.
+ *
+ * @param fiber Fiber to resume.
+ * @param arg Argument delivered to the fiber.
+ * @return Value yielded or returned by the fiber, or NULL on error.
+ */
 extern void *yafl_fiber_resume(yafl_fiber_t *fiber, void *arg) {
     /* Validation */
     if(fiber == NULL || fiber->magic != YAFL_FIBER_MAGIC) { return NULL; }
@@ -292,6 +321,12 @@ extern void *yafl_fiber_resume(yafl_fiber_t *fiber, void *arg) {
     return result;
 }
 
+/**
+ * @brief Suspend the current fiber and return control to its resumer.
+ *
+ * @param result Value yielded back to the resumer.
+ * @return Argument supplied by the next resume call, or NULL on error.
+ */
 extern void *yafl_fiber_suspend(void *result) {
     yafl_fiber_t *current = tls_current_fiber;
 
@@ -312,15 +347,23 @@ extern void *yafl_fiber_suspend(void *result) {
     return arg;
 }
 
-/* ========================================================================
- * Fiber Status and Monitoring
- * ======================================================================== */
-
+/**
+ * @brief Query the status of a fiber.
+ *
+ * @param fiber Fiber to inspect.
+ * @return Current fiber status, or YAFL_FIBER_STATUS_ERR on invalid input.
+ */
 extern yafl_fiber_status_t yafl_fiber_status(yafl_fiber_t *fiber) {
     if(fiber == NULL || fiber->magic != YAFL_FIBER_MAGIC) { return YAFL_FIBER_STATUS_ERR; }
     return fiber->status;
 }
 
+/**
+ * @brief Measure the maximum observed stack usage for a watermarked fiber.
+ *
+ * @param fiber Fiber to inspect.
+ * @return Number of bytes used, or 0 if watermarking is unavailable.
+ */
 extern size_t yafl_fiber_stack_high_watermark(yafl_fiber_t *fiber) {
     if(fiber == NULL || fiber->magic != YAFL_FIBER_MAGIC || !fiber->watermark_filled) { return 0; }
 
@@ -333,10 +376,11 @@ extern size_t yafl_fiber_stack_high_watermark(yafl_fiber_t *fiber) {
     return fiber->stack_size - unused;
 }
 
-/* ========================================================================
- * Cleanup
- * ======================================================================== */
-
+/**
+ * @brief Destroy a fiber and release any owned resources.
+ *
+ * @param fiber Fiber to destroy.
+ */
 extern void yafl_fiber_destroy(yafl_fiber_t *fiber) {
     if(fiber == NULL || fiber->magic != YAFL_FIBER_MAGIC) { return; }
 
@@ -350,8 +394,19 @@ extern void yafl_fiber_destroy(yafl_fiber_t *fiber) {
     free(fiber);
 }
 
-/* ========================================================================
- * Utilities
- * ======================================================================== */
-
-extern size_t yafl_get_page_size(void) { return get_page_size(); }
+/**
+ * @brief Return the host page size.
+ *
+ * @return System page size in bytes.
+ */
+extern size_t yafl_get_page_size(void) {
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return (size_t)si.dwPageSize;
+#else
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    if(page_size <= 0) { return 4096; }
+    return (size_t)page_size;
+#endif
+}
