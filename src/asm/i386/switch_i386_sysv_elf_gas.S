@@ -77,7 +77,7 @@ yafl_switch:
     movl  0x14(%esp), %ebx  /* restore EBX */
     movl  0x18(%esp), %ebp  /* restore EBP */
 
-    leal  0x24(%esp), %esp  /* prepare stack */
+    leal  0x20(%esp), %esp  /* prepare stack for direct data return */
 
     /* return and pass data directly */
     movl  %edx, %eax

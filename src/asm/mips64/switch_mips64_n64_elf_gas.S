@@ -79,11 +79,11 @@ yafl_switch:
     s.d  $f31, 56($sp)  # save F31
 #endif
 
-    # store SP (pointing to old context-data) in v0 as return
-    move  $v0, $sp
+    # save current context through the first argument pointer
+    sd  $sp, 0($a0)
 
-    # get SP (pointing to new context-data) from a0 param
-    move  $sp, $a0
+    # restore target context from the second argument
+    move  $sp, $a1
 
 #if defined(__mips_hard_float)
     l.d  $f24, 0($sp)   # restore F24
@@ -113,8 +113,9 @@ yafl_switch:
     # adjust stack
     daddiu $sp, $sp, 160
 
-    move  $a0, $v0 # move old sp from v0 to a0 as param
-    move  $v1, $a1 # move *data from a1 to v1 as return
+    # return and pass data directly
+    move  $v0, $a2
+    move  $a0, $a2
 
     # jump to context
     jr  $t9
