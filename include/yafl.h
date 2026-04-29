@@ -24,8 +24,8 @@ extern "C" {
  * Configuration
  * ======================================================================== */
 
-#ifndef FCONTEXT_DEFAULT_STACK_SIZE
-    #define FCONTEXT_DEFAULT_STACK_SIZE (24 * 1024)
+#ifndef YAFL_DEFAULT_STACK_SIZE
+    #define YAFL_DEFAULT_STACK_SIZE (24 * 1024)
 #endif
 
 /* ========================================================================
@@ -77,8 +77,7 @@ typedef void *(*yafl_fiber_fn)(void *arg);
  *   - YAFL_STACK_FLAGS_WATERMARK is optional
  *   - YAFL_STACK_FLAGS_NONE (no flags) is invalid
  */
-extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size,
-                                       yafl_stack_flags_t flags);
+extern yafl_fiber_t *yafl_fiber_create(yafl_fiber_fn fiber_fn, size_t stack_size, yafl_stack_flags_t flags);
 
 
 /* ========================================================================

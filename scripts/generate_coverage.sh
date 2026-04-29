@@ -54,7 +54,7 @@ lcov --capture --directory build --output-file coverage.info
 echo
 
 echo -e "${GREEN}Step 5: Filtering system files from coverage...${NC}"
-lcov --remove coverage.info '/usr/*' --output-file coverage.info
+lcov --remove coverage.info '/usr/*' --output-file coverage.info --ignore-errors unused
 echo
 
 echo -e "${GREEN}Step 6: Generating HTML report...${NC}"

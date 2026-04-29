@@ -6,22 +6,22 @@ This directory contains the MIPS64 N64 ABI context switching implementation for 
 
 ### API Refactoring (2026)
 
-The original Boost.Context API required fiber functions to explicitly call `jump_fcontext()` at the end to return control. The fcontext library has been refactored to allow fiber functions to return naturally with a `void` return type, eliminating the need for explicit context switches at function end.
+The original Boost.Context API required fiber functions to explicitly call `yafl_switch()` at the end to return control. The fcontext library has been refactored to allow fiber functions to return naturally with a `void` return type, eliminating the need for explicit context switches at function end.
 
-This required a key fix in `make_mips64_n64_elf_gas.S`:
+This required a key fix in `make_context_mips64_n64_elf_gas.S`:
 
 #### Fix in `finish` Routine - Context Pointer Preservation
 
 **Original Problem:** Early versions tried to reconstruct the context pointer from $sp using fixed offset calculations (`$sp - 160`). This was unreliable because:
 
-1. `jump_fcontext` adjusts $sp by 160 bytes after restoring the context
+1. `yafl_switch` adjusts $sp by 160 bytes after restoring the context
 2. The fiber function then allocates its own stack space, moving $sp even further
 3. By the time `finish` is reached, $sp is no longer near the context data
 4. This caused segmentation faults when fiber functions did substantial work
 
 **Solution:** Use a callee-saved register (S1) to preserve the context pointer.
 
-In `make_mips64_n64_elf_gas.S`:
+In `make_context_mips64_n64_elf_gas.S`:
 ```asm
 # Save context pointer in S1 slot within the context
 # S1 is callee-saved, so the fiber will preserve it across calls
@@ -31,7 +31,7 @@ sd  $v0, 72($v0)
 In `finish` routine:
 ```asm
 finish:
-    # S1 contains the context pointer (saved during make_fcontext and preserved by fiber)
+    # S1 contains the context pointer (saved during yafl_make_context and preserved by fiber)
     # S1 is callee-saved, so it survives the entire fiber execution
     ld $gp, 136($s1)
     ...
@@ -40,7 +40,7 @@ finish:
 **Why This Works:**
 - The MIPS64 ABI requires S1 to be callee-saved
 - We store the context pointer in the S1 register slot at offset 72 during initialization
-- When `jump_fcontext` restores the context, it loads S1 from this slot
+- When `yafl_switch` restores the context, it loads S1 from this slot
 - The fiber function must preserve S1 (ABI requirement), so it's still available in `finish`
 - By using S1 directly, we avoid relying on $sp which has been moved during fiber execution
 
@@ -50,8 +50,8 @@ Stack operations ensure 16-byte alignment compliance required by the MIPS64 ABI.
 
 ## Files
 
-- `make_mips64_n64_elf_gas.S` - Context initialization
-- `jump_mips64_n64_elf_gas.S` - Context switching/jumping
+- `make_context_mips64_n64_elf_gas.S` - Context initialization
+- `switch_mips64_n64_elf_gas.S` - Context switching/jumping
 
 ## Updating from Boost.Context
 

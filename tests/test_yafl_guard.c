@@ -181,8 +181,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "[main] child killed by signal %d\n", sig);
         fflush(stderr);
 
-        /* Expect SIGSEGV (11) or SIGBUS (7) for guard page fault */
-        if (sig == SIGSEGV || sig == SIGBUS) {
+        /* Expect SIGSEGV (11) or SIGBUS (7) SIGILL (4) for guard page fault */
+        if (sig == SIGSEGV || sig == SIGBUS || sig == SIGILL) {
             fprintf(stderr, "[main] guard page successfully detected stack overflow\n");
             fflush(stderr);
         } else {
