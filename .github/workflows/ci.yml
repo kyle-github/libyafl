@@ -574,8 +574,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: badges
+      - name: Set up badges branch
+        run: 'git fetch origin badges || true
+
+          git checkout badges || git checkout --orphan badges
+
+          mkdir -p status
+
+          rm -rf .github tests src include docs scripts docker build toolchains'
       - name: Set up directory
         run: mkdir -p status
       - name: Generate badge for x86_64-pc-windows-msvc
