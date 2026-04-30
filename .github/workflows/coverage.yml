@@ -1,0 +1,220 @@
+name: coverage
+true:
+  push:
+    branches:
+      - prerelease
+  pull_request:
+    branches:
+      - prerelease
+jobs:
+  coverage-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: 'sudo apt-get update
+
+          sudo apt-get install -y lcov cmake build-essential
+
+          '
+      - name: Configure
+        run: 'cmake -S . -B build -DENABLE_COVERAGE=ON
+
+          '
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Generate coverage report
+        run: 'lcov --capture --directory build --output-file coverage.info
+
+          lcov --ignore-errors unused --remove coverage.info ''/usr/*'' --output-file
+          coverage.info
+
+          genhtml coverage.info --output-directory docs/coverage --title "yafl Code
+          Coverage"
+
+          '
+      - name: Generate coverage badge
+        run: 'chmod +x scripts/make_coverage_badge.sh
+
+          scripts/make_coverage_badge.sh docs/coverage_linux_${{ matrix.arch }}.svg
+          coverage.info
+
+          '
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-linux-${{ matrix.arch }}
+          path: 'docs/coverage
+
+            docs/coverage_linux_${{ matrix.arch }}.svg
+
+            '
+  coverage-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: windows-latest
+            cmake_arch: x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenCppCoverage
+        run: 'choco install opencppcoverage
+
+          echo "C:\Program Files (x86)\OpenCppCoverage" | Out-File -FilePath $env:GITHUB_PATH
+          -Encoding utf8 -Append
+
+          '
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -A ${{ matrix.cmake_arch
+          }}
+      - name: Build
+        run: cmake --build build --config Debug
+      - name: Generate Coverage Report
+        run: "# Find OpenCppCoverage installation\n$opencppcoverage = Get-ChildItem\
+          \ -Path \"C:\\Program Files*\" -Recurse -Filter \"OpenCppCoverage.exe\"\
+          \ -ErrorAction SilentlyContinue | Select-Object -First 1\nif (-not $opencppcoverage)\
+          \ {\n  Write-Error \"OpenCppCoverage.exe not found\"\n  exit 1\n}\nWrite-Host\
+          \ \"Using OpenCppCoverage from: $($opencppcoverage.FullName)\"\n& $opencppcoverage.FullName\
+          \ --sources \"${{ github.workspace }}\" --cover_children --export_type=html:build/coverage_report\
+          \ --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build\
+          \ -C Debug --output-on-failure\n"
+        shell: pwsh
+      - name: Generate Coverage Badge
+        shell: powershell
+        run: "if (-Not (Test-Path build/cobertura.xml)) { Write-Error \"Cobertura\
+          \ XML not found\"; exit 1 }\n[xml]$xml = Get-Content build/cobertura.xml\n\
+          $rate = $xml.coverage.'line-rate'\n$percentage = [math]::Round([double]$rate\
+          \ * 100)\n\nif ($percentage -ge 90) { $color = \"brightgreen\" }\nelseif\
+          \ ($percentage -ge 75) { $color = \"yellow\" }\nelse { $color = \"red\"\
+          \ }\n\n$svg = @\"\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\"\
+          \ height=\"20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n   \
+          \ <stop offset=\"0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop\
+          \ offset=\"1\" stop-opacity=\".1\"/>\n  </linearGradient>\n  <mask id=\"\
+          a\">\n    <rect width=\"120\" height=\"20\" rx=\"3\" fill=\"#fff\"/>\n \
+          \ </mask>\n  <g mask=\"url(#a)\">\n    <rect width=\"70\" height=\"20\"\
+          \ fill=\"#555\"/>\n    <rect x=\"70\" width=\"50\" height=\"20\" fill=\"\
+          $color\"/>\n    <rect width=\"120\" height=\"20\" fill=\"url(#b)\"/>\n \
+          \ </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\n     font-family=\"DejaVu\
+          \ Sans,Verdana,Geneva,sans-serif\"\n     font-size=\"11\">\n    <text x=\"\
+          35\" y=\"14\">coverage</text>\n    <text x=\"95\" y=\"14\">${percentage}%</text>\n\
+          \  </g>\n</svg>\n\"@\n\nNew-Item -ItemType Directory -Force -Path docs\n\
+          $badgePath = \"docs/coverage_windows_${{ matrix.arch }}.svg\"\nSet-Content\
+          \ -Path $badgePath -Value $svg\nif (Test-Path $badgePath) {\n  Write-Host\
+          \ \"Badge created: $badgePath (${percentage}% coverage)\"\n  Get-Content\
+          \ $badgePath | Select-Object -First 5\n} else {\n  Write-Error \"Failed\
+          \ to create badge file\"\n  exit 1\n}\n"
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-windows-${{ matrix.arch }}
+          path: 'build/coverage_report
+
+            docs/coverage_windows_${{ matrix.arch }}.svg
+
+            '
+  coverage-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-15-intel
+            cmake_arch: x86_64
+          - arch: aarch64
+            runner: macos-latest
+            cmake_arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install lcov
+      - name: Configure
+        run: "cmake -S . -B build \\\n  -DENABLE_COVERAGE=ON \\\n  -DCMAKE_BUILD_TYPE=Debug\
+          \ \\\n  -DCMAKE_OSX_ARCHITECTURES=${{ matrix.cmake_arch }}\n"
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Create gcov wrapper
+        run: 'cat > /usr/local/bin/llvm-gcov << ''EOF''
+
+          #!/bin/bash
+
+          exec xcrun llvm-cov gcov "$@"
+
+          EOF
+
+          chmod +x /usr/local/bin/llvm-gcov
+
+          '
+      - name: Generate Coverage Report
+        run: 'lcov --gcov-tool llvm-gcov --capture --directory build --output-file
+          coverage.info
+
+          lcov --gcov-tool llvm-gcov --ignore-errors unused --remove coverage.info
+          ''/usr/*'' --output-file coverage.info
+
+          genhtml coverage.info --output-directory docs/coverage --title "yafl Code
+          Coverage"
+
+          '
+      - name: Generate Coverage Badge
+        run: 'chmod +x scripts/make_coverage_badge.sh
+
+          scripts/make_coverage_badge.sh docs/coverage_macos_${{ matrix.arch }}.svg
+          coverage.info
+
+          '
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-macos-${{ matrix.arch }}
+          path: 'docs/coverage
+
+            docs/coverage_macos_${{ matrix.arch }}.svg
+
+            '
+  commit-badges:
+    needs:
+      - coverage-linux
+      - coverage-macos
+      - coverage-windows
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Move badges
+        run: 'mkdir -p docs
+
+          find artifacts -name "coverage_*.svg" -exec cp {} docs/ \;
+
+          '
+      - name: Create GitHub Pages configuration
+        run: 'touch docs/.nojekyll
+
+          '
+      - name: Commit and push coverage badges
+        run: "git config user.name \"GitHub Actions\"\ngit config user.email \"actions@github.com\"\
+          \ngit add docs/coverage_*.svg docs/.nojekyll\nif git diff --quiet --cached;\
+          \ then\n  echo \"No coverage badge changes to commit\"\nelse\n  git commit\
+          \ -m \"Update code coverage badges [skip ci]\" && git push origin prerelease\n\
+          fi\n"
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'

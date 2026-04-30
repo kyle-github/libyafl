@@ -1,0 +1,987 @@
+name: CI
+'on':
+  push: null
+  pull_request: null
+jobs:
+  x86_64-pc-windows-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Configure
+        run: 'mkdir build; cd build
+
+          cmake -G "Ninja" -DTARGET=x86_64-pc-windows-msvc -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
+          ..
+
+          '
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+  s390x-ibm-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: 'sudo apt-get update
+
+          sudo apt-get install -y cmake build-essential gcc-s390x-linux-gnu qemu-user
+
+          '
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
+      - name: Configure and Build
+        run: "mkdir -p build && cd build\ncmake -DTARGET=s390x-ibm-linux-gnu \\\n\
+          \        -DCMAKE_C_COMPILER=s390x-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x\
+          \ \\\n        ..\nmake\n"
+      - name: Run Tests
+        run: 'cd build
+
+          CTEST_OUTPUT_ON_FAILURE=1 ctest
+
+          '
+  s390x-musl-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+      - name: Download and install musl-cross toolchain
+        run: ./scripts/download-musl-cross.sh s390x-ibm-linux-musl
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+      - name: Configure and Build
+        run: "mkdir -p build && cd build\ncmake -DTARGET=s390x-ibm-linux-musl \\\n\
+          \      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/s390x-ibm-linux-musl/bin/s390x-ibm-linux-musl-gcc\
+          \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=s390x \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x-static\
+          \ \\\n      ..\ncmake --build .\n"
+      - name: Run Tests
+        run: 'cd build
+
+          ctest --output-on-failure
+
+          '
+  x86_64-alpine-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=x86_64-pc-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n        .. && \\\n  cmake --build .\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
+          \ -c \"cd build && ctest --output-on-failure\"\n"
+  riscv64-musl-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+      - name: Download and install musl-cross toolchain
+        run: ./scripts/download-musl-cross.sh riscv64-unknown-linux-musl
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+      - name: Configure and Build
+        run: "mkdir -p build && cd build\ncmake -DTARGET=riscv64-unknown-linux-musl\
+          \ \\\n      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/riscv64-unknown-linux-musl/bin/riscv64-unknown-linux-musl-gcc\
+          \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=riscv64 \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-riscv64-static\
+          \ \\\n      ..\ncmake --build .\n"
+      - name: Run Tests
+        run: 'cd build
+
+          ctest --output-on-failure
+
+          '
+  aarch64-pc-windows-gnu:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          cache: true
+          install: mingw-w64-clang-aarch64-toolchain mingw-w64-clang-aarch64-cmake
+      - name: Configure
+        shell: msys2 {0}
+        run: 'mkdir build; cd build
+
+          cmake -G "Ninja" -DTARGET=aarch64-pc-windows-gnu -DCMAKE_C_COMPILER=clang
+          -DCMAKE_ASM_COMPILER=clang ..
+
+          '
+      - name: Build
+        shell: msys2 {0}
+        run: cmake --build build --parallel 4
+      - name: Run Tests
+        shell: msys2 {0}
+        run: cd build && ctest --output-on-failure
+  aarch64-pc-windows-msvc:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+      - name: Configure
+        run: 'mkdir build; cd build
+
+          cmake -G "Ninja" -DTARGET=aarch64-pc-windows-msvc -DCMAKE_C_COMPILER=cl
+          -DCMAKE_CXX_COMPILER=cl ..
+
+          '
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+  i386-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: 'sudo apt-get update
+
+          sudo apt-get install -y cmake build-essential gcc-multilib qemu-user
+
+          '
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
+      - name: Configure and Build
+        run: "mkdir -p build && cd build\ncmake -DTARGET=i386-unknown-linux-gnu \\\
+          \n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_C_FLAGS='-m32 -static'\
+          \ \\\n        ..\nmake\n"
+      - name: Run Tests
+        run: 'cd build
+
+          CTEST_OUTPUT_ON_FAILURE=1 ctest
+
+          '
+  x86_64-pc-windows-gnu:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          cache: true
+          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+      - name: Configure
+        shell: msys2 {0}
+        run: 'mkdir build; cd build
+
+          cmake -G "Ninja" -DTARGET=x86_64-pc-windows-gnu -DCMAKE_C_COMPILER=gcc -DCMAKE_ASM_COMPILER=gcc
+          ..
+
+          '
+      - name: Build
+        shell: msys2 {0}
+        run: cmake --build build --parallel 4
+      - name: Run Tests
+        shell: msys2 {0}
+        run: cd build && ctest --output-on-failure
+  ppc64le-musl-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+      - name: Download and install musl-cross toolchain
+        run: ./scripts/download-musl-cross.sh powerpc64le-unknown-linux-musl
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+      - name: Configure and Build
+        run: "mkdir -p build && cd build\ncmake -DTARGET=powerpc64le-unknown-linux-musl\
+          \ \\\n      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/powerpc64le-unknown-linux-musl/bin/powerpc64le-unknown-linux-musl-gcc\
+          \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=ppc64le \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc64le-static\
+          \ \\\n      ..\ncmake --build .\n"
+      - name: Run Tests
+        run: 'cd build
+
+          ctest --output-on-failure
+
+          '
+  aarch64-pc-linux-gnu:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: 'sudo apt-get update
+
+          sudo apt-get install -y cmake build-essential
+
+          '
+      - name: Configure
+        run: 'mkdir -p build && cd build
+
+          cmake -G "Unix Makefiles" -DTARGET=aarch64-pc-linux-gnu ..
+
+          '
+      - name: Build
+        run: cd build && make -j$(nproc)
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+  powerpc64le-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ppc64le
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc64le .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=powerpc64le-unknown-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc64le\
+          \ \\\n        .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  aarch64-apple-ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CMake
+        run: "cmake -G Xcode \\\n  -DCMAKE_SYSTEM_NAME=iOS \\\n  -DTARGET=aarch64-apple-ios\
+          \ \\\n  -DCMAKE_OSX_ARCHITECTURES=arm64 \\\n  -B build\n"
+      - name: Build
+        run: cmake --build build --config Debug
+  aarch64-apple-darwin:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: 'mkdir -p build && cd build
+
+          cmake -G "Unix Makefiles" -DTARGET=aarch64-apple-darwin ..
+
+          '
+      - name: Build
+        run: cd build && make -j$(sysctl -n hw.ncpu)
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+  x86_64-apple-darwin:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: 'mkdir -p build && cd build
+
+          cmake -G "Unix Makefiles" -DTARGET=x86_64-apple-darwin ..
+
+          '
+      - name: Build
+        run: cd build && make -j$(sysctl -n hw.ncpu)
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+  x86_64-unknown-linux-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Test Runner Script
+        run: 'echo ''#!/bin/bash'' > run_android.sh
+
+          echo ''EXE_NAME=$(basename "$1")'' >> run_android.sh
+
+          echo ''adb push "$1" "/data/local/tmp/$EXE_NAME" > /dev/null'' >> run_android.sh
+
+          echo ''shift'' >> run_android.sh
+
+          echo ''adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME
+          $@"'' >> run_android.sh
+
+          chmod +x run_android.sh
+
+          '
+      - name: Configure CMake
+        run: "cmake \\\n  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake\
+          \ \\\n  -DTARGET=x86_64-unknown-linux-android \\\n  -DANDROID_ABI=x86_64\
+          \ \\\n  -DANDROID_PLATFORM=android-29 \\\n  -DCMAKE_CROSSCOMPILING_EMULATOR=$(pwd)/run_android.sh\
+          \ \\\n  -B build\n"
+      - name: Build
+        run: cmake --build build --config Debug
+      - name: Enable KVM
+        run: 'echo ''KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"''
+          | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+
+          sudo udevadm control --reload-rules
+
+          sudo udevadm trigger --name-match=kvm
+
+          '
+      - name: Run Tests on Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect
+            -noaudio -no-boot-anim -memory 8192 -no-metrics
+          disable-animations: true
+          script: '# Wait for emulator to be fully ready
+
+            adb wait-for-device
+
+            adb shell ''while [[ -z $(getprop sys.boot_completed) ]]; do sleep 30;
+            done''
+
+            cd build
+
+            ctest --output-on-failure
+
+            '
+  x86_64-pc-linux-gnu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: 'sudo apt-get update
+
+          sudo apt-get install -y cmake build-essential
+
+          '
+      - name: Configure
+        run: 'mkdir -p build && cd build
+
+          cmake -G "Unix Makefiles" -DTARGET=x86_64-pc-linux-gnu -DENABLE_COVERAGE=ON
+          ..
+
+          '
+      - name: Build
+        run: cd build && make -j$(nproc)
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+  powerpc-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ppc
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=powerpc-unknown-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=powerpc-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc\
+          \ \\\n        .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  riscv64-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: riscv64
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.riscv64 .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=riscv64-unknown-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=riscv64-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-riscv64\
+          \ \\\n        .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  sparc64-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: sparc64
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=sparc64-unknown-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=sparc64-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-sparc64\
+          \ \\\n        .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  aarch64-alpine-linux:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-aarch64 .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=aarch64-pc-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n        .. && \\\n  cmake --build .\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
+          \ -c \"cd build && ctest --output-on-failure\"\n"
+  i386-alpine-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: i386
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=i386-unknown-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n        .. && \\\n  cmake --build .\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
+          \ -c \"cd build && ctest --output-on-failure\"\n"
+  armv7-musl-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake make
+      - name: Download and install musl-cross toolchain
+        run: ./scripts/download-musl-cross.sh arm-unknown-linux-musleabihf
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+      - name: Configure and Build
+        run: "mkdir -p build && cd build\ncmake -DTARGET=arm-unknown-linux-musleabihf\
+          \ \\\n      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/arm-unknown-linux-musleabihf/bin/arm-unknown-linux-musleabihf-gcc\
+          \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
+          \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=arm \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-arm-static\
+          \ \\\n      ..\ncmake --build .\n"
+      - name: Run Tests
+        run: 'cd build
+
+          ctest --output-on-failure
+
+          '
+  mips64el-unknown-linux-gnuabi64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mips64el
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=mips64el-unknown-linux-gnuabi64\
+          \ \\\n        -DCMAKE_C_COMPILER=mips64el-linux-gnuabi64-gcc \\\n      \
+          \  -DCMAKE_C_FLAGS='-static' \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n\
+          \        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mips64el \\\n   \
+          \     .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  arm-unknown-linux-gnueabihf:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.arm32 .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=arm-unknown-linux-gnueabihf\
+          \ \\\n        -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-arm\
+          \ \\\n        .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  mipsel-unknown-linux-gnu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mipsel
+      - name: Build Docker image
+        run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
+      - name: Build
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=mipsel-unknown-linux-gnu\
+          \ \\\n        -DCMAKE_C_COMPILER=mipsel-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
+          \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mipsel\
+          \ \\\n        .. && \\\n  make\"\n"
+      - name: Run Tests
+        run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+  generate-badges:
+    needs:
+      - x86_64-pc-windows-msvc
+      - s390x-ibm-linux-gnu
+      - s390x-musl-linux
+      - x86_64-alpine-linux
+      - riscv64-musl-linux
+      - aarch64-pc-windows-gnu
+      - aarch64-pc-windows-msvc
+      - i386-unknown-linux-gnu
+      - x86_64-pc-windows-gnu
+      - ppc64le-musl-linux
+      - aarch64-pc-linux-gnu
+      - powerpc64le-unknown-linux-gnu
+      - aarch64-apple-ios
+      - aarch64-apple-darwin
+      - x86_64-apple-darwin
+      - x86_64-unknown-linux-android
+      - x86_64-pc-linux-gnu
+      - powerpc-unknown-linux-gnu
+      - riscv64-unknown-linux-gnu
+      - sparc64-unknown-linux-gnu
+      - aarch64-alpine-linux
+      - i386-alpine-linux
+      - armv7-musl-linux
+      - mips64el-unknown-linux-gnuabi64
+      - arm-unknown-linux-gnueabihf
+      - mipsel-unknown-linux-gnu
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up badges branch
+        run: 'git fetch origin badges || true
+
+          git checkout badges || git checkout --orphan badges
+
+          mkdir -p status
+
+          rm -rf .github tests src include docs scripts docker build toolchains'
+      - name: Set up directory
+        run: mkdir -p status
+      - name: Generate badge for x86_64-pc-windows-msvc
+        run: "if [ \"${{ needs.x86_64-pc-windows-msvc.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/x86_64-pc-windows-msvc.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">x86_64-pc-windows-msvc</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for s390x-ibm-linux-gnu
+        run: "if [ \"${{ needs.s390x-ibm-linux-gnu.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/s390x-ibm-linux-gnu.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">s390x-ibm-linux-gnu</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for s390x-musl-linux
+        run: "if [ \"${{ needs.s390x-musl-linux.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/s390x-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">s390x-musl-linux</text>\n    <text x=\"190\"\
+          \ y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for x86_64-alpine-linux
+        run: "if [ \"${{ needs.x86_64-alpine-linux.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/x86_64-alpine-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">x86_64-alpine-linux</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for riscv64-musl-linux
+        run: "if [ \"${{ needs.riscv64-musl-linux.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/riscv64-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">riscv64-musl-linux</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for aarch64-pc-windows-gnu
+        run: "if [ \"${{ needs.aarch64-pc-windows-gnu.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-windows-gnu.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">aarch64-pc-windows-gnu</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for aarch64-pc-windows-msvc
+        run: "if [ \"${{ needs.aarch64-pc-windows-msvc.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-windows-msvc.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">aarch64-pc-windows-msvc</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for i386-unknown-linux-gnu
+        run: "if [ \"${{ needs.i386-unknown-linux-gnu.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/i386-unknown-linux-gnu.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">i386-unknown-linux-gnu</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for x86_64-pc-windows-gnu
+        run: "if [ \"${{ needs.x86_64-pc-windows-gnu.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/x86_64-pc-windows-gnu.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">x86_64-pc-windows-gnu</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for ppc64le-musl-linux
+        run: "if [ \"${{ needs.ppc64le-musl-linux.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/ppc64le-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">ppc64le-musl-linux</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for aarch64-pc-linux-gnu
+        run: "if [ \"${{ needs.aarch64-pc-linux-gnu.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-linux-gnu.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">aarch64-pc-linux-gnu</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for powerpc64le-unknown-linux-gnu
+        run: "if [ \"${{ needs.powerpc64le-unknown-linux-gnu.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/powerpc64le-unknown-linux-gnu.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">powerpc64le-unknown-linux-gnu</text>\n\
+          \    <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for aarch64-apple-ios
+        run: "if [ \"${{ needs.aarch64-apple-ios.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/aarch64-apple-ios.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">aarch64-apple-ios</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for aarch64-apple-darwin
+        run: "if [ \"${{ needs.aarch64-apple-darwin.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-apple-darwin.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">aarch64-apple-darwin</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for x86_64-apple-darwin
+        run: "if [ \"${{ needs.x86_64-apple-darwin.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/x86_64-apple-darwin.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">x86_64-apple-darwin</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for x86_64-unknown-linux-android
+        run: "if [ \"${{ needs.x86_64-unknown-linux-android.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/x86_64-unknown-linux-android.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">x86_64-unknown-linux-android</text>\n\
+          \    <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for x86_64-pc-linux-gnu
+        run: "if [ \"${{ needs.x86_64-pc-linux-gnu.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/x86_64-pc-linux-gnu.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">x86_64-pc-linux-gnu</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for powerpc-unknown-linux-gnu
+        run: "if [ \"${{ needs.powerpc-unknown-linux-gnu.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/powerpc-unknown-linux-gnu.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">powerpc-unknown-linux-gnu</text>\n  \
+          \  <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for riscv64-unknown-linux-gnu
+        run: "if [ \"${{ needs.riscv64-unknown-linux-gnu.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/riscv64-unknown-linux-gnu.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">riscv64-unknown-linux-gnu</text>\n  \
+          \  <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for sparc64-unknown-linux-gnu
+        run: "if [ \"${{ needs.sparc64-unknown-linux-gnu.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/sparc64-unknown-linux-gnu.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">sparc64-unknown-linux-gnu</text>\n  \
+          \  <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for aarch64-alpine-linux
+        run: "if [ \"${{ needs.aarch64-alpine-linux.result }}\" == \"success\" ];\
+          \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-alpine-linux.svg << 'SVGEOF'\n\
+          <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
+          \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
+          \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">aarch64-alpine-linux</text>\n    <text\
+          \ x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for i386-alpine-linux
+        run: "if [ \"${{ needs.i386-alpine-linux.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/i386-alpine-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">i386-alpine-linux</text>\n    <text x=\"\
+          190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for armv7-musl-linux
+        run: "if [ \"${{ needs.armv7-musl-linux.result }}\" == \"success\" ]; then\n\
+          \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
+          failing\"\nfi\ncat > status/armv7-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
+          \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
+          \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
+          \  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\" height=\"\
+          20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\">\n    <rect\
+          \ width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"160\" width=\"\
+          60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"220\" height=\"\
+          20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"middle\"\
+          \ font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"11\"\
+          >\n    <text x=\"80\" y=\"14\">armv7-musl-linux</text>\n    <text x=\"190\"\
+          \ y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for mips64el-unknown-linux-gnuabi64
+        run: "if [ \"${{ needs.mips64el-unknown-linux-gnuabi64.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/mips64el-unknown-linux-gnuabi64.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">mips64el-unknown-linux-gnuabi64</text>\n\
+          \    <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for arm-unknown-linux-gnueabihf
+        run: "if [ \"${{ needs.arm-unknown-linux-gnueabihf.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/arm-unknown-linux-gnueabihf.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">arm-unknown-linux-gnueabihf</text>\n\
+          \    <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Generate badge for mipsel-unknown-linux-gnu
+        run: "if [ \"${{ needs.mipsel-unknown-linux-gnu.result }}\" == \"success\"\
+          \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
+          red\"\n  TEXT=\"failing\"\nfi\ncat > status/mipsel-unknown-linux-gnu.svg\
+          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
+          0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
+          .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
+          \ height=\"20\" rx=\"3\" fill=\"#fff\"/>\n  </mask>\n  <g mask=\"url(#a)\"\
+          >\n    <rect width=\"160\" height=\"20\" fill=\"#555\"/>\n    <rect x=\"\
+          160\" width=\"60\" height=\"20\" fill=\"${COLOR}\"/>\n    <rect width=\"\
+          220\" height=\"20\" fill=\"url(#b)\"/>\n  </g>\n  <g fill=\"#fff\" text-anchor=\"\
+          middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"\
+          11\">\n    <text x=\"80\" y=\"14\">mipsel-unknown-linux-gnu</text>\n   \
+          \ <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
+      - name: Commit and push badges
+        run: 'git config user.name "GitHub Actions"
+
+          git config user.email "actions@github.com"
+
+          git add status/*.svg
+
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update
+          build status badges [skip ci]" && git push origin badges)'
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
