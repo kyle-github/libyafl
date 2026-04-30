@@ -981,3 +981,5 @@ jobs:
 
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update
           build status badges [skip ci]" && git push origin badges)'
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
