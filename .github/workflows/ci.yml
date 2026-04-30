@@ -11,10 +11,6 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
       - name: Configure
         run: 'mkdir build; cd build
 
@@ -36,12 +32,6 @@ jobs:
           sudo apt-get install -y cmake build-essential gcc-s390x-linux-gnu qemu-user
 
           '
-      - name: Install dependencies
-        run: 'sudo apt-get update
-
-          sudo apt-get install -y cmake build-essential gcc-s390x-linux-gnu qemu-user
-
-          '
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=s390x-ibm-linux-gnu \\\n\
           \        -DCMAKE_C_COMPILER=s390x-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
@@ -49,8 +39,6 @@ jobs:
           \ \\\n        ..\nmake\n"
       - name: Install QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-user
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: 'cd build
 
@@ -63,9 +51,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make wget qemu-user-static
-          binfmt-support
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh s390x-ibm-linux-musl
       - name: Configure and Build
@@ -76,8 +61,6 @@ jobs:
           \ \\\n      ..\ncmake --build .\n"
       - name: Install QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: 'cd build
 
@@ -90,17 +73,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
       - name: Build
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
           \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=x86_64-pc-linux-gnu\
           \ \\\n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n        .. && \\\n  cmake --build .\"\n"
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
           \ -c \"cd build && ctest --output-on-failure\"\n"
@@ -110,9 +87,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make wget qemu-user-static
-          binfmt-support
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh riscv64-unknown-linux-musl
       - name: Configure and Build
@@ -123,8 +97,6 @@ jobs:
           \ \\\n      ..\ncmake --build .\n"
       - name: Install QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: 'cd build
 
@@ -153,13 +125,6 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: cmake --build build --parallel 4
-      - name: Setup MinGW
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: CLANGARM64
-          update: true
-          cache: true
-          install: mingw-w64-clang-aarch64-cmake
       - name: Run Tests
         shell: msys2 {0}
         run: cd build && ctest --output-on-failure
@@ -167,10 +132,6 @@ jobs:
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: arm64
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -196,20 +157,12 @@ jobs:
           sudo apt-get install -y cmake build-essential gcc-multilib qemu-user
 
           '
-      - name: Install dependencies
-        run: 'sudo apt-get update
-
-          sudo apt-get install -y cmake build-essential gcc-multilib qemu-user
-
-          '
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=i386-unknown-linux-gnu \\\
           \n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_C_FLAGS='-m32 -static'\
           \ \\\n        ..\nmake\n"
       - name: Install QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-user
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: 'cd build
 
@@ -220,13 +173,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup MinGW
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          cache: true
-          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
       - name: Setup MinGW
         uses: msys2/setup-msys2@v2
         with:
@@ -245,13 +191,6 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: cmake --build build --parallel 4
-      - name: Setup MinGW
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          cache: true
-          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
       - name: Run Tests
         shell: msys2 {0}
         run: cd build && ctest --output-on-failure
@@ -261,9 +200,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make wget qemu-user-static
-          binfmt-support
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh powerpc64le-unknown-linux-musl
       - name: Configure and Build
@@ -274,8 +210,6 @@ jobs:
           \ \\\n      ..\ncmake --build .\n"
       - name: Install QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: 'cd build
 
@@ -292,12 +226,6 @@ jobs:
           sudo apt-get install -y cmake build-essential
 
           '
-      - name: Install dependencies
-        run: 'sudo apt-get update
-
-          sudo apt-get install -y cmake build-essential
-
-          '
       - name: Configure
         run: 'mkdir -p build && cd build
 
@@ -306,16 +234,12 @@ jobs:
           '
       - name: Build
         run: cd build && make -j$(nproc)
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: cd build && ctest --output-on-failure
   powerpc64le-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc64le .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.powerpc64le .
       - name: Build
@@ -328,10 +252,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: ppc64le
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc64le .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -350,8 +270,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: brew install cmake
-      - name: Install dependencies
-        run: brew install cmake
       - name: Configure
         run: 'mkdir -p build && cd build
 
@@ -360,16 +278,12 @@ jobs:
           '
       - name: Build
         run: cd build && make -j$(sysctl -n hw.ncpu)
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: cd build && ctest --output-on-failure
   x86_64-apple-darwin:
     runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: brew install cmake
       - name: Install dependencies
         run: brew install cmake
       - name: Configure
@@ -380,29 +294,12 @@ jobs:
           '
       - name: Build
         run: cd build && make -j$(sysctl -n hw.ncpu)
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: cd build && ctest --output-on-failure
   x86_64-unknown-linux-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Create Test Runner Script
-        run: 'echo ''#!/bin/bash'' > run_android.sh
-
-          echo ''EXE_NAME=$(basename "$1")'' >> run_android.sh
-
-          echo ''adb push "$1" "/data/local/tmp/$EXE_NAME" > /dev/null'' >> run_android.sh
-
-          echo ''shift'' >> run_android.sh
-
-          echo ''adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME
-          $@"'' >> run_android.sh
-
-          chmod +x run_android.sh
-
-          '
       - name: Create Test Runner Script
         run: 'echo ''#!/bin/bash'' > run_android.sh
 
@@ -425,21 +322,6 @@ jobs:
           \ \\\n  -B build\n"
       - name: Build
         run: cmake --build build --config Debug
-      - name: Create Test Runner Script
-        run: 'echo ''#!/bin/bash'' > run_android.sh
-
-          echo ''EXE_NAME=$(basename "$1")'' >> run_android.sh
-
-          echo ''adb push "$1" "/data/local/tmp/$EXE_NAME" > /dev/null'' >> run_android.sh
-
-          echo ''shift'' >> run_android.sh
-
-          echo ''adb shell "chmod +x /data/local/tmp/$EXE_NAME && /data/local/tmp/$EXE_NAME
-          $@"'' >> run_android.sh
-
-          chmod +x run_android.sh
-
-          '
       - name: Enable KVM
         run: 'echo ''KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"''
           | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -480,12 +362,6 @@ jobs:
           sudo apt-get install -y cmake build-essential
 
           '
-      - name: Install dependencies
-        run: 'sudo apt-get update
-
-          sudo apt-get install -y cmake build-essential
-
-          '
       - name: Configure
         run: 'mkdir -p build && cd build
 
@@ -495,8 +371,6 @@ jobs:
           '
       - name: Build
         run: cd build && make -j$(nproc)
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: cd build && ctest --output-on-failure
       - name: Upload coverage to Codecov
@@ -509,8 +383,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.powerpc .
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc .
       - name: Build
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=powerpc-unknown-linux-gnu\
@@ -521,10 +393,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: ppc
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.powerpc .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -532,8 +400,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.riscv64 .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.riscv64 .
       - name: Build
@@ -546,10 +412,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: riscv64
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.riscv64 .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -557,8 +419,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
       - name: Build
@@ -571,10 +431,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: sparc64
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -584,17 +440,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-aarch64 .
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-aarch64 .
       - name: Build
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
           \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=aarch64-pc-linux-gnu\
           \ \\\n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n        .. && \\\n  cmake --build .\"\n"
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-aarch64 .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
           \ -c \"cd build && ctest --output-on-failure\"\n"
@@ -602,8 +452,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
       - name: Build
@@ -615,10 +463,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: i386
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
           \ -c \"cd build && ctest --output-on-failure\"\n"
@@ -628,9 +472,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake make wget qemu-user-static
-          binfmt-support
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh arm-unknown-linux-musleabihf
       - name: Configure and Build
@@ -641,8 +482,6 @@ jobs:
           \ \\\n      ..\ncmake --build .\n"
       - name: Install QEMU
         run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
       - name: Run Tests
         run: 'cd build
 
@@ -653,8 +492,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
       - name: Build
@@ -668,10 +505,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: mips64el
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -679,8 +512,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.arm32 .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.arm32 .
       - name: Build
@@ -693,10 +524,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.arm32 .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -704,8 +531,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
       - name: Build
@@ -718,10 +543,6 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: mipsel
-      - name: Restore execute permissions
-        run: chmod +x build/bin/*
-      - name: Build Docker image
-        run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
