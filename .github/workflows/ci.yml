@@ -32,13 +32,13 @@ jobs:
           sudo apt-get install -y cmake build-essential gcc-s390x-linux-gnu qemu-user
 
           '
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=s390x-ibm-linux-gnu \\\n\
           \        -DCMAKE_C_COMPILER=s390x-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x\
           \ \\\n        ..\nmake\n"
-      - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-user
       - name: Run Tests
         run: 'cd build
 
@@ -53,14 +53,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh s390x-ibm-linux-musl
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=s390x-ibm-linux-musl \\\n\
           \      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/s390x-ibm-linux-musl/bin/s390x-ibm-linux-musl-gcc\
           \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=s390x \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-s390x-static\
           \ \\\n      ..\ncmake --build .\n"
-      - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Run Tests
         run: 'cd build
 
@@ -89,14 +89,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh riscv64-unknown-linux-musl
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=riscv64-unknown-linux-musl\
           \ \\\n      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/riscv64-unknown-linux-musl/bin/riscv64-unknown-linux-musl-gcc\
           \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=riscv64 \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-riscv64-static\
           \ \\\n      ..\ncmake --build .\n"
-      - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Run Tests
         run: 'cd build
 
@@ -157,12 +157,12 @@ jobs:
           sudo apt-get install -y cmake build-essential gcc-multilib qemu-user
 
           '
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=i386-unknown-linux-gnu \\\
           \n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_C_FLAGS='-m32 -static'\
           \ \\\n        ..\nmake\n"
-      - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-user
       - name: Run Tests
         run: 'cd build
 
@@ -202,14 +202,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh powerpc64le-unknown-linux-musl
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=powerpc64le-unknown-linux-musl\
           \ \\\n      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/powerpc64le-unknown-linux-musl/bin/powerpc64le-unknown-linux-musl-gcc\
           \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=ppc64le \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc64le-static\
           \ \\\n      ..\ncmake --build .\n"
-      - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Run Tests
         run: 'cd build
 
@@ -240,6 +240,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ppc64le
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.powerpc64le .
       - name: Build
@@ -248,10 +252,6 @@ jobs:
           \ \\\n        -DCMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc64le\
           \ \\\n        .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: ppc64le
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -381,6 +381,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ppc
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.powerpc .
       - name: Build
@@ -389,10 +393,6 @@ jobs:
           \ \\\n        -DCMAKE_C_COMPILER=powerpc-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-ppc\
           \ \\\n        .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: ppc
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -400,6 +400,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: riscv64
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.riscv64 .
       - name: Build
@@ -408,10 +412,6 @@ jobs:
           \ \\\n        -DCMAKE_C_COMPILER=riscv64-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-riscv64\
           \ \\\n        .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: riscv64
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -419,6 +419,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: sparc64
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.sparc64 .
       - name: Build
@@ -427,10 +431,6 @@ jobs:
           \ \\\n        -DCMAKE_C_COMPILER=sparc64-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-sparc64\
           \ \\\n        .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: sparc64
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -452,6 +452,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: i386
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-i386 .
       - name: Build
@@ -459,10 +463,6 @@ jobs:
           \ -c \"mkdir -p build && cd build && \\\n  cmake -DTARGET=i386-unknown-linux-gnu\
           \ \\\n        -DCMAKE_C_COMPILER=gcc \\\n        -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n        .. && \\\n  cmake --build .\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: i386
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
           \ -c \"cd build && ctest --output-on-failure\"\n"
@@ -474,14 +474,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
         run: ./scripts/download-musl-cross.sh arm-unknown-linux-musleabihf
+      - name: Install QEMU
+        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Configure and Build
         run: "mkdir -p build && cd build\ncmake -DTARGET=arm-unknown-linux-musleabihf\
           \ \\\n      -DCMAKE_C_COMPILER=${{ github.workspace }}/cross-compilers/x-tools/arm-unknown-linux-musleabihf/bin/arm-unknown-linux-musleabihf-gcc\
           \ \\\n      -DCMAKE_C_FLAGS='-static' \\\n      -DCMAKE_SYSTEM_NAME=Linux\
           \ \\\n      -DCMAKE_SYSTEM_PROCESSOR=arm \\\n      -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-arm-static\
           \ \\\n      ..\ncmake --build .\n"
-      - name: Install QEMU
-        run: sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
       - name: Run Tests
         run: 'cd build
 
@@ -492,6 +492,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mips64el
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.mips64el .
       - name: Build
@@ -501,10 +505,6 @@ jobs:
           \  -DCMAKE_C_FLAGS='-static' \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n\
           \        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mips64el \\\n   \
           \     .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: mips64el
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -512,6 +512,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.arm32 .
       - name: Build
@@ -520,10 +524,6 @@ jobs:
           \ \\\n        -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-arm\
           \ \\\n        .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
@@ -531,6 +531,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: mipsel
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.mipsel .
       - name: Build
@@ -539,10 +543,6 @@ jobs:
           \ \\\n        -DCMAKE_C_COMPILER=mipsel-linux-gnu-gcc \\\n        -DCMAKE_C_FLAGS='-static'\
           \ \\\n        -DCMAKE_SYSTEM_NAME=Linux \\\n        -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-mipsel\
           \ \\\n        .. && \\\n  make\"\n"
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: mipsel
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
           \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
