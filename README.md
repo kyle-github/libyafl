@@ -201,11 +201,13 @@ yafl_fiber_t *fiber = yafl_fiber_create(
 ```
 
 **Advantages:**
+
 - Guard pages detect overflow/underflow
 - Memory efficient (address space reserved, minimal physical memory used)
 - Automatic bounds checking (SIGSEGV/access violation on overflow)
 
 **Implementation:**
+
 - Linux/macOS: Uses `mmap()` + `mprotect()` with PROT_NONE guard pages
 - Windows: Uses `VirtualAlloc()` with PAGE_NOACCESS guard pages
 
@@ -220,10 +222,12 @@ yafl_fiber_t *fiber = yafl_fiber_create(
 ```
 
 **Advantages:**
+
 - Simple allocation without guard page overhead
 - Useful for constrained environments
 
 **Limitations:**
+
 - No overflow detection
 - Stack overflows cause undefined behavior
 
@@ -244,12 +248,14 @@ printf("Stack used: %zu bytes\n", used);
 ```
 
 **How it works:**
+
 1. Stack is filled with pattern `0xA5` at creation
 2. As fiber executes, pattern is overwritten
 3. On completion, scan detects how many bytes were used
 4. Result: accurate measurement of maximum stack depth
 
 **Overhead:**
+
 - Negligible runtime cost (only at creation/destruction)
 - Additional physical memory allocation (fills entire stack initially)
 
@@ -257,7 +263,7 @@ printf("Stack used: %zu bytes\n", used);
 
 This library implements asymmetric fibers - a fiber can only suspend back to its resumer.
 
-```
+```text
       Main Thread
          |
       resume(fiber)
@@ -287,7 +293,7 @@ Not supported: Fiber A switching directly to Fiber B. Fibers always return to th
 
 ### Virtual Memory Stack
 
-```
+```text
 ┌──────────────────────────┐
 │ Guard Page (PROT_NONE)   │
 ├──────────────────────────┤
@@ -303,7 +309,7 @@ Not supported: Fiber A switching directly to Fiber B. Fibers always return to th
 
 ### Malloc Stack
 
-```
+```text
 ┌──────────────────────────┐
 │ User-allocated block     │  No guard pages
 │ (N + 256 bytes)          │  Simple heap allocation
@@ -336,6 +342,7 @@ Tests included:
 - `test_yafl_many` - Scalability with 100 fibers
 
 Run all tests:
+
 ```bash
 cd build && ctest --output-on-failure
 ```
@@ -343,6 +350,7 @@ cd build && ctest --output-on-failure
 ## Architecture Support
 
 Tested on:
+
 - x86_64 (Linux, macOS, Windows)
 - ARM64 (Linux, macOS, iOS, Windows)
 - ARM (Linux)
@@ -363,5 +371,5 @@ See `LICENSE` file for details.
 
 ## References
 
-- **Boost.Context**: https://github.com/boostorg/context
-- **POSIX**: https://pubs.opengroup.org/onlinepubs/9699919799/
+- **Boost.Context**: [https://github.com/boostorg/context](https://github.com/boostorg/context)
+- **POSIX**: [https://pubs.opengroup.org/onlinepubs/9699919799/](https://pubs.opengroup.org/onlinepubs/9699919799/)
