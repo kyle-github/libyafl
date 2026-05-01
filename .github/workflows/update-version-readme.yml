@@ -1,12 +1,10 @@
 name: Update README and Bump Patch Version
-
-on:
+true:
   release:
-    types: [published]
-
+    types:
+      - published
 permissions:
   contents: write
-
 jobs:
   update-readme-and-version:
     runs-on: ubuntu-latest
@@ -16,42 +14,57 @@ jobs:
         with:
           ref: release
           fetch-depth: 0
-
       - name: Extract version from tag
         id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+        run: 'VERSION=${GITHUB_REF#refs/tags/v}
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+          '
       - name: Update README with current version
-        run: |
-          # Replace existing version line in README
-          sed -i "s/\*\*Latest Release:\*\*.*/Latest Release:** v${{ steps.version.outputs.version }}/" README.md
+        run: '# Replace existing version line in README
 
+          sed -i "s/\*\*Latest Release:\*\*.*/Latest Release:** v${{ steps.version.outputs.version
+          }}/" README.md
+
+          '
       - name: Commit README update to release
-        run: |
-          git config user.name "GitHub Actions"
+        run: 'git config user.name "GitHub Actions"
+
           git config user.email "actions@github.com"
+
           git add README.md
-          git commit -m "Update README with release v${{ steps.version.outputs.version }} [skip ci]"
+
+          git commit -m "Update README with release v${{ steps.version.outputs.version
+          }} [skip ci]"
+
           git push origin release
 
+          '
       - name: Checkout prerelease branch
         uses: actions/checkout@v4
         with:
           ref: prerelease
           fetch-depth: 0
-
       - name: Increment patch version on prerelease
-        run: |
-          chmod +x scripts/increment_version.sh
+        run: 'chmod +x scripts/increment_version.sh
+
           scripts/increment_version.sh patch
 
+          '
       - name: Commit version bump to prerelease
-        run: |
-          git config user.name "GitHub Actions"
+        run: 'git config user.name "GitHub Actions"
+
           git config user.email "actions@github.com"
+
           NEW_VERSION=$(cat VERSION)
+
           git add VERSION
+
           git commit -m "Bump patch version to $NEW_VERSION [skip ci]"
+
           git push origin prerelease
+
+          '
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'

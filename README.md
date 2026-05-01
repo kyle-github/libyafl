@@ -6,57 +6,57 @@
 
 | Architecture | Compiler | OS | Libc | Status | Coverage |
 | ------------ | -------- | -- | ---- | ------ | -------- |
-| x86_64 | GCC | Linux | glibc | [![x86_64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-linux-gnu.yml) | [![Coverage](docs/coverage_linux_x86_64.svg)](docs/coverage_linux_x86_64.svg) |
-| aarch64 | GCC | Linux | glibc | [![aarch64-pc-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-linux-gnu.yml) | [![Coverage](docs/coverage_linux_aarch64.svg)](docs/coverage_linux_aarch64.svg) |
-| ARM (32-bit) | GCC | Linux | glibc | [![arm-unknown-linux-gnueabihf](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/arm-unknown-linux-gnueabihf.yml) | - |
-| RISC-V 64 | GCC | Linux | glibc | [![riscv64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-unknown-linux-gnu.yml) | - |
-| MIPS (32-bit LE) | GCC | Linux | glibc | [![mipsel-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mipsel-unknown-linux-gnu.yml) | - |
-| MIPS (64-bit LE) | GCC | Linux | glibc | [![mips64el-unknown-linux-gnuabi64](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/mips64el-unknown-linux-gnuabi64.yml) | - |
-| PowerPC 64 LE | GCC | Linux | glibc | [![powerpc64le-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc64le-unknown-linux-gnu.yml) | - |
-| PowerPC (32-bit) | GCC | Linux | glibc | [![powerpc-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/powerpc-unknown-linux-gnu.yml) | - |
-| s390x | GCC | Linux | glibc | [![s390x-ibm-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-ibm-linux-gnu.yml) | - |
-| SPARC 64 | GCC | Linux | glibc | [![sparc64-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/sparc64-unknown-linux-gnu.yml) | - |
-| i386 | GCC | Linux | glibc | [![i386-unknown-linux-gnu](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-unknown-linux-gnu.yml) | - |
+| x86_64 | GCC | Linux | glibc | [![x86_64-pc-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-pc-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | [![Coverage](docs/coverage_linux_x86_64.svg)](docs/coverage_linux_x86_64.svg) |
+| aarch64 | GCC | Linux | glibc | [![aarch64-pc-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/aarch64-pc-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | [![Coverage](docs/coverage_linux_aarch64.svg)](docs/coverage_linux_aarch64.svg) |
+| ARM (32-bit) | GCC | Linux | glibc | [![arm-unknown-linux-gnueabihf](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/arm-unknown-linux-gnueabihf.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| RISC-V 64 | GCC | Linux | glibc | [![riscv64-unknown-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/riscv64-unknown-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| MIPS (32-bit LE) | GCC | Linux | glibc | [![mipsel-unknown-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/mipsel-unknown-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| MIPS (64-bit LE) | GCC | Linux | glibc | [![mips64el-unknown-linux-gnuabi64](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/mips64el-unknown-linux-gnuabi64.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| PowerPC 64 LE | GCC | Linux | glibc | [![powerpc64le-unknown-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/powerpc64le-unknown-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| PowerPC (32-bit) | GCC | Linux | glibc | [![powerpc-unknown-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/powerpc-unknown-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| s390x | GCC | Linux | glibc | [![s390x-ibm-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/s390x-ibm-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| SPARC 64 | GCC | Linux | glibc | [![sparc64-unknown-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/sparc64-unknown-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| i386 | GCC | Linux | glibc | [![i386-unknown-linux-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/i386-unknown-linux-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
 ### Linux (Alpine Container, native musl)
 
 | Architecture | Compiler | OS | Libc | Status | Coverage |
 | ------------ | -------- | -- | ---- | ------ | -------- |
-| x86_64 | GCC | Alpine Linux | musl | [![x86_64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/x86_64-alpine-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-alpine-linux.yml) | - |
-| i386 | GCC | Alpine Linux | musl | [![i386-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/i386-alpine-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/i386-alpine-linux.yml) | - |
-| aarch64 | GCC | Alpine Linux | musl | [![aarch64-alpine-linux](https://github.com/libplctag/yafl/actions/workflows/aarch64-alpine-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-alpine-linux.yml) | - |
+| x86_64 | GCC | Alpine Linux | musl | [![x86_64-alpine-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-alpine-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| i386 | GCC | Alpine Linux | musl | [![i386-alpine-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/i386-alpine-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| aarch64 | GCC | Alpine Linux | musl | [![aarch64-alpine-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/aarch64-alpine-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
 ### Linux (musl.cc Cross-Compiler, QEMU Emulation)
 
 | Architecture | Compiler | OS | Libc | Status | Coverage |
 | ------------ | -------- | -- | ---- | ------ | -------- |
-| ARM (32-bit) | GCC | Linux | musl | [![armv7-musl-linux](https://github.com/libplctag/yafl/actions/workflows/armv7-musl-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/armv7-musl-linux.yml) | - |
-| PowerPC 64 LE | GCC | Linux | musl | [![ppc64le-musl-linux](https://github.com/libplctag/yafl/actions/workflows/ppc64le-musl-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/ppc64le-musl-linux.yml) | - |
-| s390x | GCC | Linux | musl | [![s390x-musl-linux](https://github.com/libplctag/yafl/actions/workflows/s390x-musl-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/s390x-musl-linux.yml) | - |
-| RISC-V 64 | GCC | Linux | musl | [![riscv64-musl-linux](https://github.com/libplctag/yafl/actions/workflows/riscv64-musl-linux.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/riscv64-musl-linux.yml) | - |
+| ARM (32-bit) | GCC | Linux | musl | [![armv7-musl-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/armv7-musl-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| PowerPC 64 LE | GCC | Linux | musl | [![ppc64le-musl-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/ppc64le-musl-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| s390x | GCC | Linux | musl | [![s390x-musl-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/s390x-musl-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| RISC-V 64 | GCC | Linux | musl | [![riscv64-musl-linux](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/riscv64-musl-linux.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
 ### macOS/iOS
 
 | Architecture | Compiler | OS | Libc | Status | Coverage |
 | ------------ | -------- | -- | ---- | ------ | -------- |
-| x86_64 | Clang | macOS | libc | [![x86_64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-apple-darwin.yml) | [![Coverage](docs/coverage_macos_x86_64.svg)](docs/coverage_macos_x86_64.svg) |
-| aarch64 | Clang | macOS | libc | [![aarch64-apple-darwin](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-darwin.yml) | [![Coverage](docs/coverage_macos_aarch64.svg)](docs/coverage_macos_aarch64.svg) |
-| aarch64 | Clang | iOS | libc | [![aarch64-apple-ios](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-apple-ios.yml) | - |
+| x86_64 | Clang | macOS | libc | [![x86_64-apple-darwin](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-apple-darwin.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | [![Coverage](docs/coverage_macos_x86_64.svg)](docs/coverage_macos_x86_64.svg) |
+| aarch64 | Clang | macOS | libc | [![aarch64-apple-darwin](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/aarch64-apple-darwin.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | [![Coverage](docs/coverage_macos_aarch64.svg)](docs/coverage_macos_aarch64.svg) |
+| aarch64 | Clang | iOS | libc | [![aarch64-apple-ios](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/aarch64-apple-ios.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
 ### Windows
 
 | Architecture | Compiler | OS | Libc | Status | Coverage |
 | ------------ | -------- | -- | ---- | ------ | -------- |
-| x86_64 | MSVC | Windows | MSVCRT | [![x86_64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-msvc.yml) | [![Coverage](docs/coverage_windows_x86_64.svg)](docs/coverage_windows_x86_64.svg) |
-| aarch64 | MSVC | Windows | MSVCRT | [![aarch64-pc-windows-msvc](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-msvc.yml) | [![Coverage](docs/coverage_windows_aarch64.svg)](docs/coverage_windows_aarch64.svg) |
-| x86_64 | GCC (MinGW) | Windows | MSVCRT | [![x86_64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-pc-windows-gnu.yml) | - |
-| aarch64 | GCC (MinGW) | Windows | MSVCRT | [![aarch64-pc-windows-gnu](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/aarch64-pc-windows-gnu.yml) | - |
+| x86_64 | MSVC | Windows | MSVCRT | [![x86_64-pc-windows-msvc](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-pc-windows-msvc.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | [![Coverage](docs/coverage_windows_x86_64.svg)](docs/coverage_windows_x86_64.svg) |
+| aarch64 | MSVC | Windows | MSVCRT | [![aarch64-pc-windows-msvc](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/aarch64-pc-windows-msvc.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | [![Coverage](docs/coverage_windows_aarch64.svg)](docs/coverage_windows_aarch64.svg) |
+| x86_64 | GCC (MinGW) | Windows | MSVCRT | [![x86_64-pc-windows-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-pc-windows-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
+| aarch64 | GCC (MinGW) | Windows | MSVCRT | [![aarch64-pc-windows-gnu](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/aarch64-pc-windows-gnu.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
 ### Android
 
 | Architecture | Compiler | OS | Libc | Status | Coverage |
 | ------------ | -------- | -- | ---- | ------ | -------- |
-| x86_64 | Clang | Android | bionic | [![x86_64-unknown-linux-android](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml/badge.svg)](https://github.com/libplctag/yafl/actions/workflows/x86_64-unknown-linux-android.yml) | - |
+| x86_64 | Clang | Android | bionic | [![x86_64-unknown-linux-android](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-unknown-linux-android.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
 **Latest Release:** v0.1.0
 
@@ -201,11 +201,13 @@ yafl_fiber_t *fiber = yafl_fiber_create(
 ```
 
 **Advantages:**
+
 - Guard pages detect overflow/underflow
 - Memory efficient (address space reserved, minimal physical memory used)
 - Automatic bounds checking (SIGSEGV/access violation on overflow)
 
 **Implementation:**
+
 - Linux/macOS: Uses `mmap()` + `mprotect()` with PROT_NONE guard pages
 - Windows: Uses `VirtualAlloc()` with PAGE_NOACCESS guard pages
 
@@ -220,10 +222,12 @@ yafl_fiber_t *fiber = yafl_fiber_create(
 ```
 
 **Advantages:**
+
 - Simple allocation without guard page overhead
 - Useful for constrained environments
 
 **Limitations:**
+
 - No overflow detection
 - Stack overflows cause undefined behavior
 
@@ -244,12 +248,14 @@ printf("Stack used: %zu bytes\n", used);
 ```
 
 **How it works:**
+
 1. Stack is filled with pattern `0xA5` at creation
 2. As fiber executes, pattern is overwritten
 3. On completion, scan detects how many bytes were used
 4. Result: accurate measurement of maximum stack depth
 
 **Overhead:**
+
 - Negligible runtime cost (only at creation/destruction)
 - Additional physical memory allocation (fills entire stack initially)
 
@@ -257,7 +263,7 @@ printf("Stack used: %zu bytes\n", used);
 
 This library implements asymmetric fibers - a fiber can only suspend back to its resumer.
 
-```
+```text
       Main Thread
          |
       resume(fiber)
@@ -287,7 +293,7 @@ Not supported: Fiber A switching directly to Fiber B. Fibers always return to th
 
 ### Virtual Memory Stack
 
-```
+```text
 ┌──────────────────────────┐
 │ Guard Page (PROT_NONE)   │
 ├──────────────────────────┤
@@ -303,7 +309,7 @@ Not supported: Fiber A switching directly to Fiber B. Fibers always return to th
 
 ### Malloc Stack
 
-```
+```text
 ┌──────────────────────────┐
 │ User-allocated block     │  No guard pages
 │ (N + 256 bytes)          │  Simple heap allocation
@@ -336,6 +342,7 @@ Tests included:
 - `test_yafl_many` - Scalability with 100 fibers
 
 Run all tests:
+
 ```bash
 cd build && ctest --output-on-failure
 ```
@@ -343,6 +350,7 @@ cd build && ctest --output-on-failure
 ## Architecture Support
 
 Tested on:
+
 - x86_64 (Linux, macOS, Windows)
 - ARM64 (Linux, macOS, iOS, Windows)
 - ARM (Linux)
@@ -363,5 +371,5 @@ See `LICENSE` file for details.
 
 ## References
 
-- **Boost.Context**: https://github.com/boostorg/context
-- **POSIX**: https://pubs.opengroup.org/onlinepubs/9699919799/
+- **Boost.Context**: [https://github.com/boostorg/context](https://github.com/boostorg/context)
+- **POSIX**: [https://pubs.opengroup.org/onlinepubs/9699919799/](https://pubs.opengroup.org/onlinepubs/9699919799/)
