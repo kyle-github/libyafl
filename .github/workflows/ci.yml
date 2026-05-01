@@ -575,13 +575,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up badges branch
-        run: 'git fetch origin badges || true
-
-          git checkout badges || git checkout --orphan badges
-
-          mkdir -p status
-
-          rm -rf .github tests src include docs scripts docker build toolchains'
+        run: "git fetch origin badges || true\nif git checkout badges; then\n  echo\
+          \ \"Switched to existing badges branch\"\nelse\n  git checkout --orphan\
+          \ badges\n  git rm -rf .\nfi\nmkdir -p status\n"
       - name: Set up directory
         run: mkdir -p status
       - name: Generate badge for x86_64-pc-windows-msvc
@@ -975,13 +971,9 @@ jobs:
           11\">\n    <text x=\"80\" y=\"14\">mipsel-unknown-linux-gnu</text>\n   \
           \ <text x=\"190\" y=\"14\">${TEXT}</text>\n  </g>\n</svg>\nSVGEOF\n"
       - name: Commit and push badges
-        run: 'git config user.name "GitHub Actions"
-
-          git config user.email "actions@github.com"
-
-          git add status/*.svg
-
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update
-          build status badges [skip ci]" && git push origin badges)'
+        run: "git config user.name \"GitHub Actions\"\ngit config user.email \"actions@github.com\"\
+          \ngit add status/*.svg\nif ! git diff --staged --quiet; then\n  git commit\
+          \ -m \"Update build status badges [skip ci]\"\n  git push origin badges\n\
+          else\n  echo \"No badge changes to commit.\"\nfi\n"
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
