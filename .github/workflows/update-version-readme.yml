@@ -1,5 +1,5 @@
 name: Update README and Bump Patch Version
-true:
+on:
   release:
     types:
       - published
@@ -47,11 +47,11 @@ jobs:
           ref: prerelease
           fetch-depth: 0
       - name: Increment patch version on prerelease
-        run: 'chmod +x scripts/increment_version.sh
+        run: "chmod +x scripts/increment_version.sh
 
           scripts/increment_version.sh patch
 
-          '
+          "
       - name: Commit version bump to prerelease
         run: 'git config user.name "GitHub Actions"
 
@@ -67,4 +67,4 @@ jobs:
 
           '
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
