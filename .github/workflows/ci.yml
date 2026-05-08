@@ -583,7 +583,7 @@ jobs:
       - name: Generate badge for x86_64-pc-windows-msvc
         run: "if [ \"${{ needs.x86_64-pc-windows-msvc.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/x86_64-pc-windows-msvc.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/x86_64-pc-windows-msvc.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -598,7 +598,7 @@ jobs:
       - name: Generate badge for s390x-ibm-linux-gnu
         run: "if [ \"${{ needs.s390x-ibm-linux-gnu.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/s390x-ibm-linux-gnu.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/s390x-ibm-linux-gnu.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -613,7 +613,7 @@ jobs:
       - name: Generate badge for s390x-musl-linux
         run: "if [ \"${{ needs.s390x-musl-linux.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/s390x-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/s390x-musl-linux.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -628,7 +628,7 @@ jobs:
       - name: Generate badge for x86_64-alpine-linux
         run: "if [ \"${{ needs.x86_64-alpine-linux.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/x86_64-alpine-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/x86_64-alpine-linux.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -643,7 +643,7 @@ jobs:
       - name: Generate badge for riscv64-musl-linux
         run: "if [ \"${{ needs.riscv64-musl-linux.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/riscv64-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/riscv64-musl-linux.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -658,7 +658,7 @@ jobs:
       - name: Generate badge for aarch64-pc-windows-gnu
         run: "if [ \"${{ needs.aarch64-pc-windows-gnu.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-windows-gnu.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-windows-gnu.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -674,7 +674,7 @@ jobs:
         run: "if [ \"${{ needs.aarch64-pc-windows-msvc.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-windows-msvc.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -688,7 +688,7 @@ jobs:
       - name: Generate badge for i386-unknown-linux-gnu
         run: "if [ \"${{ needs.i386-unknown-linux-gnu.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/i386-unknown-linux-gnu.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/i386-unknown-linux-gnu.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -703,7 +703,7 @@ jobs:
       - name: Generate badge for x86_64-pc-windows-gnu
         run: "if [ \"${{ needs.x86_64-pc-windows-gnu.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/x86_64-pc-windows-gnu.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/x86_64-pc-windows-gnu.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -718,7 +718,7 @@ jobs:
       - name: Generate badge for ppc64le-musl-linux
         run: "if [ \"${{ needs.ppc64le-musl-linux.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/ppc64le-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/ppc64le-musl-linux.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -733,7 +733,7 @@ jobs:
       - name: Generate badge for aarch64-pc-linux-gnu
         run: "if [ \"${{ needs.aarch64-pc-linux-gnu.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-linux-gnu.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-pc-linux-gnu.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -749,7 +749,7 @@ jobs:
         run: "if [ \"${{ needs.powerpc64le-unknown-linux-gnu.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/powerpc64le-unknown-linux-gnu.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -763,7 +763,7 @@ jobs:
       - name: Generate badge for aarch64-apple-ios
         run: "if [ \"${{ needs.aarch64-apple-ios.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/aarch64-apple-ios.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/aarch64-apple-ios.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -778,7 +778,7 @@ jobs:
       - name: Generate badge for aarch64-apple-darwin
         run: "if [ \"${{ needs.aarch64-apple-darwin.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-apple-darwin.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-apple-darwin.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -793,7 +793,7 @@ jobs:
       - name: Generate badge for x86_64-apple-darwin
         run: "if [ \"${{ needs.x86_64-apple-darwin.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/x86_64-apple-darwin.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/x86_64-apple-darwin.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -809,7 +809,7 @@ jobs:
         run: "if [ \"${{ needs.x86_64-unknown-linux-android.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/x86_64-unknown-linux-android.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -823,7 +823,7 @@ jobs:
       - name: Generate badge for x86_64-pc-linux-gnu
         run: "if [ \"${{ needs.x86_64-pc-linux-gnu.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/x86_64-pc-linux-gnu.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/x86_64-pc-linux-gnu.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -839,7 +839,7 @@ jobs:
         run: "if [ \"${{ needs.powerpc-unknown-linux-gnu.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/powerpc-unknown-linux-gnu.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -854,7 +854,7 @@ jobs:
         run: "if [ \"${{ needs.riscv64-unknown-linux-gnu.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/riscv64-unknown-linux-gnu.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -869,7 +869,7 @@ jobs:
         run: "if [ \"${{ needs.sparc64-unknown-linux-gnu.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/sparc64-unknown-linux-gnu.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -883,7 +883,7 @@ jobs:
       - name: Generate badge for aarch64-alpine-linux
         run: "if [ \"${{ needs.aarch64-alpine-linux.result }}\" == \"success\" ];\
           \ then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\
-          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-alpine-linux.svg << 'SVGEOF'\n\
+          \n  TEXT=\"failing\"\nfi\ncat > status/aarch64-alpine-linux.svg << SVGEOF\n\
           <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n\
           \  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\"\
           \ stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
@@ -898,7 +898,7 @@ jobs:
       - name: Generate badge for i386-alpine-linux
         run: "if [ \"${{ needs.i386-alpine-linux.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/i386-alpine-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/i386-alpine-linux.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -913,7 +913,7 @@ jobs:
       - name: Generate badge for armv7-musl-linux
         run: "if [ \"${{ needs.armv7-musl-linux.result }}\" == \"success\" ]; then\n\
           \  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"red\"\n  TEXT=\"\
-          failing\"\nfi\ncat > status/armv7-musl-linux.svg << 'SVGEOF'\n<svg xmlns=\"\
+          failing\"\nfi\ncat > status/armv7-musl-linux.svg << SVGEOF\n<svg xmlns=\"\
           http://www.w3.org/2000/svg\" width=\"220\" height=\"20\">\n  <linearGradient\
           \ id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"0\" stop-color=\"#bbb\"\
           \ stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\".1\"/>\n\
@@ -929,7 +929,7 @@ jobs:
         run: "if [ \"${{ needs.mips64el-unknown-linux-gnuabi64.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/mips64el-unknown-linux-gnuabi64.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -944,7 +944,7 @@ jobs:
         run: "if [ \"${{ needs.arm-unknown-linux-gnueabihf.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/arm-unknown-linux-gnueabihf.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
@@ -959,7 +959,7 @@ jobs:
         run: "if [ \"${{ needs.mipsel-unknown-linux-gnu.result }}\" == \"success\"\
           \ ]; then\n  COLOR=\"brightgreen\"\n  TEXT=\"passing\"\nelse\n  COLOR=\"\
           red\"\n  TEXT=\"failing\"\nfi\ncat > status/mipsel-unknown-linux-gnu.svg\
-          \ << 'SVGEOF'\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
+          \ << SVGEOF\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"220\" height=\"\
           20\">\n  <linearGradient id=\"b\" x2=\"0\" y2=\"100%\">\n    <stop offset=\"\
           0\" stop-color=\"#bbb\" stop-opacity=\".1\"/>\n    <stop offset=\"1\" stop-opacity=\"\
           .1\"/>\n  </linearGradient>\n  <mask id=\"a\">\n    <rect width=\"220\"\
