@@ -58,7 +58,7 @@
 | ------------ | -------- | -- | ---- | ------ | -------- |
 | x86_64 | Clang | Android | bionic | [![x86_64-unknown-linux-android](https://raw.githubusercontent.com/kyle-github/libyafl/badges/status/x86_64-unknown-linux-android.svg)](https://github.com/kyle-github/libyafl/actions/workflows/ci.yml) | - |
 
-**Latest Release:** v0.1.0
+**Latest Release:** v1.0.0
 
 A portable, low-level C11 fiber/coroutine library derived from Boost.Context.
 
