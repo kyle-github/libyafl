@@ -21,7 +21,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel 4
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   s390x-ibm-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
@@ -42,7 +42,7 @@ jobs:
       - name: Run Tests
         run: 'cd build
 
-          CTEST_OUTPUT_ON_FAILURE=1 ctest
+          CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error
 
           '
   s390x-musl-linux:
@@ -64,7 +64,7 @@ jobs:
       - name: Run Tests
         run: 'cd build
 
-          ctest --output-on-failure
+          ctest --no-tests=error --output-on-failure
 
           '
   x86_64-alpine-linux:
@@ -80,7 +80,7 @@ jobs:
           \ \\\n        .. && \\\n  cmake --build .\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
-          \ -c \"cd build && ctest --output-on-failure\"\n"
+          \ -c \"cd build && ctest --no-tests=error --output-on-failure\"\n"
   riscv64-musl-linux:
     runs-on: ubuntu-latest
     steps:
@@ -100,7 +100,7 @@ jobs:
       - name: Run Tests
         run: 'cd build
 
-          ctest --output-on-failure
+          ctest --no-tests=error --output-on-failure
 
           '
   aarch64-pc-windows-gnu:
@@ -127,7 +127,7 @@ jobs:
         run: cmake --build build --parallel 4
       - name: Run Tests
         shell: msys2 {0}
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   aarch64-pc-windows-msvc:
     runs-on: windows-11-arm
     steps:
@@ -146,7 +146,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel 4
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   i386-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
@@ -166,7 +166,7 @@ jobs:
       - name: Run Tests
         run: 'cd build
 
-          CTEST_OUTPUT_ON_FAILURE=1 ctest
+          CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error
 
           '
   x86_64-pc-windows-gnu:
@@ -193,7 +193,7 @@ jobs:
         run: cmake --build build --parallel 4
       - name: Run Tests
         shell: msys2 {0}
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   ppc64le-musl-linux:
     runs-on: ubuntu-latest
     steps:
@@ -213,7 +213,7 @@ jobs:
       - name: Run Tests
         run: 'cd build
 
-          ctest --output-on-failure
+          ctest --no-tests=error --output-on-failure
 
           '
   aarch64-pc-linux-gnu:
@@ -235,7 +235,7 @@ jobs:
       - name: Build
         run: cd build && make -j$(nproc)
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   powerpc64le-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
@@ -254,7 +254,7 @@ jobs:
           \ \\\n        .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   aarch64-apple-ios:
     runs-on: macos-15
     steps:
@@ -277,7 +277,7 @@ jobs:
       - name: Build
         run: cd build && make -j$(sysctl -n hw.ncpu)
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   x86_64-apple-darwin:
     runs-on: macos-15-intel
     steps:
@@ -291,7 +291,7 @@ jobs:
       - name: Build
         run: cd build && make -j$(sysctl -n hw.ncpu)
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
   x86_64-unknown-linux-android:
     runs-on: ubuntu-latest
     steps:
@@ -345,7 +345,7 @@ jobs:
 
             cd build
 
-            ctest --output-on-failure
+            ctest --no-tests=error --output-on-failure
 
             '
   x86_64-pc-linux-gnu:
@@ -368,7 +368,7 @@ jobs:
       - name: Build
         run: cd build && make -j$(nproc)
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --no-tests=error --output-on-failure
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
@@ -391,7 +391,7 @@ jobs:
           \ \\\n        .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   riscv64-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
@@ -410,7 +410,7 @@ jobs:
           \ \\\n        .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   sparc64-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
@@ -429,7 +429,7 @@ jobs:
           \ \\\n        .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   aarch64-alpine-linux:
     runs-on: ubuntu-24.04-arm
     steps:
@@ -443,7 +443,7 @@ jobs:
           \ \\\n        .. && \\\n  cmake --build .\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
-          \ -c \"cd build && ctest --output-on-failure\"\n"
+          \ -c \"cd build && ctest --no-tests=error --output-on-failure\"\n"
   i386-alpine-linux:
     runs-on: ubuntu-latest
     steps:
@@ -461,7 +461,7 @@ jobs:
           \ \\\n        .. && \\\n  cmake --build .\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  sh\
-          \ -c \"cd build && ctest --output-on-failure\"\n"
+          \ -c \"cd build && ctest --no-tests=error --output-on-failure\"\n"
   armv7-musl-linux:
     runs-on: ubuntu-latest
     steps:
@@ -481,7 +481,7 @@ jobs:
       - name: Run Tests
         run: 'cd build
 
-          ctest --output-on-failure
+          ctest --no-tests=error --output-on-failure
 
           '
   mips64el-unknown-linux-gnuabi64:
@@ -503,7 +503,7 @@ jobs:
           \     .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   arm-unknown-linux-gnueabihf:
     runs-on: ubuntu-24.04
     steps:
@@ -522,7 +522,7 @@ jobs:
           \ \\\n        .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   mipsel-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
@@ -541,7 +541,7 @@ jobs:
           \ \\\n        .. && \\\n  make\"\n"
       - name: Run Tests
         run: "docker run --rm -v ${{ github.workspace }}:/src yafl-builder \\\n  bash\
-          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest\"\n"
+          \ -c \"cd build && CTEST_OUTPUT_ON_FAILURE=1 ctest --no-tests=error\"\n"
   generate-badges:
     needs:
       - x86_64-pc-windows-msvc

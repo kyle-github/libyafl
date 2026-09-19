@@ -26,13 +26,13 @@ jobs:
 
           '
       - name: Configure
-        run: 'cmake -S . -B build -DENABLE_COVERAGE=ON
+        run: 'cmake -S . -B build -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
 
           '
       - name: Build
         run: cmake --build build
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --no-tests=error --test-dir build --output-on-failure
       - name: Generate coverage report
         run: 'lcov --capture --directory build --output-file coverage.info
 
@@ -89,7 +89,7 @@ jobs:
           \ {\n  Write-Error \"OpenCppCoverage.exe not found\"\n  exit 1\n}\nWrite-Host\
           \ \"Using OpenCppCoverage from: $($opencppcoverage.FullName)\"\n& $opencppcoverage.FullName\
           \ --sources \"${{ github.workspace }}\" --cover_children --export_type=html:build/coverage_report\
-          \ --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build\
+          \ --export_type=cobertura:build/cobertura.xml -- ctest --no-tests=error --test-dir build\
           \ -C Debug --output-on-failure\n"
         shell: pwsh
       - name: Generate Coverage Badge
@@ -147,7 +147,7 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --no-tests=error --test-dir build --output-on-failure
       - name: Create gcov wrapper
         run: 'cat > /usr/local/bin/llvm-gcov << ''EOF''
 

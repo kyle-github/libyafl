@@ -257,12 +257,8 @@ target_include_directories(yafl PUBLIC include)
 set_target_properties(yafl PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 # ============================================================================
-# Test Executables (Debug builds only)
+# Test Executables
 # ============================================================================
-
-# Gate tests to Debug builds: assert()-heavy test code produces -Wunused-variable
-# errors under -Werror in optimized builds where NDEBUG is defined.
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 set(TESTS
     test_yafl_basic
@@ -275,6 +271,9 @@ set(TESTS
 foreach(test ${TESTS})
     add_executable(${test} tests/${test}.c)
     target_link_libraries(${test} PRIVATE yafl)
+    # Tests are assert()-based: keep asserts live even in Release so the shipped
+    # (optimized) library is what gets tested.
+    target_compile_options(${test} PRIVATE $<IF:$<C_COMPILER_ID:MSVC>,/UNDEBUG,-UNDEBUG>)
     # Link dl library for test_yafl_guard on Linux/Unix for dladdr
     if("${test}" STREQUAL "test_yafl_guard" AND UNIX)
         target_link_libraries(${test} PRIVATE ${CMAKE_DL_LIBS})
@@ -297,8 +296,6 @@ endforeach()
 
 # test_yafl_guard is expected to crash (segfault) due to stack overflow
 # set_tests_properties(test_yafl_guard PROPERTIES WILL_FAIL TRUE)
-
-endif() # CMAKE_BUILD_TYPE STREQUAL "Debug"
 
 # ============================================================================
 # Summary
