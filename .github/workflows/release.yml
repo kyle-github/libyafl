@@ -27,7 +27,7 @@ jobs:
 
           '
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
       - name: Read VERSION
@@ -41,7 +41,7 @@ jobs:
           '
       - name: Get Release Details
         id: release_details
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script:
             "const commit_sha = \"${{ github.event.workflow_run.head_sha }}\"\
@@ -57,7 +57,7 @@ jobs:
             \ Using commit message: ${title}`);\n}\n\ncore.setOutput('title', title);\n\
             core.setOutput('body', body);\n"
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
           name: Release v${{ env.VERSION }}

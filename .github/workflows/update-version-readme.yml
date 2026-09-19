@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout release branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: release
           fetch-depth: 0
@@ -42,7 +42,7 @@ jobs:
 
           '
       - name: Checkout prerelease branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: prerelease
           fetch-depth: 0

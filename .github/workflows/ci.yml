@@ -6,7 +6,7 @@ jobs:
   x86_64-pc-windows-msvc:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -25,7 +25,7 @@ jobs:
   s390x-ibm-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: 'sudo apt-get update
 
@@ -48,7 +48,7 @@ jobs:
   s390x-musl-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
@@ -70,7 +70,7 @@ jobs:
   x86_64-alpine-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-x86_64 .
       - name: Build
@@ -84,7 +84,7 @@ jobs:
   riscv64-musl-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
@@ -106,7 +106,7 @@ jobs:
   aarch64-pc-windows-gnu:
     runs-on: windows-11-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup MinGW
         uses: msys2/setup-msys2@v2
         with:
@@ -131,7 +131,7 @@ jobs:
   aarch64-pc-windows-msvc:
     runs-on: windows-11-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -150,7 +150,7 @@ jobs:
   i386-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: 'sudo apt-get update
 
@@ -172,7 +172,7 @@ jobs:
   x86_64-pc-windows-gnu:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup MinGW
         uses: msys2/setup-msys2@v2
         with:
@@ -197,7 +197,7 @@ jobs:
   ppc64le-musl-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
@@ -219,7 +219,7 @@ jobs:
   aarch64-pc-linux-gnu:
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: 'sudo apt-get update
 
@@ -239,9 +239,9 @@ jobs:
   powerpc64le-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: ppc64le
       - name: Build Docker image
@@ -258,7 +258,7 @@ jobs:
   aarch64-apple-ios:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Configure CMake
         run: "cmake -G Xcode \\\n  -DCMAKE_SYSTEM_NAME=iOS \\\n  -DTARGET=aarch64-apple-ios\
           \ \\\n  -DCMAKE_OSX_ARCHITECTURES=arm64 \\\n  -B build\n"
@@ -267,7 +267,7 @@ jobs:
   aarch64-apple-darwin:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Configure
         run: 'mkdir -p build && cd build
 
@@ -281,7 +281,7 @@ jobs:
   x86_64-apple-darwin:
     runs-on: macos-15-intel
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Configure
         run: 'mkdir -p build && cd build
 
@@ -295,7 +295,7 @@ jobs:
   x86_64-unknown-linux-android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Create Test Runner Script
         run: 'echo ''#!/bin/bash'' > run_android.sh
 
@@ -351,7 +351,7 @@ jobs:
   x86_64-pc-linux-gnu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: 'sudo apt-get update
 
@@ -370,15 +370,15 @@ jobs:
       - name: Run Tests
         run: cd build && ctest --output-on-failure
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   powerpc-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: ppc
       - name: Build Docker image
@@ -395,9 +395,9 @@ jobs:
   riscv64-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: riscv64
       - name: Build Docker image
@@ -414,9 +414,9 @@ jobs:
   sparc64-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: sparc64
       - name: Build Docker image
@@ -433,7 +433,7 @@ jobs:
   aarch64-alpine-linux:
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build Docker image
         run: docker build -t yafl-builder -f docker/Dockerfile.alpine-aarch64 .
       - name: Build
@@ -447,9 +447,9 @@ jobs:
   i386-alpine-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: i386
       - name: Build Docker image
@@ -465,7 +465,7 @@ jobs:
   armv7-musl-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y cmake make
       - name: Download and install musl-cross toolchain
@@ -487,9 +487,9 @@ jobs:
   mips64el-unknown-linux-gnuabi64:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: mips64el
       - name: Build Docker image
@@ -507,9 +507,9 @@ jobs:
   arm-unknown-linux-gnueabihf:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm
       - name: Build Docker image
@@ -526,9 +526,9 @@ jobs:
   mipsel-unknown-linux-gnu:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: mipsel
       - name: Build Docker image
@@ -573,7 +573,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up badges branch
         run: "git fetch origin badges || true\nif git checkout badges; then\n  echo\
           \ \"Switched to existing badges branch\"\nelse\n  git checkout --orphan\
