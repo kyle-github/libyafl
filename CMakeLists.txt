@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Read version from file (format: major.minor.patch)
-set(PROJECT_VERSION_FULL "0.1.0")
+set(PROJECT_VERSION_FULL "1.0.0")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VER_FILE_CONTENT)
     if(VER_FILE_CONTENT)
