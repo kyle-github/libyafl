@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 # Configure apt with retry logic for transient network failures
 RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/99-retries && \

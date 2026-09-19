@@ -1,5 +1,5 @@
 name: coverage
-true:
+on:
   push:
     branches:
       - prerelease
@@ -18,7 +18,7 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: 'sudo apt-get update
 
@@ -26,13 +26,13 @@ jobs:
 
           '
       - name: Configure
-        run: 'cmake -S . -B build -DENABLE_COVERAGE=ON
+        run: 'cmake -S . -B build -DENABLE_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
 
           '
       - name: Build
         run: cmake --build build
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --no-tests=error --test-dir build --output-on-failure
       - name: Generate coverage report
         run: 'lcov --capture --directory build --output-file coverage.info
 
@@ -51,7 +51,7 @@ jobs:
 
           '
       - name: Upload Coverage Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-linux-${{ matrix.arch }}
           path: 'docs/coverage
@@ -69,7 +69,7 @@ jobs:
             cmake_arch: x64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install OpenCppCoverage
         run: 'choco install opencppcoverage
 
@@ -89,7 +89,7 @@ jobs:
           \ {\n  Write-Error \"OpenCppCoverage.exe not found\"\n  exit 1\n}\nWrite-Host\
           \ \"Using OpenCppCoverage from: $($opencppcoverage.FullName)\"\n& $opencppcoverage.FullName\
           \ --sources \"${{ github.workspace }}\" --cover_children --export_type=html:build/coverage_report\
-          \ --export_type=cobertura:build/cobertura.xml -- ctest --test-dir build\
+          \ --export_type=cobertura:build/cobertura.xml -- ctest --no-tests=error --test-dir build\
           \ -C Debug --output-on-failure\n"
         shell: pwsh
       - name: Generate Coverage Badge
@@ -117,7 +117,7 @@ jobs:
           \ $badgePath | Select-Object -First 5\n} else {\n  Write-Error \"Failed\
           \ to create badge file\"\n  exit 1\n}\n"
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-windows-${{ matrix.arch }}
           path: 'build/coverage_report
@@ -138,7 +138,7 @@ jobs:
             cmake_arch: arm64
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         run: brew install lcov
       - name: Configure
@@ -147,7 +147,7 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --no-tests=error --test-dir build --output-on-failure
       - name: Create gcov wrapper
         run: 'cat > /usr/local/bin/llvm-gcov << ''EOF''
 
@@ -179,7 +179,7 @@ jobs:
 
           '
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-macos-${{ matrix.arch }}
           path: 'docs/coverage
@@ -195,9 +195,9 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/prerelease'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: Move badges

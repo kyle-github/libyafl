@@ -27,7 +27,7 @@ jobs:
 
           '
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
       - name: Read VERSION
@@ -41,7 +41,7 @@ jobs:
           '
       - name: Get Release Details
         id: release_details
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script:
             "const commit_sha = \"${{ github.event.workflow_run.head_sha }}\"\
@@ -57,7 +57,7 @@ jobs:
             \ Using commit message: ${title}`);\n}\n\ncore.setOutput('title', title);\n\
             core.setOutput('body', body);\n"
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
           name: Release v${{ env.VERSION }}
@@ -77,5 +77,25 @@ jobs:
           generate_release_notes: false
           draft: false
           prerelease: false
+      - name: Update README on release
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          sed -i "s/^\*\*Latest Release:\*\*.*/**Latest Release:** v${VERSION}/" README.md
+          git add README.md
+          git diff --cached --quiet || git commit -m "Update README with release v${VERSION} [skip ci]"
+          git push origin HEAD:release
+      - name: Checkout prerelease
+        uses: actions/checkout@v7
+        with:
+          ref: prerelease
+      - name: Bump patch version on prerelease
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          bash scripts/increment_version.sh patch
+          git add VERSION
+          git commit -m "Bump patch version to $(cat VERSION) [skip ci]"
+          git push origin prerelease
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"

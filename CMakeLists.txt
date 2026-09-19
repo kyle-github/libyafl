@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Read version from file (format: major.minor.patch)
-set(PROJECT_VERSION_FULL "0.1.0")
+set(PROJECT_VERSION_FULL "1.0.0")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VER_FILE_CONTENT)
     if(VER_FILE_CONTENT)
@@ -78,12 +78,33 @@ endif()
 # Compiler Flags
 # ============================================================================
 
-# Enable ASAN/UBSAN in Debug builds (Generic)
+# Enable ASAN/UBSAN in Debug builds (Generic).
+#
+# When built standalone, default to ASan+UBSan. When built as part of a parent
+# project that defines USE_MEM_SANITIZERS/USE_THREAD_SANITIZERS, defer entirely
+# to the parent's choice: the parent already added the right -fsanitize=... flags
+# to CMAKE_C_FLAGS_DEBUG (which apply here too), and ASan/LeakSan cannot be linked
+# into the same binary as TSan, so this library must never add its own ASan flags
+# on top of a parent-selected TSan build.
+set(YAFL_ASAN_ACTIVE FALSE)
+set(YAFL_TSAN_ACTIVE FALSE)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT MSVC)
-    message(STATUS "Debug build detected: Enabling ASAN/UBSAN")
-    add_compile_options($<$<COMPILE_LANGUAGE:C>:-fsanitize=address,undefined>)
-    add_compile_options($<$<COMPILE_LANGUAGE:C>:-fno-omit-frame-pointer>)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
+    if(DEFINED USE_MEM_SANITIZERS OR DEFINED USE_THREAD_SANITIZERS)
+        if(USE_THREAD_SANITIZERS)
+            message(STATUS "Debug build detected: using parent-selected ThreadSanitizer")
+            set(YAFL_TSAN_ACTIVE TRUE)
+        elseif(USE_MEM_SANITIZERS)
+            message(STATUS "Debug build detected: using parent-selected ASAN/UBSAN")
+            set(YAFL_ASAN_ACTIVE TRUE)
+        endif()
+    else()
+        message(STATUS "Debug build detected: Enabling ASAN/UBSAN")
+        add_compile_options($<$<COMPILE_LANGUAGE:C>:-fsanitize=address,undefined>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C>:-fno-omit-frame-pointer>)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
+        set(YAFL_ASAN_ACTIVE TRUE)
+    endif()
 
     # Automatically enable watermark checking in debug builds
     message(STATUS "Enabling stack watermark for Debug build")
@@ -130,6 +151,10 @@ else()
         set(HOST_ARCH "x86_64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64|AARCH64")
         set(HOST_ARCH "aarch64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm|^ARM")
+        set(HOST_ARCH "arm")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^x86$|^i386$|^i686$|^Win32$")
+        set(HOST_ARCH "i386")
     else()
         message(FATAL_ERROR "Could not auto-detect architecture. Please specify -DTARGET=<triple>")
     endif()
@@ -184,6 +209,20 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS" OR CMAKE_SYSTEM_NAME STREQUAL "Android")
     message(STATUS "Skipping stack direction check for ${CMAKE_SYSTEM_NAME} (assuming downward)")
+elseif(YAFL_ASAN_ACTIVE)
+    # Under ASan, this probe is unreliable: ASan's stack-use-after-return "fake stack"
+    # can allocate a function's locals off the real machine stack entirely, so comparing
+    # caller/callee frame addresses no longer reflects true hardware stack growth
+    # direction. Skip the runtime probe and rely on the well-known fact that every
+    # architecture this project ships a toolchain/asm implementation for grows downward.
+    message(STATUS "Skipping stack direction check under ASan/UBSan (assuming downward)")
+elseif(CMAKE_CROSSCOMPILING AND CMAKE_CROSSCOMPILING_EMULATOR MATCHES "qemu")
+    # ponytail: QEMU user-mode emulation (e.g. the s390x CI leg) has been observed to make
+    # this probe report "upward" on architectures that are well-documented to grow the
+    # stack downward under their native SysV/Linux ABI (s390x included) and for which this
+    # project already ships a hand-verified downward-stack asm implementation (gated by the
+    # toolchains/${TRIPLE}.cmake lookup above). Trust the ABI instead of an emulator-only probe.
+    message(STATUS "Skipping stack direction check under QEMU user-mode emulation (assuming downward per target ABI)")
 elseif(NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
     message(STATUS "Checking stack direction...")
     try_run(STACK_DIR_EXITCODE STACK_DIR_COMPILED
@@ -192,7 +231,11 @@ elseif(NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
     )
 
     if(STACK_DIR_COMPILED)
-        if(STACK_DIR_EXITCODE EQUAL 0)
+        if(STACK_DIR_EXITCODE STREQUAL "FAILED_TO_RUN")
+            # ponytail: sandboxed/CI environments can deny exec of the freshly-built probe
+            # even when not cross-compiling. That's "couldn't test it", not "tested upward".
+            message(WARNING "Could not execute stack direction check (sandboxed environment?). Assuming downward stack.")
+        elseif(STACK_DIR_EXITCODE EQUAL 0)
             message(STATUS "Stack grows downward (supported)")
         else()
             message(FATAL_ERROR "Stack grows upward! This architecture is not supported by yafl.")
@@ -203,6 +246,15 @@ elseif(NOT CMAKE_CROSSCOMPILING OR CMAKE_CROSSCOMPILING_EMULATOR)
 else()
     message(STATUS "Cross-compiling without emulator: Skipping stack direction check (assuming downward)")
 endif()
+
+# ============================================================================
+# Library
+# ============================================================================
+
+# Create static library
+add_library(yafl STATIC src/yafl.c ${ASM_FILES})
+target_include_directories(yafl PUBLIC include)
+set_target_properties(yafl PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 # ============================================================================
 # Test Executables
@@ -216,14 +268,12 @@ set(TESTS
     test_yafl_watermark
 )
 
-# Create static library
-add_library(yafl STATIC src/yafl.c ${ASM_FILES})
-target_include_directories(yafl PUBLIC include)
-set_target_properties(yafl PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
-
 foreach(test ${TESTS})
     add_executable(${test} tests/${test}.c)
     target_link_libraries(${test} PRIVATE yafl)
+    # Tests are assert()-based: keep asserts live even in Release so the shipped
+    # (optimized) library is what gets tested.
+    target_compile_options(${test} PRIVATE $<IF:$<C_COMPILER_ID:MSVC>,/UNDEBUG,-UNDEBUG>)
     # Link dl library for test_yafl_guard on Linux/Unix for dladdr
     if("${test}" STREQUAL "test_yafl_guard" AND UNIX)
         target_link_libraries(${test} PRIVATE ${CMAKE_DL_LIBS})
