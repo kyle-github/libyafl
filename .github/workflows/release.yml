@@ -77,5 +77,25 @@ jobs:
           generate_release_notes: false
           draft: false
           prerelease: false
+      - name: Update README on release
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          sed -i "s/^\*\*Latest Release:\*\*.*/**Latest Release:** v${VERSION}/" README.md
+          git add README.md
+          git diff --cached --quiet || git commit -m "Update README with release v${VERSION} [skip ci]"
+          git push origin HEAD:release
+      - name: Checkout prerelease
+        uses: actions/checkout@v7
+        with:
+          ref: prerelease
+      - name: Bump patch version on prerelease
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          bash scripts/increment_version.sh patch
+          git add VERSION
+          git commit -m "Bump patch version to $(cat VERSION) [skip ci]"
+          git push origin prerelease
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
