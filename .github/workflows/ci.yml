@@ -343,9 +343,7 @@ jobs:
             adb shell ''while [[ -z $(getprop sys.boot_completed) ]]; do sleep 30;
             done''
 
-            cd build
-
-            ctest --no-tests=error --output-on-failure
+            ctest --no-tests=error --test-dir build --output-on-failure
 
             '
   x86_64-pc-linux-gnu:
